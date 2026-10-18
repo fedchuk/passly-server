@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: passly
+  datasource:
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/passly}
+    username: ${JDBC_DATABASE_USERNAME:passly}
+    password: ${JDBC_DATABASE_PASSWORD:passly}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: ${PORT:8080}
