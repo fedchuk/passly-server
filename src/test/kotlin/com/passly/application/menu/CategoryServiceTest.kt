@@ -1,8 +1,5 @@
-package com.passly.domain.menu
+package com.passly.application.menu
 
-import com.passly.application.menu.CategoryService
-import com.passly.application.menu.CreateCategoryCommand
-import com.passly.application.menu.MoveCategoryCommand
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId
