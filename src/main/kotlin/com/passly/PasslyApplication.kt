@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class PasslyServerApplication
+class PasslyApplication
 
 fun main(args: Array<String>) {
-    runApplication<PasslyServerApplication>(*args)
+    runApplication<PasslyApplication>(*args)
 }
