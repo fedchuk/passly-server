@@ -13,7 +13,7 @@ import java.util.UUID
 abstract class BaseEntity(
     @Id
     @Column(name = "id", nullable = false, updatable = false)
-    val id: UUID = UUID.randomUUID(),
+    val id: UUID,
 ) {
     @Version
     @Column(name = "version")

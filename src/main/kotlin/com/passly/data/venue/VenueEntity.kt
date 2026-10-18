@@ -9,12 +9,14 @@ import java.util.UUID
 @Entity
 @Table(name = "venue")
 class VenueEntity(
+    id: UUID,
+
     @Column(name = "tenant_id", nullable = false, updatable = false)
     val tenantId: UUID,
 
     @Column(name = "name", nullable = false, length = 160)
     var name: String,
-) : BaseEntity() {
+) : BaseEntity(id) {
     @Column(name = "menu_version", nullable = false, insertable = false, updatable = false)
     var menuVersion: Long = 0
         protected set
