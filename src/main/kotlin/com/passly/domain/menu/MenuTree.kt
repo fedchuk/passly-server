@@ -78,9 +78,9 @@ class MenuTree(
         if (oldParentId != newParentId) {
             category.parentId = newParentId
             changed += category
-            changed += renumber(children(oldParentId))
+            changed += assignPositions(children(oldParentId))
         }
-        changed += renumber(newSiblings)
+        changed += assignPositions(newSiblings)
         return changed
     }
 
@@ -100,7 +100,7 @@ class MenuTree(
         if (siblings.map { it.id }.toSet() != orderedIds.toSet()) {
             throw ValidationException("orderedIds must list exactly the current children of the parent")
         }
-        return renumber(orderedIds.map { get(it) })
+        return assignPositions(orderedIds.map { get(it) })
     }
 
     fun removeLeaf(id: CategoryId): Set<Category> {
@@ -109,10 +109,10 @@ class MenuTree(
             throw ConflictException("Category '${category.name}' has subcategories. Move or delete them first.")
         }
         byId.remove(id)
-        return renumber(children(category.parentId))
+        return assignPositions(children(category.parentId))
     }
 
-    private fun renumber(ordered: List<Category>): Set<Category> {
+    private fun assignPositions(ordered: List<Category>): Set<Category> {
         val changed = linkedSetOf<Category>()
         ordered.forEachIndexed { index, category ->
             if (category.sortOrder != index) {
