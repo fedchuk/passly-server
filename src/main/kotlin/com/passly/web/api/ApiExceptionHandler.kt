@@ -3,6 +3,7 @@ package com.passly.web.api
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.DomainException
 import com.passly.domain.common.NotFoundException
+import com.passly.domain.common.UnauthorizedException
 import com.passly.domain.common.ValidationException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.OptimisticLockingFailureException
@@ -28,6 +29,7 @@ class ApiExceptionHandler(private val handlerExceptionResolver: HandlerException
             is NotFoundException -> HttpStatus.NOT_FOUND
             is ConflictException -> HttpStatus.CONFLICT
             is ValidationException -> HttpStatus.BAD_REQUEST
+            is UnauthorizedException -> HttpStatus.UNAUTHORIZED
         }
         return forStatusAndDetail(status, e.message)
     }

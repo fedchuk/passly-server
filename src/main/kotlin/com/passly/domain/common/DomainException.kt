@@ -7,3 +7,5 @@ class NotFoundException(what: String, id: Any) : DomainException("$what $id not 
 class ConflictException(message: String) : DomainException(message)
 
 class ValidationException(message: String) : DomainException(message)
+
+class UnauthorizedException(message: String) : DomainException(message)

@@ -1,4 +1,4 @@
-package com.passly.web.api.menu
+package com.passly.web.menu
 
 import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration

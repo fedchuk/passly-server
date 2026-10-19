@@ -12,6 +12,10 @@ spring:
   web:
     locale: en
     locale-resolver: fixed
+  auth:
+    issuer: passly
+    access-token-ttl: 15m
+    refresh-token-ttl: 30d
 
 server:
   port: ${PORT:8080}
