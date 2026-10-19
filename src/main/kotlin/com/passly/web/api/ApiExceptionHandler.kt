@@ -4,11 +4,13 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.common.DomainException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ProblemDetail
+import org.springframework.http.ProblemDetail.forStatusAndDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -27,12 +29,12 @@ class ApiExceptionHandler(private val handlerExceptionResolver: HandlerException
             is ConflictException -> HttpStatus.CONFLICT
             is ValidationException -> HttpStatus.BAD_REQUEST
         }
-        return ProblemDetail.forStatusAndDetail(status, e.message)
+        return forStatusAndDetail(status, e.message)
     }
 
     @ExceptionHandler(OptimisticLockingFailureException::class)
     fun handleConcurrentChange(e: OptimisticLockingFailureException): ProblemDetail =
-        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "The data was changed by someone else. Reload and try again.")
+        forStatusAndDetail(HttpStatus.CONFLICT, "The data was changed by someone else. Reload and try again.")
 
     override fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,
@@ -46,4 +48,8 @@ class ApiExceptionHandler(private val handlerExceptionResolver: HandlerException
         }
         return handleExceptionInternal(ex, problem, headers, status, request)
     }
+
+    @ExceptionHandler(DataIntegrityViolationException::class)
+    fun handleIntegrityViolation(e: DataIntegrityViolationException): ProblemDetail =
+        forStatusAndDetail(HttpStatus.CONFLICT, "The operation conflicts with related data. Reload and try again.")
 }

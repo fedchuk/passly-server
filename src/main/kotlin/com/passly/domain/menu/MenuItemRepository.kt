@@ -7,4 +7,5 @@ interface MenuItemRepository {
     fun findActive(venueId: VenueId, id: MenuItemId): MenuItem?
     fun existsInCategory(categoryId: CategoryId): Boolean
     fun saveAll(items: Collection<MenuItem>)
+    fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean
 }

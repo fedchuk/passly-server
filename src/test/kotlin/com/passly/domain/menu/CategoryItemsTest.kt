@@ -135,4 +135,27 @@ class CategoryItemsTest {
         assertFailsWith<IllegalArgumentException> { fish.moveIn(ribeye) }
         assertTrue(fish.isEmpty())
     }
+
+    @Test
+    fun `modifier groups are attached in order without duplicates`() {
+        val ribeye = steaks.add(tenant, details("Ribeye"))
+        val doneness = ModifierGroupId.new()
+        val sauces = ModifierGroupId.new()
+
+        ribeye.attachModifierGroups(listOf(doneness, sauces))
+
+        assertEquals(listOf(doneness, sauces), ribeye.modifierGroupIds)
+        assertFailsWith<ValidationException> { ribeye.attachModifierGroups(listOf(doneness, doneness)) }
+        assertEquals(listOf(doneness, sauces), ribeye.modifierGroupIds)
+    }
+
+    @Test
+    fun `archiving detaches modifier groups`() {
+        val ribeye = steaks.add(tenant, details("Ribeye"))
+        ribeye.attachModifierGroups(listOf(ModifierGroupId.new()))
+
+        steaks.archive(ribeye.id)
+
+        assertTrue(ribeye.modifierGroupIds.isEmpty())
+    }
 }

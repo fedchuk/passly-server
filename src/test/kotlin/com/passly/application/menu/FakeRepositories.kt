@@ -68,8 +68,10 @@ class FakeMenuItemRepository : MenuItemRepository {
         lastSaved = items.map { it.id }.toSet()
     }
 
+    override fun existsWithModifierGroup(groupId: ModifierGroupId) = stored.values.any { groupId in it.modifierGroupIds }
+
     private fun copyOf(i: MenuItem) = MenuItem.fromStorage(
-        i.id, i.tenantId, i.venueId, i.categoryId, i.details, i.sortOrder, i.available, i.archived, i.version ?: 0,
+        i.id, i.tenantId, i.venueId, i.categoryId, i.details, i.sortOrder, i.available, i.archived, i.modifierGroupIds, i.version ?: 0,
     )
 }
 

@@ -6,6 +6,9 @@ import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItemDetails
+import com.passly.domain.menu.ModifierDraft
+import com.passly.domain.menu.ModifierGroup
+import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.StationId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
@@ -26,8 +29,9 @@ class MenuItemServiceTest {
     private val categories = FakeCategoryRepository()
     private val stations = FakeStationRepository(mapOf(grill to venue.id))
     private val items = FakeMenuItemRepository()
+    private val modifierGroups = FakeModifierGroupRepository()
     private val categoryService = CategoryService(venues, categories, stations, items)
-    private val service = MenuItemService(venues, categories, stations, items)
+    private val service = MenuItemService(venues, categories, stations, items, modifierGroups)
 
     private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks")).id
     private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish")).id
@@ -126,5 +130,39 @@ class MenuItemServiceTest {
         assertFailsWith<NotFoundException> { service.get(venue.id, ribeye.id) }
         categoryService.delete(venue.id, steaks)
         assertTrue(steaks !in categories.stored)
+    }
+
+    @Test
+    fun `modifier groups of the venue are attached in the given order`() {
+        val ribeye = create(steaks, "Ribeye")
+        val doneness = modifierGroup("Doneness")
+        val sauces = modifierGroup("Sauces")
+
+        service.attachModifierGroups(AttachModifierGroupsCommand(venue.id, ribeye.id, listOf(sauces, doneness), 0))
+
+        assertEquals(listOf(sauces, doneness), items.stored.getValue(ribeye.id).modifierGroupIds)
+    }
+
+    @Test
+    fun `modifier group of another venue cannot be attached`() {
+        val ribeye = create(steaks, "Ribeye")
+        val foreign = ModifierGroup.create(TenantId.new(), VenueId.new(), "Foreign", 0, 1, listOf(
+            ModifierDraft(
+                "X",
+                Money.of("0")
+            )
+        ))
+        modifierGroups.save(foreign)
+
+        assertFailsWith<NotFoundException> {
+            service.attachModifierGroups(AttachModifierGroupsCommand(venue.id, ribeye.id, listOf(foreign.id)))
+        }
+        assertTrue(items.stored.getValue(ribeye.id).modifierGroupIds.isEmpty())
+    }
+
+    private fun modifierGroup(name: String): ModifierGroupId {
+        val group = ModifierGroup.create(venue.tenantId, venue.id, name, 0, 1, listOf(ModifierDraft("Option", Money.of("0"))))
+        modifierGroups.save(group)
+        return group.id
     }
 }

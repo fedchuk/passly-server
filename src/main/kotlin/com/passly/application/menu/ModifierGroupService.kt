@@ -2,6 +2,7 @@ package com.passly.application.menu
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
+import com.passly.domain.menu.MenuItemRepository
 import com.passly.domain.menu.ModifierGroup
 import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.ModifierGroupRepository
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 class ModifierGroupService(
     private val venues: VenueRepository,
     private val groups: ModifierGroupRepository,
+    private val items: MenuItemRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -52,7 +54,11 @@ class ModifierGroupService(
     }
 
     fun delete(venueId: VenueId, id: ModifierGroupId) {
-        groups.delete(requireGroup(venueId, id))
+        val group = requireGroup(venueId, id)
+        if (items.existsWithModifierGroup(id)) {
+            throw ConflictException("Modifier group '${group.name}' is used by menu items. Detach it first.")
+        }
+        groups.delete(group)
     }
 
     private fun requireVenue(id: VenueId): Venue =

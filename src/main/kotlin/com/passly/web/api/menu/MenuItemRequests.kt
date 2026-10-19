@@ -1,5 +1,6 @@
 package com.passly.web.api.menu
 
+import com.passly.application.menu.AttachModifierGroupsCommand
 import com.passly.application.menu.MoveMenuItemCommand
 import com.passly.application.menu.ReorderMenuItemsCommand
 import com.passly.domain.common.Money
@@ -7,6 +8,7 @@ import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.MenuItemId
+import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.StationId
 import com.passly.domain.venue.VenueId
 import jakarta.validation.constraints.NotBlank
@@ -54,6 +56,14 @@ data class ReorderMenuItemsRequest(
 ) {
     fun toCommand(venueId: VenueId, categoryId: CategoryId) =
         ReorderMenuItemsCommand(venueId, categoryId, orderedIds.map(::MenuItemId))
+}
+
+data class AttachModifierGroupsRequest(
+    val groupIds: List<UUID>,
+    val version: Long,
+) {
+    fun toCommand(venueId: VenueId, id: MenuItemId) =
+        AttachModifierGroupsCommand(venueId, id, groupIds.map(::ModifierGroupId), version)
 }
 
 private fun menuItemDetails(name: String, description: String?, price: String, taxRate: String, stationId: UUID?) =

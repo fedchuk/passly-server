@@ -100,4 +100,14 @@ class MenuItemController(
     fun archive(@PathVariable venueId: UUID, @PathVariable id: UUID) {
         items.archive(VenueId(venueId), MenuItemId(id))
     }
+
+    @PutMapping("/items/{id}/modifier-groups")
+    fun attachModifierGroups(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @RequestBody request: AttachModifierGroupsRequest,
+    ): MenuItemResponse {
+        items.attachModifierGroups(request.toCommand(VenueId(venueId), MenuItemId(id)))
+        return get(venueId, id)
+    }
 }

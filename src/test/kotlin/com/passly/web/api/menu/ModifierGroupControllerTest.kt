@@ -1,4 +1,4 @@
-package com.passly.application.menu
+package com.passly.web.api.menu
 
 import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration
@@ -98,6 +98,16 @@ class ModifierGroupControllerTest {
 
         mockMvc.delete("$base/$id").andExpect { status { isNoContent() } }
         mockMvc.get("$base/$id").andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `groups of an unknown venue are not found`() {
+        val unknown = UUID.randomUUID()
+
+        mockMvc.get("/api/v1/venues/$unknown/modifier-groups").andExpect {
+            status { isNotFound() }
+            jsonPath("$.detail") { value("Venue $unknown not found") }
+        }
     }
 
     private fun create(json: String): String =

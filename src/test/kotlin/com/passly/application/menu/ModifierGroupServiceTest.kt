@@ -3,6 +3,10 @@ package com.passly.application.menu
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
+import com.passly.domain.common.TaxRate
+import com.passly.domain.menu.CategoryId
+import com.passly.domain.menu.CategoryItems
+import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.venue.TenantId
@@ -17,7 +21,8 @@ class ModifierGroupServiceTest {
 
     private val venue = Venue(VenueId.new(), TenantId.new(), "Bistro")
     private val groups = FakeModifierGroupRepository()
-    private val service = ModifierGroupService(FakeVenueRepository(venue), groups)
+    private val items = FakeMenuItemRepository()
+    private val service = ModifierGroupService(FakeVenueRepository(venue), groups, items)
 
     private fun option(name: String, delta: String = "0") = ModifierDraft(name, Money.of(delta))
 
@@ -78,5 +83,17 @@ class ModifierGroupServiceTest {
         service.delete(venue.id, size.id)
 
         assertTrue(size.id !in groups.stored)
+    }
+
+    @Test
+    fun `group used by a menu item cannot be deleted`() {
+        val size = create("Size")
+        val category = CategoryItems(venue.id, CategoryId.new(), emptyList())
+        val latte = category.add(venue.tenantId, MenuItemDetails("Latte", null, Money.of("3.00"), TaxRate.of("10")))
+        latte.attachModifierGroups(listOf(size.id))
+        items.saveAll(listOf(latte))
+
+        assertFailsWith<ConflictException> { service.delete(venue.id, size.id) }
+        assertTrue(size.id in groups.stored)
     }
 }

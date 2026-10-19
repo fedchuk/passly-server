@@ -7,6 +7,7 @@ import com.passly.domain.menu.CategoryRepository
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemId
 import com.passly.domain.menu.MenuItemRepository
+import com.passly.domain.menu.ModifierGroupRepository
 import com.passly.domain.menu.StationId
 import com.passly.domain.menu.StationRepository
 import com.passly.domain.venue.Venue
@@ -22,6 +23,7 @@ class MenuItemService(
     private val categories: CategoryRepository,
     private val stations: StationRepository,
     private val items: MenuItemRepository,
+    private val modifierGroups: ModifierGroupRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -94,6 +96,20 @@ class MenuItemService(
         val changed = items.loadCategoryItems(venueId, categoryId).archive(itemId)
 
         items.saveAll(changed)
+    }
+
+    fun attachModifierGroups(command: AttachModifierGroupsCommand): MenuItem {
+        val venueGroups = modifierGroups.findAll(command.venueId).map { it.id }.toSet()
+        command.groupIds.firstOrNull { it !in venueGroups }?.let { throw NotFoundException("Modifier group", it) }
+
+        val item = requireItem(command.venueId, command.itemId)
+        if (command.expectedVersion != null && command.expectedVersion != item.version) {
+            throw ConflictException("Menu item ${item.name} was changed by someone else. Reload and try again.")
+        }
+        item.attachModifierGroups(command.groupIds)
+
+        items.saveAll(listOf(item))
+        return item
     }
 
     private fun requireItem(venueId: VenueId, id: MenuItemId): MenuItem =

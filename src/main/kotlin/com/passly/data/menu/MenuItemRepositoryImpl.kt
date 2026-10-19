@@ -27,4 +27,7 @@ class MenuItemRepositoryImpl(
             jpa.upsert(item.id.value, item.version, create = { item.toNewEntity() }, update = { updateFrom(item) })
         }
     }
+
+    override fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean =
+        jpa.existsWithModifierGroup(groupId.value)
 }

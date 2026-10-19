@@ -15,6 +15,7 @@ class MenuItem private constructor(
     sortOrder: Int,
     available: Boolean,
     archived: Boolean,
+    modifierGroupIds: List<ModifierGroupId>,
     val version: Long?,
 ) {
     var categoryId: CategoryId? = categoryId
@@ -44,6 +45,9 @@ class MenuItem private constructor(
     var archived: Boolean = archived
         private set
 
+    var modifierGroupIds: List<ModifierGroupId> = modifierGroupIds
+        private set
+
     val isNew: Boolean get() = version == null
 
     val details: MenuItemDetails get() = MenuItemDetails(name, description, price, taxRate, stationId)
@@ -56,6 +60,17 @@ class MenuItem private constructor(
         price = valid.price
         taxRate = valid.taxRate
         stationId = valid.stationId
+    }
+
+    fun attachModifierGroups(groupIds: List<ModifierGroupId>) {
+        requireActive()
+        if (groupIds.toSet().size != groupIds.size) {
+            throw ValidationException("The same modifier group is attached twice")
+        }
+        if (groupIds.size > MAX_MODIFIER_GROUPS) {
+            throw ValidationException("A menu item can have at most $MAX_MODIFIER_GROUPS modifier groups")
+        }
+        modifierGroupIds = groupIds.toList()
     }
 
     fun addToStopList() {
@@ -73,6 +88,7 @@ class MenuItem private constructor(
         archived = true
         categoryId = null
         sortOrder = 0
+        modifierGroupIds = emptyList()
     }
 
     private fun requireActive() {
@@ -88,6 +104,7 @@ class MenuItem private constructor(
     companion object {
         const val MAX_NAME_LENGTH = 160
         const val MAX_DESCRIPTION_LENGTH = 2000
+        const val MAX_MODIFIER_GROUPS = 10
 
         internal fun new(
             tenantId: TenantId,
@@ -104,6 +121,7 @@ class MenuItem private constructor(
             sortOrder = sortOrder,
             available = true,
             archived = false,
+            modifierGroupIds = emptyList(),
             version = null,
         )
 
@@ -116,8 +134,9 @@ class MenuItem private constructor(
             sortOrder: Int,
             available: Boolean,
             archived: Boolean,
+            modifierGroupIds: List<ModifierGroupId>,
             version: Long,
-        ) = MenuItem(id, tenantId, venueId, categoryId, details, sortOrder, available, archived, version)
+        ) = MenuItem(id, tenantId, venueId, categoryId, details, sortOrder, available, archived, modifierGroupIds, version)
 
         private fun validated(details: MenuItemDetails): MenuItemDetails {
             val name = details.name.trim()

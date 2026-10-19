@@ -1,8 +1,12 @@
 package com.passly.data.menu
 
 import com.passly.data.common.BaseEntity
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OrderColumn
 import jakarta.persistence.Table
 import java.math.BigDecimal
 import java.util.UUID
@@ -44,4 +48,11 @@ class MenuItemEntity(
 
     @Column(name = "archived", nullable = false)
     var archived: Boolean,
-) : BaseEntity(id)
+) : BaseEntity(id) {
+
+    @ElementCollection
+    @CollectionTable(name = "menu_item_modifier_group", joinColumns = [JoinColumn(name = "menu_item_id")])
+    @OrderColumn(name = "position")
+    @Column(name = "group_id", nullable = false)
+    var modifierGroupIds: MutableList<UUID> = mutableListOf()
+}

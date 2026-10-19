@@ -16,6 +16,7 @@ data class MenuItemResponse(
     val effectiveStationId: UUID?,
     val sortOrder: Int,
     val available: Boolean,
+    val modifierGroupIds: List<UUID>,
     val version: Long,
 )
 
@@ -30,5 +31,6 @@ fun MenuItem.toResponse(tree: MenuTree) = MenuItemResponse(
     effectiveStationId = tree.stationFor(this)?.value,
     sortOrder = sortOrder,
     available = available,
+    modifierGroupIds = modifierGroupIds.map { it.value },
     version = checkNotNull(version) { "Menu item $id is not stored yet" },
 )

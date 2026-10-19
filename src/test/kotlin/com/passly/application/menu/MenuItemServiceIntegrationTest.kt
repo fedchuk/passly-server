@@ -3,9 +3,11 @@ package com.passly.application.menu
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
+import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItemDetails
+import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.venue.VenueId
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +32,9 @@ class MenuItemServiceIntegrationTest {
 
     @Autowired
     lateinit var jdbc: JdbcClient
+
+    @Autowired
+    lateinit var modifierGroupService: ModifierGroupService
 
     private val venueId = VenueId(UUID.randomUUID())
 
@@ -84,6 +89,38 @@ class MenuItemServiceIntegrationTest {
 
         assertTrue(steaks !in categoryService.getTree(venueId))
     }
+
+    @Test
+    fun `attached modifier groups are persisted in order`() {
+        val ribeye = create(category("Steaks"), "Ribeye")
+        val doneness = group("Doneness")
+        val sauces = group("Sauces")
+
+        service.attachModifierGroups(AttachModifierGroupsCommand(venueId, ribeye.id, listOf(doneness, sauces), 0))
+        service.attachModifierGroups(AttachModifierGroupsCommand(venueId, ribeye.id, listOf(sauces, doneness), 1))
+
+        val stored = service.get(venueId, ribeye.id)
+        assertEquals(listOf(sauces, doneness), stored.modifierGroupIds)
+        assertEquals(2L, stored.version)
+    }
+
+    @Test
+    fun `used modifier group can be deleted only after the item is archived`() {
+        val ribeye = create(category("Steaks"), "Ribeye")
+        val doneness = group("Doneness")
+        service.attachModifierGroups(AttachModifierGroupsCommand(venueId, ribeye.id, listOf(doneness)))
+
+        assertFailsWith<ConflictException> { modifierGroupService.delete(venueId, doneness) }
+
+        service.archive(venueId, ribeye.id)
+        modifierGroupService.delete(venueId, doneness)
+
+        assertFailsWith<NotFoundException> { modifierGroupService.get(venueId, doneness) }
+    }
+
+    private fun group(name: String) = modifierGroupService.create(
+        CreateModifierGroupCommand(venueId, name, 0, 1, listOf(ModifierDraft("Option", Money.of("0")))),
+    ).id
 
     private fun category(name: String): CategoryId =
         categoryService.create(CreateCategoryCommand(venueId, name)).id

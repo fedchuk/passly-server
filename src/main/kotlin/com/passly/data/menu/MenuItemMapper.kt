@@ -6,6 +6,7 @@ import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.MenuItemId
+import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.StationId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
@@ -25,6 +26,7 @@ fun MenuItemEntity.toDomain() = MenuItem.fromStorage(
     sortOrder = sortOrder,
     available = available,
     archived = archived,
+    modifierGroupIds = modifierGroupIds.map(::ModifierGroupId),
     version = checkNotNull(version) { "Stored menu item $id has no version" },
 )
 
@@ -41,7 +43,7 @@ fun MenuItem.toNewEntity() = MenuItemEntity(
     sortOrder = sortOrder,
     available = available,
     archived = archived,
-)
+).also { entity -> entity.modifierGroupIds = modifierGroupIds.map { it.value }.toMutableList() }
 
 fun MenuItemEntity.updateFrom(item: MenuItem) {
     categoryId = item.categoryId?.value
@@ -53,4 +55,6 @@ fun MenuItemEntity.updateFrom(item: MenuItem) {
     sortOrder = item.sortOrder
     available = item.available
     archived = item.archived
+    val groupIds = item.modifierGroupIds.map { it.value }
+    if (modifierGroupIds != groupIds) modifierGroupIds = groupIds.toMutableList()
 }

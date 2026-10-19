@@ -143,6 +143,31 @@ class MenuItemControllerTest {
         }
     }
 
+    @Test
+    fun `modifier groups can be attached and then block deleting the group`() {
+        val ribeye = createItem(createCategory("Steaks"), "Ribeye")
+        val doneness = createGroup("Doneness")
+
+        mockMvc.put("$venue/items/$ribeye/modifier-groups") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"groupIds": ["$doneness"], "version": 0}"""
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.modifierGroupIds[0]") { value(doneness) }
+            jsonPath("$.version") { value(1) }
+        }
+
+        mockMvc.delete("$venue/modifier-groups/$doneness").andExpect { status { isConflict() } }
+    }
+
+    private fun createGroup(name: String): String =
+        mockMvc.post("$venue/modifier-groups") {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"name": "$name", "minSelect": 1, "maxSelect": 1, "options": [{"name": "Option"}]}"""
+        }.andExpect {
+            status { isCreated() }
+        }.andReturn().response.getHeader("Location")!!.substringAfterLast('/')
+
     private fun createCategory(name: String): String =
         mockMvc.post("$venue/categories") {
             contentType = MediaType.APPLICATION_JSON
