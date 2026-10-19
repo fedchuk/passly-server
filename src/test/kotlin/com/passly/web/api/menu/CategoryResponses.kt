@@ -1,4 +1,4 @@
-package com.passly.web.menu
+package com.passly.web.api.menu
 
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId

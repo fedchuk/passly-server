@@ -1,4 +1,4 @@
-package com.passly.web.menu
+package com.passly.web.api.menu
 
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.menu.MoveCategoryCommand
