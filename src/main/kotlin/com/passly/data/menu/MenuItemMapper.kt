@@ -1,6 +1,5 @@
 package com.passly.data.menu
 
-import com.passly.application.menu.MenuItemEntity
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId

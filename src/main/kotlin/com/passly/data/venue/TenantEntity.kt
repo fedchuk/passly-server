@@ -6,6 +6,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import java.util.UUID
 
+// client
 @Entity
 @Table(name = "tenant")
 class TenantEntity(

@@ -1,6 +1,5 @@
 package com.passly.data.menu
 
-import com.passly.application.menu.MenuItemEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 

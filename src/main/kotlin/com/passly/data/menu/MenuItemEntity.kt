@@ -1,4 +1,4 @@
-package com.passly.application.menu
+package com.passly.data.menu
 
 import com.passly.data.common.BaseEntity
 import jakarta.persistence.Column

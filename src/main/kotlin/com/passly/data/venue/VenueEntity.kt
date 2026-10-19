@@ -6,6 +6,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import java.util.UUID
 
+// restaurant
 @Entity
 @Table(name = "venue")
 class VenueEntity(

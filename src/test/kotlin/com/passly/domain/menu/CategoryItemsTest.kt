@@ -125,4 +125,14 @@ class CategoryItemsTest {
         assertEquals(kitchen, tree.stationFor(stew))
         assertEquals(grill, tree.stationFor(ribeye))
     }
+
+    @Test
+    fun `archived item cannot be moved into a category`() {
+        val fish = CategoryItems(venue, CategoryId.new(), emptyList())
+        val ribeye = steaks.add(tenant, details("Ribeye"))
+        steaks.archive(ribeye.id)
+
+        assertFailsWith<IllegalArgumentException> { fish.moveIn(ribeye) }
+        assertTrue(fish.isEmpty())
+    }
 }
