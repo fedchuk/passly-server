@@ -1,4 +1,4 @@
-package com.passly.web.api
+package com.passly.web.api.auth
 
 import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration
