@@ -5,6 +5,7 @@ import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.CategoryRepository
+import com.passly.domain.menu.MenuItemRepository
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.StationId
 import com.passly.domain.menu.StationRepository
@@ -20,6 +21,7 @@ class CategoryService(
     private val venues: VenueRepository,
     private val categories: CategoryRepository,
     private val stations: StationRepository,
+    private val items: MenuItemRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -81,6 +83,9 @@ class CategoryService(
         lockVenue(venueId)
         val tree = categories.loadTree(venueId)
         val category = tree[categoryId]
+        if (items.existsInCategory(categoryId)) {
+            throw ConflictException("Category '${category.name}' has menu items. Move or archive them first.")
+        }
         val reordered = tree.removeLeaf(categoryId)
 
         categories.delete(category)

@@ -1,11 +1,9 @@
-package com.passly.domain.common
+package com.passly.domain.menu
 
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.CategoryItems
-import com.passly.domain.menu.MenuItemDetails
-import com.passly.domain.menu.MenuTree
-import com.passly.domain.menu.StationId
-import com.passly.domain.menu.stationFor
+import com.passly.domain.common.Money
+import com.passly.domain.common.NotFoundException
+import com.passly.domain.common.TaxRate
+import com.passly.domain.common.ValidationException
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 import org.junit.jupiter.api.Assertions.assertFalse

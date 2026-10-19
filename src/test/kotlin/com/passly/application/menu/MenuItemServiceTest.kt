@@ -1,0 +1,130 @@
+package com.passly.application.menu
+
+import com.passly.domain.common.ConflictException
+import com.passly.domain.common.Money
+import com.passly.domain.common.NotFoundException
+import com.passly.domain.common.TaxRate
+import com.passly.domain.menu.CategoryId
+import com.passly.domain.menu.MenuItemDetails
+import com.passly.domain.menu.StationId
+import com.passly.domain.venue.TenantId
+import com.passly.domain.venue.Venue
+import com.passly.domain.venue.VenueId
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class MenuItemServiceTest {
+
+    private val venue = Venue(VenueId.new(), TenantId.new(), "Bistro")
+    private val grill = StationId.new()
+
+    private val venues = FakeVenueRepository(venue)
+    private val categories = FakeCategoryRepository()
+    private val stations = FakeStationRepository(mapOf(grill to venue.id))
+    private val items = FakeMenuItemRepository()
+    private val categoryService = CategoryService(venues, categories, stations, items)
+    private val service = MenuItemService(venues, categories, stations, items)
+
+    private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks")).id
+    private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish")).id
+
+    private fun details(name: String, price: String = "20.00", station: StationId? = null) =
+        MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"), station)
+
+    private fun create(category: CategoryId, name: String) =
+        service.create(CreateMenuItemCommand(venue.id, category, details(name)))
+
+    private fun namesIn(category: CategoryId) = service.listInCategory(venue.id, category).map { it.name }
+
+    @Test
+    fun `created items are listed in order under the venue's tenant`() {
+        create(steaks, "Ribeye")
+        val picanha = create(steaks, "Picanha")
+
+        assertEquals(listOf("Ribeye", "Picanha"), namesIn(steaks))
+        assertEquals(venue.tenantId, items.stored.getValue(picanha.id).tenantId)
+    }
+
+    @Test
+    fun `item cannot be created in an unknown category or with a foreign station`() {
+        assertFailsWith<NotFoundException> { create(CategoryId.new(), "Ghost") }
+        assertFailsWith<NotFoundException> {
+            service.create(CreateMenuItemCommand(venue.id, steaks, details("Ribeye", station = StationId.new())))
+        }
+    }
+
+    @Test
+    fun `update changes details and rejects an outdated version`() {
+        val ribeye = create(steaks, "Ribeye")
+
+        service.update(UpdateMenuItemCommand(venue.id, ribeye.id, details("Ribeye 300 g", "27.50", grill), 0))
+
+        val stored = items.stored.getValue(ribeye.id)
+        assertEquals("Ribeye 300 g", stored.name)
+        assertEquals(Money.of("27.50"), stored.price)
+        assertEquals(grill, stored.stationId)
+        assertFailsWith<ConflictException> {
+            service.update(UpdateMenuItemCommand(venue.id, ribeye.id, details("Ribeye"), expectedVersion = 5))
+        }
+    }
+
+    @Test
+    fun `availability toggles the stop list`() {
+        val ribeye = create(steaks, "Ribeye")
+
+        service.changeAvailability(venue.id, ribeye.id, available = false)
+        assertFalse(items.stored.getValue(ribeye.id).available)
+
+        service.changeAvailability(venue.id, ribeye.id, available = true)
+        assertTrue(items.stored.getValue(ribeye.id).available)
+    }
+
+    @Test
+    fun `move puts the item at the end of the target category`() {
+        val salmon = create(steaks, "Salmon")
+        create(steaks, "Ribeye")
+        create(fish, "Sea bass")
+
+        service.move(MoveMenuItemCommand(venue.id, salmon.id, fish))
+
+        assertEquals(listOf("Ribeye"), namesIn(steaks))
+        assertEquals(listOf("Sea bass", "Salmon"), namesIn(fish))
+    }
+
+    @Test
+    fun `move to the same category changes nothing`() {
+        val ribeye = create(steaks, "Ribeye")
+        items.lastSaved = emptySet()
+
+        service.move(MoveMenuItemCommand(venue.id, ribeye.id, steaks))
+
+        assertTrue(items.lastSaved.isEmpty())
+    }
+
+    @Test
+    fun `reorder sets the exact order`() {
+        val a = create(steaks, "A")
+        val b = create(steaks, "B")
+
+        service.reorder(ReorderMenuItemsCommand(venue.id, steaks, listOf(b.id, a.id)))
+
+        assertEquals(listOf("B", "A"), namesIn(steaks))
+    }
+
+    @Test
+    fun `archived item disappears and lets the category be deleted`() {
+        val ribeye = create(steaks, "Ribeye")
+
+        service.archive(venue.id, ribeye.id)
+
+        assertTrue(items.stored.getValue(ribeye.id).archived)
+        assertNull(items.stored.getValue(ribeye.id).categoryId)
+        assertFailsWith<NotFoundException> { service.get(venue.id, ribeye.id) }
+        categoryService.delete(venue.id, steaks)
+        assertTrue(steaks !in categories.stored)
+    }
+}

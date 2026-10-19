@@ -1,17 +1,14 @@
 package com.passly.application.menu
 
 import com.passly.domain.common.ConflictException
+import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.menu.Category
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.CategoryRepository
-import com.passly.domain.menu.MenuTree
+import com.passly.domain.common.TaxRate
+import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
-import com.passly.domain.menu.StationRepository
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
-import com.passly.domain.venue.VenueRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -25,7 +22,8 @@ class CategoryServiceTest {
     private val venues = FakeVenueRepository(venue)
     private val categories = FakeCategoryRepository()
     private val stations = FakeStationRepository(mapOf(kitchen to venue.id))
-    private val service = CategoryService(venues, categories, stations)
+    private val items = FakeMenuItemRepository()
+    private val service = CategoryService(venues, categories, stations, items)
 
     @Test
     fun `create stores the new category under the venue's tenant`() {
@@ -98,34 +96,16 @@ class CategoryServiceTest {
         assertEquals("Food", categories.stored.getValue(food.id).name)
     }
 
-    private class FakeVenueRepository(private val venue: Venue) : VenueRepository {
-        var locks = 0
-        override fun findById(id: VenueId) = venue.takeIf { it.id == id }
-        override fun findByIdAndLock(id: VenueId) = findById(id)?.also { locks++ }
-    }
-
-    private class FakeCategoryRepository : CategoryRepository {
-        val stored = linkedMapOf<CategoryId, Category>()
-        var lastSaved: Set<CategoryId> = emptySet()
-
-        override fun loadTree(venueId: VenueId) =
-            MenuTree(venueId, stored.values.filter { it.venueId == venueId }.map(::copyOf))
-
-        override fun saveAll(categories: Collection<Category>) {
-            categories.forEach { stored[it.id] = copyOf(it) }
-            lastSaved = categories.map { it.id }.toSet()
-        }
-
-        override fun delete(category: Category) {
-            stored.remove(category.id)
-        }
-
-        private fun copyOf(c: Category) = Category.fromStorage(
-            c.id, c.tenantId, c.venueId, c.parentId, c.name, c.sortOrder, c.stationId, c.active, c.version ?: 0,
+    @Test
+    fun `category with menu items cannot be deleted`() {
+        val steaks = service.create(CreateCategoryCommand(venue.id, "Steaks"))
+        val ribeye = items.loadCategoryItems(venue.id, steaks.id).add(
+            venue.tenantId,
+            MenuItemDetails("Ribeye", null, Money.of("26.00"), TaxRate.of("10")),
         )
-    }
+        items.saveAll(listOf(ribeye))
 
-    private class FakeStationRepository(private val stationVenues: Map<StationId, VenueId>) : StationRepository {
-        override fun existsInVenue(stationId: StationId, venueId: VenueId) = stationVenues[stationId] == venueId
+        assertFailsWith<ConflictException> { service.delete(venue.id, steaks.id) }
+        assertTrue(steaks.id in categories.stored)
     }
 }
