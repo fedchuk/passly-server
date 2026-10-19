@@ -17,9 +17,10 @@ import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
 
-class FakeVenueRepository(private val venue: Venue) : VenueRepository {
+class FakeVenueRepository(vararg venues: Venue) : VenueRepository {
+    private val byId = venues.associateBy { it.id }
     var locks = 0
-    override fun findById(id: VenueId) = venue.takeIf { it.id == id }
+    override fun findById(id: VenueId) = byId[id]
     override fun findByIdAndLock(id: VenueId) = findById(id)?.also { locks++ }
 }
 
