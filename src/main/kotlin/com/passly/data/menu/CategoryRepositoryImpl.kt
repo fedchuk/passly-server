@@ -1,10 +1,10 @@
 package com.passly.data.menu
 
+import com.passly.data.common.upsert
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryRepository
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.venue.VenueId
-import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -17,23 +17,11 @@ class CategoryRepositoryImpl(
 
     override fun saveAll(categories: Collection<Category>) {
         categories.forEach { category ->
-            if (category.isNew) {
-                jpa.save(category.toNewEntity())
-            } else {
-                updateExisting(category)
-            }
+            jpa.upsert(category.id.value, category.version, create = { category.toNewEntity() }, update = { updateFrom(category) })
         }
     }
 
     override fun delete(category: Category) {
         jpa.deleteById(category.id.value)
-    }
-
-    private fun updateExisting(category: Category) {
-        val entity = jpa.getReferenceById(category.id.value)
-        if (entity.version != category.version) {
-            throw OptimisticLockingFailureException("Category ${category.id} was modified by someone else")
-        }
-        entity.updateFrom(category)
     }
 }
