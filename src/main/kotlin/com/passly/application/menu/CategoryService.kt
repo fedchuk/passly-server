@@ -1,5 +1,6 @@
 package com.passly.application.menu
 
+import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId
@@ -42,7 +43,12 @@ class CategoryService(
         requireVenue(command.venueId)
         command.stationId?.let { requireStationInVenue(it, command.venueId) }
 
-        val category = categories.loadTree(command.venueId)[command.categoryId].apply {
+        val category = categories.loadTree(command.venueId)[command.categoryId]
+        if (command.expectedVersion != null && command.expectedVersion != category.version) {
+            throw ConflictException("Category ${category.name} was changed by someone else. Reload and try again.")
+        }
+
+        category.apply {
             rename(command.name)
             assignStation(command.stationId)
             if (command.active) activate() else deactivate()

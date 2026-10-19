@@ -17,6 +17,7 @@ data class UpdateCategoryCommand(
     val name: String,
     val stationId: StationId?,
     val active: Boolean,
+    val expectedVersion: Long? = null,
 )
 
 data class MoveCategoryCommand(

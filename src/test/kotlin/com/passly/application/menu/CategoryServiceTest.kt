@@ -1,5 +1,6 @@
 package com.passly.application.menu
 
+import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId
@@ -85,6 +86,16 @@ class CategoryServiceTest {
     @Test
     fun `unknown venue is not found`() {
         assertFailsWith<NotFoundException> { service.create(CreateCategoryCommand(VenueId.new(), "Food")) }
+    }
+
+    @Test
+    fun `update with an outdated version is rejected`() {
+        val food = service.create(CreateCategoryCommand(venue.id, "Food"))
+
+        assertFailsWith<ConflictException> {
+            service.update(UpdateCategoryCommand(venue.id, food.id, "Kitchen", null, true, expectedVersion = 7))
+        }
+        assertEquals("Food", categories.stored.getValue(food.id).name)
     }
 
     private class FakeVenueRepository(private val venue: Venue) : VenueRepository {
