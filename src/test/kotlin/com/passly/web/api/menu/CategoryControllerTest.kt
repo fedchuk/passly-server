@@ -68,6 +68,7 @@ class CategoryControllerTest {
         }.andExpect {
             status { isBadRequest() }
             content { contentType(MediaType.APPLICATION_PROBLEM_JSON) }
+            jsonPath("$.errors.name") { exists() }
         }
     }
 

@@ -9,6 +9,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  web:
+    locale: en
+    locale-resolver: fixed
 
 server:
   port: ${PORT:8080}
