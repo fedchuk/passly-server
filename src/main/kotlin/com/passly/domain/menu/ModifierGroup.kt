@@ -28,6 +28,16 @@ class ModifierGroup private constructor(
 
     val isNew: Boolean get() = version == null
 
+    fun update(newName: String, min: Int, max: Int, drafts: List<ModifierDraft>) {
+        val validName = validName(newName)
+        val replaced = buildModifiers(drafts, existing = modifiers.associateBy { it.id })
+        validateLimits(min, max, replaced.size)
+        name = validName
+        minSelect = min
+        maxSelect = max
+        modifiers = replaced
+    }
+
     fun rename(newName: String) {
         name = validName(newName)
     }

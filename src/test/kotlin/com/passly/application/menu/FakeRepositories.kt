@@ -8,6 +8,9 @@ import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemId
 import com.passly.domain.menu.MenuItemRepository
 import com.passly.domain.menu.MenuTree
+import com.passly.domain.menu.ModifierGroup
+import com.passly.domain.menu.ModifierGroupId
+import com.passly.domain.menu.ModifierGroupRepository
 import com.passly.domain.menu.StationId
 import com.passly.domain.menu.StationRepository
 import com.passly.domain.venue.Venue
@@ -67,5 +70,25 @@ class FakeMenuItemRepository : MenuItemRepository {
 
     private fun copyOf(i: MenuItem) = MenuItem.fromStorage(
         i.id, i.tenantId, i.venueId, i.categoryId, i.details, i.sortOrder, i.available, i.archived, i.version ?: 0,
+    )
+}
+
+class FakeModifierGroupRepository : ModifierGroupRepository {
+    val stored = linkedMapOf<ModifierGroupId, ModifierGroup>()
+
+    override fun findAll(venueId: VenueId) = stored.values.filter { it.venueId == venueId }.map(::copyOf)
+
+    override fun find(venueId: VenueId, id: ModifierGroupId) = stored[id]?.takeIf { it.venueId == venueId }?.let(::copyOf)
+
+    override fun save(group: ModifierGroup) {
+        stored[group.id] = copyOf(group)
+    }
+
+    override fun delete(group: ModifierGroup) {
+        stored.remove(group.id)
+    }
+
+    private fun copyOf(g: ModifierGroup) = ModifierGroup.fromStorage(
+        g.id, g.tenantId, g.venueId, g.name, g.minSelect, g.maxSelect, g.modifiers, g.version ?: 0,
     )
 }

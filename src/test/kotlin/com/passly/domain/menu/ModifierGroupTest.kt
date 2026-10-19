@@ -116,4 +116,19 @@ class ModifierGroupTest {
         assertEquals(1, group.minSelect)
         assertEquals(1, group.maxSelect)
     }
+
+    @Test
+    fun `update checks new limits against new options together`() {
+        val group = ModifierGroup.create(tenant, venue, "Sauce", 1, 1, listOf(option("BBQ"), option("Mayo")))
+        val (bbq, mayo) = group.modifiers
+
+        group.update(
+            "Sauces", min = 3, max = 3,
+            drafts = listOf(option("BBQ", id = bbq.id), option("Mayo", id = mayo.id), option("Aioli")),
+        )
+
+        assertEquals("Sauces", group.name)
+        assertEquals(3, group.minSelect)
+        assertEquals(listOf("BBQ", "Mayo", "Aioli"), group.modifiers.map { it.name })
+    }
 }
