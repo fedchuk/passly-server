@@ -1,20 +1,35 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('My venues')}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('My venues', null, 'venues', ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container">
-    <h1>My venues</h1>
-    <p th:if="${venues.isEmpty()}">You do not manage any venue yet.</p>
-    <div class="grid venues">
-        <article th:each="venue : ${venues}">
-            <header>
-                <a th:if="${venue.manageable}" th:href="@{/admin/venues/{id}(id=${venue.id})}" th:text="${venue.name}">Bistro Centro</a>
-                <span th:unless="${venue.manageable}" th:text="${venue.name}">Bistro Centro</span>
-            </header>
-            <small th:text="${venue.role}">OWNER</small>
-            <p th:unless="${venue.manageable}"><small>Use the Passly mobile app for this venue.</small></p>
-        </article>
+<main>
+    <div class="page-header">
+        <div>
+            <h1>My venues</h1>
+            <p class="subtitle">Choose a venue to manage its menu and team.</p>
+        </div>
+    </div>
+
+    <p th:if="${venues.isEmpty()}" class="empty">You do not manage any venue yet.</p>
+
+    <div class="venue-grid">
+        <th:block th:each="venue : ${venues}">
+            <a th:if="${venue.manageable}" class="venue-card" th:href="@{/admin/venues/{id}/overview(id=${venue.id})}">
+                <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
+                <span>
+                    <strong th:text="${venue.name}">Bistro Centro</strong>
+                    <span class="badge" th:text="${venue.roleLabel}">Owner</span>
+                </span>
+            </a>
+            <div th:unless="${venue.manageable}" class="venue-card disabled">
+                <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
+                <span>
+                    <strong th:text="${venue.name}">Bistro Centro</strong>
+                    <span class="badge" th:text="${venue.roleLabel}">Waiter</span>
+                    <small class="muted">Use the Passly mobile app for this venue.</small>
+                </span>
+            </div>
+        </th:block>
     </div>
 </main>
 </body>

@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Edit category')}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Edit category', ${venue}, 'menu', ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container narrow">
+<main class="narrow">
     <nav aria-label="breadcrumb">
         <ul>
-            <li><a th:href="@{/admin}">My venues</a></li>
-            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
+            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}">Menu</a></li>
             <li>Edit category</li>
         </ul>
     </nav>

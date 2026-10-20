@@ -5,7 +5,7 @@ import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.user.Permission
 import com.passly.domain.user.Role
-import java.util.UUID
+import java.util.*
 
 data class VenueView(
     val id: UUID,
@@ -13,6 +13,8 @@ data class VenueView(
     val role: Role,
 ) {
     val manageable: Boolean get() = Permission.EDIT_MENU in role.permissions
+    val staffManageable: Boolean get() = Permission.MANAGE_STAFF in role.permissions
+    val roleLabel: String get() = role.name.lowercase().replaceFirstChar { it.uppercase() }
 }
 
 data class CategoryNodeView(

@@ -1,20 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Modifier groups')}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Modifier groups', ${venue}, 'modifiers', ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container">
-    <nav aria-label="breadcrumb">
-        <ul>
-            <li><a th:href="@{/admin}">My venues</a></li>
-            <li th:text="${venue.name}">Bistro Centro</li>
-        </ul>
-    </nav>
+<main>
     <div class="page-header">
-        <h1 th:text="${venue.name}">Bistro Centro</h1>
+        <h1>Modifier groups</h1>
         <a th:href="@{/admin/venues/{v}/modifier-groups/new(v=${venue.id})}" role="button">Add group</a>
     </div>
-    <nav th:replace="~{fragments/venue-nav :: tabs(${venue}, 'modifiers')}"></nav>
 
     <p th:if="${message}" class="notice" th:text="${message}">Group added</p>
     <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>

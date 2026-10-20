@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Not found')}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Not found', null, null, ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container">
+<main>
     <h1>Not found</h1>
     <p th:text="${message}">Category not found</p>
     <a th:href="@{/admin}">Back to my venues</a>

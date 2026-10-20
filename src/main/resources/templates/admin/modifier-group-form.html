@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${formTitle})}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${formTitle}, ${venue}, 'modifiers', ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container">
+<main class="narrow">
     <nav aria-label="breadcrumb">
         <ul>
-            <li><a th:href="@{/admin}">My venues</a></li>
-            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
             <li><a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}">Modifier groups</a></li>
+            <li th:text="${formTitle}">New modifier group</li>
         </ul>
     </nav>
     <h1 th:text="${formTitle}">New modifier group</h1>

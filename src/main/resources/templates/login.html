@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Log in')}"></head>
-<body>
-<main class="container narrow">
-    <h1>Passly</h1>
+<body class="auth-page">
+<main class="auth-card">
+    <div class="brand">
+        <span class="brand-mark"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+        <span>
+            <strong>Passly</strong>
+            <small>Restaurant admin</small>
+        </span>
+    </div>
+    <h1>Log in</h1>
     <p th:if="${param.error}" class="error">Invalid email or password.</p>
-    <p th:if="${param.logout}">You have been logged out.</p>
+    <p th:if="${param.logout}" class="notice">You have been logged out.</p>
     <form th:action="@{/login}" method="post">
         <label>
             Email
@@ -19,7 +26,7 @@
             <input type="checkbox" name="remember-me">
             Remember me
         </label>
-        <button type="submit">Log in</button>
+        <button type="submit" class="wide">Log in</button>
     </form>
 </main>
 </body>

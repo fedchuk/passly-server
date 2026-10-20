@@ -1,27 +1,69 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(title, venue, active, content)">
 <head th:fragment="head(title)">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title} + ' · Passly'">Passly</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
 </head>
 <body>
-<header th:fragment="header" class="container">
-    <nav>
-        <ul>
-            <li><a th:href="@{/admin}"><strong>Passly</strong></a></li>
-        </ul>
-        <ul th:if="${currentUser != null}">
-            <li th:text="${currentUser.displayName}">Max</li>
-            <li>
-                <form th:action="@{/logout}" method="post" class="inline">
-                    <button type="submit" class="secondary outline">Log out</button>
-                </form>
-            </li>
-        </ul>
-    </nav>
-</header>
+<div class="app">
+    <aside class="sidebar">
+        <a class="brand" th:href="@{/admin}">
+            <span class="brand-mark"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+            <span>
+                <strong>Passly</strong>
+                <small>Restaurant admin</small>
+            </span>
+        </a>
+
+        <nav class="side-nav" th:if="${venue != null}" aria-label="Venue">
+            <a th:href="@{/admin/venues/{v}/overview(v=${venue.id})}"
+               th:attr="aria-current=${active == 'overview'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('home')}"></svg>Overview</a>
+            <a th:href="@{/admin/venues/{v}(v=${venue.id})}"
+               th:attr="aria-current=${active == 'menu'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('menu')}"></svg>Menu</a>
+            <a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}"
+               th:attr="aria-current=${active == 'modifiers'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg>Modifier groups</a>
+            <a th:if="${venue.staffManageable}" th:href="@{/admin/venues/{v}/staff(v=${venue.id})}"
+               th:attr="aria-current=${active == 'staff'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('staff')}"></svg>Staff</a>
+        </nav>
+
+        <nav class="side-nav" th:if="${venue == null}" aria-label="Main">
+            <a th:href="@{/admin}" th:attr="aria-current=${active == 'venues'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('venues')}"></svg>My venues</a>
+        </nav>
+
+        <a th:if="${venue != null}" class="venue-switch" th:href="@{/admin}" title="Switch venue">
+            <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
+            <span class="venue-switch-text">
+                <strong th:text="${venue.name}">Bistro Centro</strong>
+                <small th:text="${venue.roleLabel}">Manager</small>
+            </span>
+            <svg th:replace="~{fragments/icons :: icon('switch')}"></svg>
+        </a>
+    </aside>
+
+    <div class="workspace">
+        <header class="topbar" th:if="${currentUser != null}">
+            <div class="user">
+                <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">M</span>
+                <span th:text="${currentUser.displayName}">Max</span>
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="ghost" title="Log out">
+                    <svg th:replace="~{fragments/icons :: icon('logout')}"></svg>
+                    <span>Log out</span>
+                </button>
+            </form>
+        </header>
+        <main th:replace="${content}"></main>
+    </div>
+</div>
 </body>
 </html>

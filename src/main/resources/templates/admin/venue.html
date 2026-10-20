@@ -1,30 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${venue.name})}"></head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Menu', ${venue}, 'menu', ~{::main})}">
 <body>
-<header th:replace="~{fragments/layout :: header}"></header>
-<main class="container">
-    <nav aria-label="breadcrumb">
-        <ul>
-            <li><a th:href="@{/admin}">My venues</a></li>
-            <li th:text="${venue.name}">Bistro Centro</li>
-        </ul>
-    </nav>
-    <h1 th:text="${venue.name}">Bistro Centro</h1>
-
-    <nav th:replace="~{fragments/venue-nav :: tabs(${venue}, 'menu')}"></nav>
+<main>
+    <div class="page-header">
+        <div>
+            <h1>Menu</h1>
+            <p class="subtitle">Categories can be nested. Open a category to manage its items.</p>
+        </div>
+    </div>
 
     <p th:if="${message}" class="notice" th:text="${message}">Category added</p>
     <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
 
-    <h2>Menu</h2>
-    <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post" role="group">
-        <input name="name" placeholder="New category" required maxlength="120" aria-label="Category name">
-        <button type="submit">Add</button>
-    </form>
+    <section class="card">
+        <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post" role="group">
+            <input name="name" placeholder="New category" required maxlength="120" aria-label="Category name">
+            <button type="submit">Add</button>
+        </form>
 
-    <p th:if="${tree.isEmpty()}">No categories yet.</p>
-    <ul th:replace="~{fragments/category-tree :: tree(${tree}, ${venue.id})}"></ul>
+        <p th:if="${tree.isEmpty()}" class="empty">No categories yet.</p>
+        <ul th:replace="~{fragments/category-tree :: tree(${tree}, ${venue.id})}"></ul>
+    </section>
 </main>
 </body>
 </html>

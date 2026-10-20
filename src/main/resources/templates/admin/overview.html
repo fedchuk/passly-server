@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Overview', ${venue}, 'overview', ~{::main})}">
+<body>
+<main>
+    <div class="page-header">
+        <div>
+            <h1 th:text="|Welcome, ${currentUser.displayName}|">Welcome, Max</h1>
+            <p class="subtitle" th:text="|Here is how ${venue.name} is set up.|">Here is how Bistro Centro is set up.</p>
+        </div>
+    </div>
+
+    <div class="stats">
+        <a class="stat" th:href="@{/admin/venues/{v}(v=${venue.id})}">
+            <span class="stat-icon tone-primary"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+            <span>
+                <small>Menu items</small>
+                <strong th:text="${overview.items}">42</strong>
+                <small class="muted" th:text="|in ${overview.categories} categories|">in 8 categories</small>
+            </span>
+        </a>
+        <a class="stat" th:href="@{/admin/venues/{v}(v=${venue.id})}">
+            <span class="stat-icon" th:classappend="${overview.stopListed > 0} ? 'tone-warning' : 'tone-success'">
+                <svg th:replace="~{fragments/icons :: icon('stop')}"></svg>
+            </span>
+            <span>
+                <small>On the stop list</small>
+                <strong th:text="${overview.stopListed}">3</strong>
+                <small class="muted" th:text="${overview.stopListed > 0} ? 'Guests cannot order these' : 'Everything is available'">Guests cannot order these</small>
+            </span>
+        </a>
+        <a class="stat" th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}">
+            <span class="stat-icon tone-violet"><svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg></span>
+            <span>
+                <small>Modifier groups</small>
+                <strong th:text="${overview.modifierGroups}">5</strong>
+                <small class="muted">Doneness, size, extras</small>
+            </span>
+        </a>
+        <a class="stat" th:href="${venue.staffManageable} ? @{/admin/venues/{v}/staff(v=${venue.id})} : null">
+            <span class="stat-icon tone-info"><svg th:replace="~{fragments/icons :: icon('staff')}"></svg></span>
+            <span>
+                <small>Staff</small>
+                <strong th:text="${overview.staff}">6</strong>
+                <small class="muted">Not counting owners</small>
+            </span>
+        </a>
+    </div>
+
+    <h2>Quick actions</h2>
+    <div class="quick-actions">
+        <a class="action-card" th:href="@{/admin/venues/{v}(v=${venue.id})}">
+            <span class="stat-icon tone-success"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+            <span><strong>Edit the menu</strong><small>Categories, items, prices</small></span>
+        </a>
+        <a class="action-card" th:href="@{/admin/venues/{v}/modifier-groups/new(v=${venue.id})}">
+            <span class="stat-icon tone-violet"><svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg></span>
+            <span><strong>Add a modifier group</strong><small>Options guests can choose</small></span>
+        </a>
+        <a class="action-card" th:if="${venue.staffManageable}" th:href="@{/admin/venues/{v}/staff/new(v=${venue.id})}">
+            <span class="stat-icon tone-info"><svg th:replace="~{fragments/icons :: icon('staff')}"></svg></span>
+            <span><strong>Hire someone</strong><small>Give them access to the app</small></span>
+        </a>
+    </div>
+
+    <section class="card coming-soon">
+        <span class="stat-icon tone-muted"><svg th:replace="~{fragments/icons :: icon('clock')}"></svg></span>
+        <div>
+            <strong>Orders and revenue are coming</strong>
+            <p class="muted">Revenue, popular dishes and recent orders appear here once waiters take orders in the Passly app.</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>
