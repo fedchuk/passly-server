@@ -23,4 +23,8 @@ class VenueRepositoryImpl(
 
     override fun findAllByIds(ids: Collection<VenueId>): List<Venue> =
         if (ids.isEmpty()) emptyList() else jpa.findAllById(ids.map { it.value }).map { it.toDomain() }
+
+    override fun save(venue: Venue) {
+        jpa.save(VenueEntity(venue.id.value, venue.tenantId.value, venue.name))
+    }
 }

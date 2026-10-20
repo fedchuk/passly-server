@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+
+server:
+  forward-headers-strategy: native
+  servlet:
+    session:
+      cookie:
+        secure: true
+
+passly:
+  jwt:
+    generate-if-missing: false
+  remember-me:
+    key: ${REMEMBER_ME_KEY}

@@ -18,8 +18,16 @@ passly:
     issuer: passly
     access-token-ttl: 15m
     refresh-token-ttl: 30d
+  jwt:
+    private-key: ${JWT_PRIVATE_KEY:}
   remember-me:
     key: ${REMEMBER_ME_KEY:dev-only-remember-me-key}
+  bootstrap:
+    business-name: ${BOOTSTRAP_BUSINESS_NAME:}
+    venue-name: ${BOOTSTRAP_VENUE_NAME:}
+    owner-email: ${BOOTSTRAP_OWNER_EMAIL:}
+    owner-name: ${BOOTSTRAP_OWNER_NAME:}
+    owner-password: ${BOOTSTRAP_OWNER_PASSWORD:}
 
 server:
   port: ${PORT:8080}

@@ -20,12 +20,15 @@ import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
 
 class FakeVenueRepository(vararg venues: Venue) : VenueRepository {
-    private val byId = venues.associateBy { it.id }
+    private val byId = venues.associateByTo(linkedMapOf()) { it.id }
     var locks = 0
     override fun findById(id: VenueId) = byId[id]
     override fun findByIdAndLock(id: VenueId) = findById(id)?.also { locks++ }
     override fun findAllByTenant(tenantId: TenantId) = byId.values.filter { it.tenantId == tenantId }
     override fun findAllByIds(ids: Collection<VenueId>) = ids.mapNotNull { byId[it] }
+    override fun save(venue: Venue) {
+        byId[venue.id] = venue
+    }
 }
 
 class FakeCategoryRepository : CategoryRepository {

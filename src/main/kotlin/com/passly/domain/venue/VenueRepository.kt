@@ -5,4 +5,5 @@ interface VenueRepository {
     fun findByIdAndLock(id: VenueId): Venue?
     fun findAllByTenant(tenantId: TenantId): List<Venue>
     fun findAllByIds(ids: Collection<VenueId>): List<Venue>
+    fun save(venue: Venue)
 }

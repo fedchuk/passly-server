@@ -58,6 +58,14 @@ allOpen {
     annotation("jakarta.persistence.Embeddable")
 }
 
+tasks.bootJar {
+    archiveFileName.set("passly.jar")
+}
+
+tasks.jar {
+    enabled = false
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     testLogging {
