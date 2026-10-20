@@ -106,16 +106,6 @@ class ModifierGroupControllerTest {
     }
 
     @Test
-    fun `groups of an unknown venue are not found`() {
-        val unknown = UUID.randomUUID()
-
-        mockMvc.get("/api/v1/venues/$unknown/modifier-groups").andExpect {
-            status { isNotFound() }
-            jsonPath("$.detail") { value("Venue $unknown not found") }
-        }
-    }
-
-    @Test
     fun `groups of an unknown venue are forbidden`() {
         mockMvc.get("/api/v1/venues/${UUID.randomUUID()}/modifier-groups").andExpect { status { isForbidden() } }
     }

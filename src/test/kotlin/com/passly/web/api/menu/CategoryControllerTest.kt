@@ -114,11 +114,6 @@ class CategoryControllerTest {
     }
 
     @Test
-    fun `unknown venue is not found`() {
-        mockMvc.get("/api/v1/venues/${UUID.randomUUID()}/categories").andExpect { status { isNotFound() } }
-    }
-
-    @Test
     fun `unknown venue is forbidden`() {
         mockMvc.get("/api/v1/venues/${UUID.randomUUID()}/categories").andExpect { status { isForbidden() } }
     }
