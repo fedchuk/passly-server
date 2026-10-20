@@ -89,6 +89,15 @@ class MenuItemService(
         items.saveAll(changed)
     }
 
+    fun shift(venueId: VenueId, itemId: MenuItemId, delta: Int) {
+        lockVenue(venueId)
+        val categoryId = checkNotNull(requireItem(venueId, itemId).categoryId)
+
+        val changed = items.loadCategoryItems(venueId, categoryId).shift(itemId, delta)
+
+        items.saveAll(changed)
+    }
+
     fun archive(venueId: VenueId, itemId: MenuItemId) {
         lockVenue(venueId)
         val categoryId = checkNotNull(requireItem(venueId, itemId).categoryId)

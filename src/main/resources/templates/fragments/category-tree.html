@@ -4,9 +4,11 @@
 <ul th:fragment="tree(nodes, venueId)" class="tree">
     <li th:each="node : ${nodes}">
         <div class="node">
-            <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venueId}, c=${node.id})}"
+            <a th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venueId}, c=${node.id})}"
                th:text="${node.name}" th:classappend="${node.active} ? '' : 'inactive'">Wine</a>
             <span class="actions">
+                <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venueId}, c=${node.id})}"
+                   role="button" class="outline secondary" title="Edit category">✎</a>
                 <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venueId}, c=${node.id})}" method="post">
                     <input type="hidden" name="delta" value="-1">
                     <button type="submit" class="outline secondary" th:disabled="${node.first}" title="Move up">↑</button>

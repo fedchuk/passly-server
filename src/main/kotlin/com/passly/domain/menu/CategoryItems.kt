@@ -65,6 +65,15 @@ class CategoryItems {
         return assignPositions(orderedIds.map { get(it) })
     }
 
+    fun shift(id: MenuItemId, delta: Int): Set<MenuItem> {
+        val ordered = items.toMutableList()
+        val current = ordered.indexOf(get(id))
+        val target = (current + delta).coerceIn(0, ordered.lastIndex)
+        if (target == current) return emptySet()
+        ordered.add(target, ordered.removeAt(current))
+        return assignPositions(ordered)
+    }
+
     private fun nextPosition(): Int = (byId.values.maxOfOrNull { it.sortOrder } ?: -1) + 1
 
     private fun assignPositions(ordered: List<MenuItem>): Set<MenuItem> {

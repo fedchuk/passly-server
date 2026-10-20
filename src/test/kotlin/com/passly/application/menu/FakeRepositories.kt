@@ -11,6 +11,7 @@ import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.ModifierGroup
 import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.ModifierGroupRepository
+import com.passly.domain.menu.Station
 import com.passly.domain.menu.StationId
 import com.passly.domain.menu.StationRepository
 import com.passly.domain.venue.TenantId
@@ -50,6 +51,8 @@ class FakeCategoryRepository : CategoryRepository {
 
 class FakeStationRepository(private val stationVenues: Map<StationId, VenueId>) : StationRepository {
     override fun existsInVenue(stationId: StationId, venueId: VenueId) = stationVenues[stationId] == venueId
+    override fun findAllInVenue(venueId: VenueId) =
+        stationVenues.filterValues { it == venueId }.keys.map { Station(it, venueId, "Station $it") }
 }
 
 class FakeMenuItemRepository : MenuItemRepository {

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${formTitle})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container narrow">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
+            <li><a th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${category.id})}" th:text="${category.name}">Wine</a></li>
+        </ul>
+    </nav>
+    <h1 th:text="${formTitle}">New item</h1>
+
+    <form th:action="@{${formAction}}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
+
+        <input type="hidden" th:field="*{version}">
+
+        <label>
+            Name
+            <input th:field="*{name}" maxlength="160" required
+                   th:attr="aria-invalid=${#fields.hasErrors('name')} ? 'true' : null">
+            <small class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name must not be blank</small>
+        </label>
+
+        <label>
+            Description
+            <textarea th:field="*{description}" rows="3" maxlength="2000"></textarea>
+            <small class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Too long</small>
+        </label>
+
+        <div class="grid">
+            <label>
+                Price
+                <input th:field="*{price}" inputmode="decimal" placeholder="4.50" required
+                       th:attr="aria-invalid=${#fields.hasErrors('price')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}">Enter a price like 4.50</small>
+            </label>
+            <label>
+                VAT, %
+                <input th:field="*{taxRate}" inputmode="decimal" placeholder="10" required
+                       th:attr="aria-invalid=${#fields.hasErrors('taxRate')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('taxRate')}" th:errors="*{taxRate}">Enter a rate like 10</small>
+            </label>
+        </div>
+
+        <label>
+            Station
+            <select th:field="*{stationId}">
+                <option value="">Same as the category</option>
+                <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Bar</option>
+            </select>
+        </label>
+
+        <fieldset>
+            <legend>Modifier groups</legend>
+            <p th:if="${modifierGroups.isEmpty()}" class="muted">No modifier groups yet.</p>
+            <div class="checkboxes">
+                <label th:each="group : ${modifierGroups}">
+                    <input type="checkbox" th:field="*{modifierGroupIds}" th:value="${group.id}">
+                    <span th:text="${group.name}">Doneness</span>
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="buttons">
+            <button type="submit">Save</button>
+            <a th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${category.id})}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

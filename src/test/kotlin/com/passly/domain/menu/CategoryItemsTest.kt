@@ -158,4 +158,15 @@ class CategoryItemsTest {
 
         assertTrue(ribeye.modifierGroupIds.isEmpty())
     }
+
+    @Test
+    fun `shift moves an item one place and does nothing at the edges`() {
+        val a = steaks.add(tenant, details("A"))
+        steaks.add(tenant, details("B"))
+        val c = steaks.add(tenant, details("C"))
+
+        assertEquals(setOf("C", "B"), steaks.shift(c.id, -1).map { it.name }.toSet())
+        assertEquals(listOf("A", "C", "B"), names(steaks))
+        assertTrue(steaks.shift(a.id, -1).isEmpty())
+    }
 }

@@ -5,4 +5,6 @@ import java.util.UUID
 
 interface StationJpaRepository : JpaRepository<StationEntity, UUID> {
     fun existsByIdAndVenueId(id: UUID, venueId: UUID): Boolean
+
+    fun findAllByVenueIdOrderBySortOrderAscNameAsc(venueId: UUID): List<StationEntity>
 }

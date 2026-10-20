@@ -48,7 +48,8 @@
     margin: 0;
 }
 
-.actions button {
+.actions button,
+.actions [role="button"] {
     margin: 0;
     padding: 0.1rem 0.6rem;
 }
@@ -87,4 +88,35 @@
 .buttons {
     display: flex;
     gap: 0.5rem;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.number {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.muted {
+    color: var(--pico-muted-color);
+}
+
+.status {
+    margin: 0;
+}
+
+.status button {
+    margin: 0;
+    padding: 0.1rem 0.6rem;
+    font-size: 0.85em;
+}
+
+.checkboxes label {
+    display: inline-flex;
+    margin-right: 1.25rem;
 }

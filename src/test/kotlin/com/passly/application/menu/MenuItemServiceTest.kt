@@ -160,6 +160,18 @@ class MenuItemServiceTest {
         assertTrue(items.stored.getValue(ribeye.id).modifierGroupIds.isEmpty())
     }
 
+    @Test
+    fun `shift moves the item within its category and locks the venue`() {
+        create(steaks, "Ribeye")
+        val picanha = create(steaks, "Picanha")
+        venues.locks = 0
+
+        service.shift(venue.id, picanha.id, -1)
+
+        assertEquals(listOf("Picanha", "Ribeye"), namesIn(steaks))
+        assertEquals(1, venues.locks)
+    }
+
     private fun modifierGroup(name: String): ModifierGroupId {
         val group = ModifierGroup.create(venue.tenantId, venue.id, name, 0, 1, listOf(ModifierDraft("Option", Money.of("0"))))
         modifierGroups.save(group)
