@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated
 import org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated
@@ -139,5 +140,38 @@ class AdminSiteTest {
         val owner = jdbc.createMember(venue, Role.OWNER)
 
         mockMvc.get("/something-else") { with(loggedIn(owner)) }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `remember me sets a long lived cookie`() {
+        val manager = jdbc.createMember(venue, Role.MANAGER)
+
+        mockMvc.post("/login") {
+            with(csrf())
+            param("username", emailOf(manager))
+            param("password", "unused")
+            param("remember-me", "on")
+        }.andExpect {
+            redirectedUrl("/admin")
+            cookie {
+                exists("remember-me")
+                maxAge("remember-me", 14 * 24 * 60 * 60)
+                httpOnly("remember-me", true)
+            }
+        }
+    }
+
+    @Test
+    fun `without remember me there is no cookie`() {
+        val manager = jdbc.createMember(venue, Role.MANAGER)
+
+        mockMvc.post("/login") {
+            with(csrf())
+            param("username", emailOf(manager))
+            param("password", "unused")
+        }.andExpect {
+            redirectedUrl("/admin")
+            cookie { doesNotExist("remember-me") }
+        }
     }
 }

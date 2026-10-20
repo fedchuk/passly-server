@@ -12,10 +12,14 @@ spring:
   web:
     locale: en
     locale-resolver: fixed
+
+passly:
   auth:
     issuer: passly
     access-token-ttl: 15m
     refresh-token-ttl: 30d
+  remember-me:
+    key: ${REMEMBER_ME_KEY:dev-only-remember-me-key}
 
 server:
   port: ${PORT:8080}

@@ -1,6 +1,7 @@
 package com.passly.security
 
 import com.passly.domain.user.Permission
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
@@ -8,6 +9,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
@@ -37,7 +39,12 @@ class SecurityConfig {
 
     @Bean
     @Order(2)
-    fun webSecurityFilterChain(http: HttpSecurity, venues: VenueAuthorization): SecurityFilterChain {
+    fun webSecurityFilterChain(
+        http: HttpSecurity,
+        venues: VenueAuthorization,
+        userDetailsService: UserDetailsService,
+        @Value("\${passly.remember-me.key}") rememberMeKey: String,
+    ): SecurityFilterChain {
         http {
             authorizeHttpRequests {
                 authorize("/login", permitAll)
@@ -55,10 +62,19 @@ class SecurityConfig {
                 loginPage = "/login"
                 defaultSuccessUrl("/admin", true)
             }
+            rememberMe {
+                key = rememberMeKey
+                this.userDetailsService = userDetailsService
+                tokenValiditySeconds = REMEMBER_ME_SECONDS
+            }
             logout {
                 logoutSuccessUrl = "/login?logout"
             }
         }
         return http.build()
+    }
+
+    private companion object {
+        const val REMEMBER_ME_SECONDS = 14 * 24 * 60 * 60
     }
 }
