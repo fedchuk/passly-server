@@ -2,36 +2,41 @@ package com.passly.web.api.menu
 
 import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration
+import com.passly.domain.user.Role
+import com.passly.web.api.createMember
+import com.passly.web.api.createVenue
+import com.passly.web.api.mockMvcAs
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.web.servlet.*
+import org.springframework.web.context.WebApplicationContext
 import java.util.*
 import kotlin.test.Test
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @Import(TestcontainersConfiguration::class)
 class ModifierGroupControllerTest {
 
     @Autowired
-    lateinit var mockMvc: MockMvc
+    lateinit var context: WebApplicationContext
 
     @Autowired
     lateinit var jdbc: JdbcClient
 
-    private val venueId = UUID.randomUUID()
+    lateinit var mockMvc: MockMvc
+
+    private lateinit var venueId: UUID
     private val base get() = "/api/v1/venues/$venueId/modifier-groups"
 
     @BeforeEach
-    fun createVenue() {
-        val tenantId = UUID.randomUUID()
-        jdbc.sql("insert into tenant (id, name) values (?, ?)").params(tenantId, "Test tenant").update()
-        jdbc.sql("insert into venue (id, tenant_id, name) values (?, ?, ?)").params(venueId, tenantId, "Test venue").update()
+    fun createVenueWithManager() {
+        val venue = jdbc.createVenue()
+        venueId = venue.venueId
+        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
     }
 
     @Test
@@ -108,6 +113,11 @@ class ModifierGroupControllerTest {
             status { isNotFound() }
             jsonPath("$.detail") { value("Venue $unknown not found") }
         }
+    }
+
+    @Test
+    fun `groups of an unknown venue are forbidden`() {
+        mockMvc.get("/api/v1/venues/${UUID.randomUUID()}/modifier-groups").andExpect { status { isForbidden() } }
     }
 
     private fun create(json: String): String =

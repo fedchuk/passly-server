@@ -6,10 +6,7 @@ import com.passly.domain.common.ValidationException
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
+import kotlin.test.*
 
 class UserTest {
 
@@ -102,5 +99,14 @@ class UserTest {
         assertFailsWith<ValidationException> { admin.joinVenue(centro, Role.MANAGER) }
         assertFailsWith<ValidationException> { admin.becomeOwnerOf(tenant) }
         assertNull(admin.roleIn(centro))
+    }
+
+    @Test
+    fun `permissions follow the role in the venue`() {
+        val anna = user().apply { joinVenue(centro, Role.KITCHEN) }
+
+        assertTrue(anna.can(Permission.MANAGE_STOP_LIST, centro))
+        assertFalse(anna.can(Permission.EDIT_MENU, centro))
+        assertFalse(anna.can(Permission.VIEW_MENU, playa))
     }
 }

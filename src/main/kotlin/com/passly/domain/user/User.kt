@@ -37,6 +37,9 @@ class User private constructor(
         return memberships.firstOrNull { it.venueId == venue.id }?.role
     }
 
+    fun can(permission: Permission, venue: Venue): Boolean =
+        roleIn(venue)?.permissions?.contains(permission) == true
+
     fun joinVenue(venue: Venue, role: Role) {
         requireTenantUser()
         if (role == Role.OWNER) throw ValidationException("Owner is granted for the whole business, not for one venue")
