@@ -2,14 +2,7 @@ package com.passly.application.menu
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.CategoryRepository
-import com.passly.domain.menu.MenuItem
-import com.passly.domain.menu.MenuItemId
-import com.passly.domain.menu.MenuItemRepository
-import com.passly.domain.menu.ModifierGroupRepository
-import com.passly.domain.menu.StationId
-import com.passly.domain.menu.StationRepository
+import com.passly.domain.menu.*
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
@@ -24,6 +17,7 @@ class MenuItemService(
     private val stations: StationRepository,
     private val items: MenuItemRepository,
     private val modifierGroups: ModifierGroupRepository,
+    private val menuChanges: MenuChangeRecorder,
 ) {
 
     @Transactional(readOnly = true)
@@ -43,6 +37,7 @@ class MenuItemService(
         val item = items.loadCategoryItems(venue.id, command.categoryId).add(venue.tenantId, command.details)
 
         items.saveAll(listOf(item))
+        menuChanges.recordChange(venue.id, MenuChangeKind.ITEMS)
         return item
     }
 
@@ -56,6 +51,7 @@ class MenuItemService(
         item.update(command.details)
 
         items.saveAll(listOf(item))
+        menuChanges.recordChange(command.venueId, MenuChangeKind.ITEMS)
         return item
     }
 
@@ -64,6 +60,7 @@ class MenuItemService(
         if (available) item.removeFromStopList() else item.addToStopList()
 
         items.saveAll(listOf(item))
+        menuChanges.recordChange(venueId, MenuChangeKind.STOP_LIST)
         return item
     }
 
@@ -78,6 +75,7 @@ class MenuItemService(
         val item = source[command.itemId]
 
         items.saveAll(source.takeOut(item.id) + target.moveIn(item))
+        menuChanges.recordChange(command.venueId, MenuChangeKind.ITEMS)
     }
 
     fun reorder(command: ReorderMenuItemsCommand) {
@@ -87,6 +85,7 @@ class MenuItemService(
         val changed = items.loadCategoryItems(command.venueId, command.categoryId).reorder(command.orderedIds)
 
         items.saveAll(changed)
+        menuChanges.recordChange(command.venueId, MenuChangeKind.ITEMS)
     }
 
     fun shift(venueId: VenueId, itemId: MenuItemId, delta: Int) {
@@ -96,6 +95,7 @@ class MenuItemService(
         val changed = items.loadCategoryItems(venueId, categoryId).shift(itemId, delta)
 
         items.saveAll(changed)
+        menuChanges.recordChange(venueId, MenuChangeKind.ITEMS)
     }
 
     fun archive(venueId: VenueId, itemId: MenuItemId) {
@@ -105,6 +105,7 @@ class MenuItemService(
         val changed = items.loadCategoryItems(venueId, categoryId).archive(itemId)
 
         items.saveAll(changed)
+        menuChanges.recordChange(venueId, MenuChangeKind.ITEMS)
     }
 
     fun attachModifierGroups(command: AttachModifierGroupsCommand): MenuItem {
@@ -118,6 +119,7 @@ class MenuItemService(
         item.attachModifierGroups(command.groupIds)
 
         items.saveAll(listOf(item))
+        menuChanges.recordChange(command.venueId, MenuChangeKind.ITEMS)
         return item
     }
 

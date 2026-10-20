@@ -12,6 +12,8 @@ spring:
   web:
     locale: en
     locale-resolver: fixed
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 passly:
   auth:
@@ -32,6 +34,10 @@ passly:
     email: ${PLATFORM_ADMIN_EMAIL:}
     name: ${PLATFORM_ADMIN_NAME:Platform admin}
     password: ${PLATFORM_ADMIN_PASSWORD:}
+  messaging:
+    kafka-enabled: ${KAFKA_ENABLED:false}
+    menu-topic: passly.menu-events
+    relay-interval-ms: 1000
 
 server:
   port: ${PORT:8080}

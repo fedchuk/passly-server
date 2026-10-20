@@ -4,21 +4,11 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.MenuItemDetails
-import com.passly.domain.menu.ModifierDraft
-import com.passly.domain.menu.ModifierGroup
-import com.passly.domain.menu.ModifierGroupId
-import com.passly.domain.menu.StationId
+import com.passly.domain.menu.*
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class MenuItemServiceTest {
 
@@ -30,8 +20,9 @@ class MenuItemServiceTest {
     private val stations = FakeStationRepository(mapOf(grill to venue.id))
     private val items = FakeMenuItemRepository()
     private val modifierGroups = FakeModifierGroupRepository()
-    private val categoryService = CategoryService(venues, categories, stations, items)
-    private val service = MenuItemService(venues, categories, stations, items, modifierGroups)
+    private val menuChanges = FakeMenuChangeRecorder()
+    private val categoryService = CategoryService(venues, categories, stations, items, menuChanges)
+    private val service = MenuItemService(venues, categories, stations, items, modifierGroups, menuChanges)
 
     private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks")).id
     private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish")).id
@@ -85,6 +76,16 @@ class MenuItemServiceTest {
 
         service.changeAvailability(venue.id, ribeye.id, available = true)
         assertTrue(items.stored.getValue(ribeye.id).available)
+    }
+
+    @Test
+    fun `every change is recorded for the waiter apps`() {
+        val ribeye = create(steaks, "Ribeye")
+        menuChanges.recorded.clear()
+
+        service.changeAvailability(venue.id, ribeye.id, available = false)
+
+        assertEquals(listOf(venue.id to MenuChangeKind.STOP_LIST), menuChanges.recorded)
     }
 
     @Test

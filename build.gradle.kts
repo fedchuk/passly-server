@@ -33,6 +33,7 @@ dependencies {
     implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
+    implementation("org.springframework.boot:spring-boot-starter-kafka")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
@@ -43,8 +44,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
+    testImplementation("org.testcontainers:testcontainers-kafka")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 kotlin {

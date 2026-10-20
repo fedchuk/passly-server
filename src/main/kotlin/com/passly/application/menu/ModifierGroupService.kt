@@ -18,6 +18,7 @@ class ModifierGroupService(
     private val venues: VenueRepository,
     private val groups: ModifierGroupRepository,
     private val items: MenuItemRepository,
+    private val menuChanges: MenuChangeRecorder,
 ) {
 
     @Transactional(readOnly = true)
@@ -40,6 +41,7 @@ class ModifierGroupService(
             drafts = command.options,
         )
         groups.save(group)
+        menuChanges.recordChange(venue.id, MenuChangeKind.MODIFIER_GROUPS)
         return group
     }
 
@@ -50,6 +52,7 @@ class ModifierGroupService(
         }
         group.update(command.name, command.minSelect, command.maxSelect, command.options)
         groups.save(group)
+        menuChanges.recordChange(command.venueId, MenuChangeKind.MODIFIER_GROUPS)
         return group
     }
 
@@ -59,6 +62,7 @@ class ModifierGroupService(
             throw ConflictException("Modifier group '${group.name}' is used by menu items. Detach it first.")
         }
         groups.delete(group)
+        menuChanges.recordChange(venueId, MenuChangeKind.MODIFIER_GROUPS)
     }
 
     private fun requireVenue(id: VenueId): Venue =

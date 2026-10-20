@@ -23,7 +23,8 @@ class CategoryServiceTest {
     private val categories = FakeCategoryRepository()
     private val stations = FakeStationRepository(mapOf(kitchen to venue.id))
     private val items = FakeMenuItemRepository()
-    private val service = CategoryService(venues, categories, stations, items)
+    private val menuChanges = FakeMenuChangeRecorder()
+    private val service = CategoryService(venues, categories, stations, items, menuChanges)
 
     @Test
     fun `create stores the new category under the venue's tenant`() {
