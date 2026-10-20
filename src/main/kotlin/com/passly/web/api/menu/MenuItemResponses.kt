@@ -3,6 +3,7 @@ package com.passly.web.api.menu
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.stationFor
+import io.swagger.v3.oas.annotations.media.Schema
 import java.util.UUID
 
 data class MenuItemResponse(
@@ -10,7 +11,9 @@ data class MenuItemResponse(
     val categoryId: UUID,
     val name: String,
     val description: String?,
+    @Schema(example = "4.50")
     val price: String,
+    @Schema(example = "10.00")
     val taxRate: String,
     val stationId: UUID?,
     val effectiveStationId: UUID?,

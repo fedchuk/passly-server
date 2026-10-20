@@ -1,11 +1,13 @@
 package com.passly.web.api.menu
 
 import com.passly.domain.menu.ModifierGroup
+import io.swagger.v3.oas.annotations.media.Schema
 import java.util.UUID
 
 data class ModifierResponse(
     val id: UUID,
     val name: String,
+    @Schema(example = "-0.50")
     val priceDelta: String,
 )
 

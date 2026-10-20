@@ -11,6 +11,8 @@ import com.passly.domain.menu.MenuItemId
 import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.StationId
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.VERSION_DESCRIPTION
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
@@ -23,8 +25,11 @@ private const val PERCENT = """^\d{1,3}(\.\d{1,2})?$"""
 data class CreateMenuItemRequest(
     @NotBlank @Size(max = 160) val name: String,
     @Size(max = 2000) val description: String? = null,
+    @Schema(description = "Price as a string with up to 2 decimals", example = "4.50")
     @Pattern(regexp = MONEY) val price: String,
+    @Schema(description = "VAT in percent", example = "10")
     @Pattern(regexp = PERCENT) val taxRate: String,
+    @Schema(description = "Leave empty to use the station of the category")
     val stationId: UUID? = null,
 ) {
     fun toDetails() = menuItemDetails(name, description, price, taxRate, stationId)
@@ -33,9 +38,13 @@ data class CreateMenuItemRequest(
 data class UpdateMenuItemRequest(
     @NotBlank @Size(max = 160) val name: String,
     @Size(max = 2000) val description: String? = null,
+    @Schema(description = "Price as a string with up to 2 decimals", example = "4.50")
     @Pattern(regexp = MONEY) val price: String,
+    @Schema(description = "VAT in percent", example = "10")
     @Pattern(regexp = PERCENT) val taxRate: String,
+    @Schema(description = "Leave empty to use the station of the category")
     val stationId: UUID? = null,
+    @Schema(description = VERSION_DESCRIPTION, example = "0")
     val version: Long,
 ) {
     fun toDetails() = menuItemDetails(name, description, price, taxRate, stationId)
@@ -59,7 +68,9 @@ data class ReorderMenuItemsRequest(
 }
 
 data class AttachModifierGroupsRequest(
+    @Schema(description = "All groups of the item in display order. An empty list detaches them all.")
     val groupIds: List<UUID>,
+    @Schema(description = VERSION_DESCRIPTION, example = "0")
     val version: Long,
 ) {
     fun toCommand(venueId: VenueId, id: MenuItemId) =
