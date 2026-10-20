@@ -60,6 +60,7 @@ class SecurityConfig {
                 authorize("/platform/**", hasRole("PLATFORM_ADMIN"))
                 authorize("/", authenticated)
                 authorize("/admin", authenticated)
+                authorize("/account/**", authenticated)
                 authorize(anyRequest, denyAll)
             }
             formLogin {

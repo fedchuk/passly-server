@@ -268,6 +268,23 @@ small {
     margin: 0;
 }
 
+.topbar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-small);
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.topbar-link:hover,
+.topbar-link[aria-current="page"] {
+    background: var(--surface-muted);
+    color: var(--text);
+    text-decoration: none;
+}
+
 .user {
     display: flex;
     align-items: center;
@@ -1063,7 +1080,8 @@ a.action-card:hover {
         padding: 0.6rem 1rem;
     }
 
-    .topbar button span {
+    .topbar button span,
+    .topbar-link span {
         display: none;
     }
 

@@ -6,6 +6,6 @@ class NotFoundException(what: String, id: Any) : DomainException("$what $id not 
 
 class ConflictException(message: String) : DomainException(message)
 
-class ValidationException(message: String) : DomainException(message)
+class ValidationException(message: String, val field: String? = null) : DomainException(message)
 
 class UnauthorizedException(message: String) : DomainException(message)
