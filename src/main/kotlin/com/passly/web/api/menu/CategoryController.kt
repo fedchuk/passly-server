@@ -3,6 +3,7 @@ package com.passly.web.api.menu
 import com.passly.application.menu.CategoryService
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.venue.VenueId
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -21,6 +22,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/venues/{venueId}/categories")
+@Tag(name = "Categories", description = "The category tree of a venue")
 class CategoryController(
     private val service: CategoryService,
 ) {

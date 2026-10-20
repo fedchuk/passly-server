@@ -3,6 +3,7 @@ package com.passly.web.api.menu
 import com.passly.application.menu.ModifierGroupService
 import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.venue.VenueId
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,6 +20,7 @@ import java.net.URI
 import java.util.UUID
 
 @RestController
+@Tag(name = "Modifier groups", description = "Options such as doneness or size")
 @RequestMapping("/api/v1/venues/{venueId}/modifier-groups")
 class ModifierGroupController(
     private val service: ModifierGroupService,

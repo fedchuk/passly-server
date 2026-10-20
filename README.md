@@ -6,6 +6,8 @@ Passly is a SaaS backend for restaurants: a REST API for the waiter and kitchen 
 
 **Live demo:** https://passly-8ece774580f7.herokuapp.com. The app may take about 20 seconds to wake up on the first request.
 
+**API docs:** [Swagger UI](https://passly-8ece774580f7.herokuapp.com/swagger-ui.html) · [OpenAPI spec](https://passly-8ece774580f7.herokuapp.com/v3/api-docs)
+
 ## What it does
 
 - **Multi-tenant SaaS.** One business (tenant) can own several venues. Every request is checked against the venue in the URL, and data of one business is never visible to another.
@@ -63,24 +65,23 @@ src/main/kotlin/com/passly
     - Anything not explicitly allowed is denied.
 - **Errors as RFC 9457 Problem Details** with field-level validation errors.
 
-## API overview
+## API
 
-All endpoints except login and refresh need `Authorization: Bearer <access token>`.
+Interactive documentation: [Swagger UI](https://passly-8ece774580f7.herokuapp.com/swagger-ui.html) · [OpenAPI spec](https://passly-8ece774580f7.herokuapp.com/v3/api-docs)
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/api/v1/auth/login` | Get an access and a refresh token |
-| POST | `/api/v1/auth/refresh` | Rotate the refresh token |
-| POST | `/api/v1/auth/logout`, `/logout-all` | End one session or all of them |
-| GET | `/api/v1/me` | Current user and their venues |
-| GET, POST | `/api/v1/venues/{venueId}/categories` | Category tree (with ETag) and creation |
-| PUT, DELETE | `/api/v1/venues/{venueId}/categories/{id}` | Update or delete a category |
-| POST | `/api/v1/venues/{venueId}/categories/{id}/move` | Move a category in the tree |
-| GET, POST | `/api/v1/venues/{venueId}/categories/{id}/items` | Items of a category |
-| PUT | `/api/v1/venues/{venueId}/items/{id}/availability` | Stop list |
-| PUT | `/api/v1/venues/{venueId}/items/{id}/modifier-groups` | Attach modifier groups |
-| GET, POST | `/api/v1/venues/{venueId}/modifier-groups` | Modifier groups |
-| GET, POST | `/api/v1/venues/{venueId}/staff` | Staff of a venue |
+How the API works:
+
+- **Authentication.** `POST /api/v1/auth/login` returns a short-lived access token (15 minutes) and a refresh token. Send the access token as `Authorization: Bearer <token>`. When it expires, call `POST /api/v1/auth/refresh` to get a new pair; each refresh token works only once.
+- **Everything is scoped to a venue:** `/api/v1/venues/{venueId}/...`. What you can do there depends on your role in that venue.
+- **Optimistic locking.** Updates carry the `version` you last read. If someone changed the resource in between, you get `409 Conflict`.
+- **Errors** use RFC 9457 Problem Details, with field errors for validation failures.
+- **Money** is sent as strings (`"4.50"`) to avoid floating point errors.
+
+```bash
+curl -X POST https://passly-8ece774580f7.herokuapp.com/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "owner@example.com", "password": "..."}'
+```
 
 ## Running locally
 

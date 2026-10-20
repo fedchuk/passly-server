@@ -31,3 +31,11 @@ passly:
 
 server:
   port: ${PORT:8080}
+
+springdoc:
+  packages-to-scan: com.passly.web.api
+  paths-to-match: /api/**
+  swagger-ui:
+    path: /swagger-ui.html
+    persist-authorization: true
+    tags-sorter: alpha
