@@ -58,8 +58,26 @@
 }
 
 .add-sub summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     font-size: 0.85em;
-    color: var(--pico-muted-color);
+    color: var(--pico-primary);
+    cursor: pointer;
+}
+
+.add-sub summary::after {
+    display: none;
+}
+
+.add-sub summary::before {
+    content: "+";
+    font-weight: bold;
+    width: 0.75rem;
+}
+
+.add-sub[open] summary::before {
+    content: "−";
 }
 
 .add-sub form {

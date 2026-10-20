@@ -2,10 +2,12 @@ package com.passly.web.admin
 
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
+import com.passly.application.menu.MoveCategoryCommand
 import com.passly.application.menu.UpdateCategoryCommand
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.CategoryId
+import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.StationId
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
@@ -57,9 +59,9 @@ class CategoryAdminController(
         @AuthenticationPrincipal principal: PasslyUserPrincipal,
         model: Model,
     ): String {
-        val category = categories.getTree(VenueId(venueId))[CategoryId(id)]
-        model.addAttribute("form", EditCategoryForm.of(category))
-        return editPage(venueId, id, principal, model)
+        val tree = categories.getTree(VenueId(venueId))
+        model.addAttribute("form", EditCategoryForm.of(tree[CategoryId(id)]))
+        return editPage(venueId, id, tree, principal, model)
     }
 
     @PostMapping("/{id}")
@@ -94,7 +96,7 @@ class CategoryAdminController(
                 binding.reject("invalid", e.message ?: "Invalid data")
             }
         }
-        return editPage(venueId, id, principal, model)
+        return editPage(venueId, id, categories.getTree(VenueId(venueId)), principal, model)
     }
 
     @PostMapping("/{id}/shift")
@@ -120,9 +122,29 @@ class CategoryAdminController(
         "Category '$name' deleted"
     }
 
-    private fun editPage(venueId: UUID, id: UUID, principal: PasslyUserPrincipal, model: Model): String {
+    @PostMapping("/{id}/move")
+    fun move(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @RequestParam(required = false) parentId: UUID?,
+        flash: RedirectAttributes,
+    ): String = flash.redirectAfter(venueId) {
+        val category = categories.getTree(VenueId(venueId))[CategoryId(id)]
+        val newParentId = parentId?.let(::CategoryId)
+        if (category.parentId == newParentId) {
+            "Category '${category.name}' is already there"
+        } else {
+            categories.move(MoveCategoryCommand(VenueId(venueId), category.id, newParentId))
+            "Category '${category.name}' moved"
+        }
+    }
+
+    private fun editPage(venueId: UUID, id: UUID, tree: MenuTree, principal: PasslyUserPrincipal, model: Model): String {
+        val categoryId = CategoryId(id)
         model.addAttribute("venue", venues.find(principal, venueId))
         model.addAttribute("categoryId", id)
+        model.addAttribute("parentOptions", tree.parentOptionsFor(categoryId))
+        model.addAttribute("currentParentId", tree[categoryId].parentId?.value)
         return "admin/category-edit"
     }
 

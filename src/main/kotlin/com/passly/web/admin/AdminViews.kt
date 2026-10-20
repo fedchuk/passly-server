@@ -39,3 +39,21 @@ fun MenuTree.toNodeViews(parentId: CategoryId? = null): List<CategoryNodeView> {
         )
     }
 }
+
+data class ParentOption(
+    val id: UUID?,
+    val label: String,
+) {
+    val value: String get() = id?.toString() ?: ""
+}
+
+fun MenuTree.parentOptionsFor(id: CategoryId): List<ParentOption> {
+    val excluded = descendantsOf(id) + id
+
+    fun optionsUnder(parentId: CategoryId?, depth: Int): List<ParentOption> =
+        children(parentId)
+            .filter { it.id !in excluded }
+            .flatMap { listOf(ParentOption(it.id.value, "— ".repeat(depth) + it.name)) + optionsUnder(it.id, depth + 1) }
+
+    return listOf(ParentOption(null, "Top level")) + optionsUnder(null, 0)
+}

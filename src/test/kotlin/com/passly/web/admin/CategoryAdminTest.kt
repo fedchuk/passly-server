@@ -236,4 +236,76 @@ class CategoryAdminTest {
             view { name("error/404") }
         }
     }
+
+    @Test
+    fun `move options exclude the category and its subtree`() {
+        val drinks = create("Drinks")
+        val wine = create("Wine", drinks.id)
+        create("Rioja", wine.id)
+        val beer = create("Beer")
+
+        mockMvc.get("$page/categories/${wine.id}/edit") { with(manager) }.andExpect {
+            status { isOk() }
+            model {
+                attribute(
+                    "parentOptions",
+                    listOf(
+                        ParentOption(null, "Top level"),
+                        ParentOption(drinks.id.value, "Drinks"),
+                        ParentOption(beer.id.value, "Beer"),
+                    ),
+                )
+                attribute("currentParentId", drinks.id.value)
+            }
+        }
+    }
+
+    @Test
+    fun `category moves under another parent`() {
+        val drinks = create("Drinks")
+        val wine = create("Wine")
+
+        mockMvc.post("$page/categories/${wine.id}/move") {
+            with(manager)
+            with(csrf())
+            param("parentId", drinks.id.toString())
+        }.andExpect {
+            redirectedUrl(page)
+            flash { attribute("message", "Category 'Wine' moved") }
+        }
+
+        assertEquals(listOf("Wine"), names(drinks.id))
+    }
+
+    @Test
+    fun `empty choice moves the category to the top level`() {
+        val drinks = create("Drinks")
+        create("Wine", drinks.id)
+        val wine = categories.getTree(venueId).children(drinks.id).single()
+
+        mockMvc.post("$page/categories/${wine.id}/move") {
+            with(manager)
+            with(csrf())
+            param("parentId", "")
+        }.andExpect { redirectedUrl(page) }
+
+        assertEquals(listOf("Drinks", "Wine"), names())
+    }
+
+    @Test
+    fun `moving into its own subcategory is refused`() {
+        val drinks = create("Drinks")
+        val wine = create("Wine", drinks.id)
+
+        mockMvc.post("$page/categories/${drinks.id}/move") {
+            with(manager)
+            with(csrf())
+            param("parentId", wine.id.toString())
+        }.andExpect {
+            redirectedUrl(page)
+            flash { attributeExists("error") }
+        }
+
+        assertEquals(listOf("Drinks"), names())
+    }
 }
