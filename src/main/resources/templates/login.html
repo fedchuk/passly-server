@@ -2,32 +2,83 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Log in')}"></head>
 <body class="auth-page">
-<main class="auth-card">
-    <div class="brand">
-        <span class="brand-mark"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
-        <span>
-            <strong>Passly</strong>
-            <small>Restaurant admin</small>
-        </span>
-    </div>
-    <h1>Log in</h1>
-    <p th:if="${param.error}" class="error">Invalid email or password.</p>
-    <p th:if="${param.logout}" class="notice">You have been logged out.</p>
-    <form th:action="@{/login}" method="post">
-        <label>
-            Email
-            <input type="email" name="username" autocomplete="username" required autofocus>
-        </label>
-        <label>
-            Password
-            <input type="password" name="password" autocomplete="current-password" required>
-        </label>
-        <label>
-            <input type="checkbox" name="remember-me">
-            Remember me
-        </label>
-        <button type="submit" class="wide">Log in</button>
-    </form>
-</main>
+<div class="auth-shell">
+    <section class="auth-hero">
+        <div class="brand">
+            <span class="brand-mark"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+            <span><strong>Passly</strong></span>
+        </div>
+        <p class="auth-lead">Run your restaurant from one place</p>
+
+        <ul class="auth-features">
+            <li>
+                <span class="feature-icon"><svg th:replace="~{fragments/icons :: icon('menu')}"></svg></span>
+                <span><strong>Menu</strong><small>Categories, dishes and prices</small></span>
+            </li>
+            <li>
+                <span class="feature-icon"><svg th:replace="~{fragments/icons :: icon('stop')}"></svg></span>
+                <span><strong>Stop list</strong><small>Hide what the kitchen ran out of</small></span>
+            </li>
+            <li>
+                <span class="feature-icon"><svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg></span>
+                <span><strong>Modifiers</strong><small>Doneness, size and extras</small></span>
+            </li>
+            <li>
+                <span class="feature-icon"><svg th:replace="~{fragments/icons :: icon('staff')}"></svg></span>
+                <span><strong>Staff</strong><small>Your team and their roles</small></span>
+            </li>
+        </ul>
+
+        <p class="auth-tagline">Good service starts with order</p>
+    </section>
+
+    <main class="auth-form">
+        <h1>Welcome to Passly</h1>
+        <p class="subtitle">Log in to manage your venue</p>
+
+        <p th:if="${param.error}" class="error">Invalid email or password.</p>
+        <p th:if="${param.logout}" class="notice">You have been logged out.</p>
+
+        <form th:action="@{/login}" method="post">
+            <label class="field">
+                <span class="visually-hidden">Email</span>
+                <svg th:replace="~{fragments/icons :: icon('mail')}"></svg>
+                <input type="email" name="username" placeholder="Email" autocomplete="username" required autofocus>
+            </label>
+
+            <label class="field">
+                <span class="visually-hidden">Password</span>
+                <svg th:replace="~{fragments/icons :: icon('lock')}"></svg>
+                <input type="password" id="password" name="password" placeholder="Password" autocomplete="current-password" required>
+                <button type="button" class="reveal" id="reveal-password" aria-label="Show password" aria-pressed="false">
+                    <span class="when-hidden"><svg th:replace="~{fragments/icons :: icon('eye')}"></svg></span>
+                    <span class="when-shown"><svg th:replace="~{fragments/icons :: icon('eye-off')}"></svg></span>
+                </button>
+            </label>
+
+            <label>
+                <input type="checkbox" name="remember-me">
+                Remember me
+            </label>
+
+            <button type="submit" class="wide">Log in</button>
+        </form>
+
+        <p class="auth-hint">No account yet? Ask the owner or manager of your venue to add you.</p>
+    </main>
+</div>
+
+<script>
+    const password = document.getElementById('password');
+    const reveal = document.getElementById('reveal-password');
+
+    reveal.addEventListener('click', () => {
+        const show = password.type === 'password';
+        password.type = show ? 'text' : 'password';
+        reveal.setAttribute('aria-pressed', String(show));
+        reveal.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        password.focus();
+    });
+</script>
 </body>
 </html>
