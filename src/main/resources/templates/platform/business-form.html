@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Add business', null, 'businesses', ~{::main})}">
+<body>
+<main class="narrow">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/platform}">Businesses</a></li>
+            <li>Add business</li>
+        </ul>
+    </nav>
+    <h1>Add business</h1>
+
+    <form th:action="@{/platform/businesses}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Something went wrong</p>
+
+        <fieldset>
+            <legend>Business</legend>
+            <label>
+                Business name
+                <input th:field="*{businessName}" maxlength="160" required placeholder="Bistro Group"
+                       th:attr="aria-invalid=${#fields.hasErrors('businessName')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('businessName')}" th:errors="*{businessName}">Required</small>
+            </label>
+            <label>
+                First venue
+                <input th:field="*{venueName}" maxlength="160" required placeholder="Bistro Centro"
+                       th:attr="aria-invalid=${#fields.hasErrors('venueName')} ? 'true' : null">
+                <small class="muted">The owner can add more venues later.</small>
+                <small class="error" th:if="${#fields.hasErrors('venueName')}" th:errors="*{venueName}">Required</small>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Owner</legend>
+            <label>
+                Name
+                <input th:field="*{ownerName}" maxlength="120" required autocomplete="off"
+                       th:attr="aria-invalid=${#fields.hasErrors('ownerName')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('ownerName')}" th:errors="*{ownerName}">Required</small>
+            </label>
+            <label>
+                Email
+                <input type="email" th:field="*{ownerEmail}" maxlength="254" required autocomplete="off"
+                       th:attr="aria-invalid=${#fields.hasErrors('ownerEmail')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('ownerEmail')}" th:errors="*{ownerEmail}">Invalid email</small>
+            </label>
+            <label>
+                Initial password
+                <input type="password" th:field="*{ownerPassword}" minlength="8" required autocomplete="new-password"
+                       th:attr="aria-invalid=${#fields.hasErrors('ownerPassword')} ? 'true' : null">
+                <small class="muted">At least 8 characters. Share it with the owner in private.</small>
+                <small class="error" th:if="${#fields.hasErrors('ownerPassword')}" th:errors="*{ownerPassword}">Too short</small>
+            </label>
+        </fieldset>
+
+        <div class="buttons">
+            <button type="submit">Create business</button>
+            <a th:href="@{/platform}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

@@ -1,6 +1,5 @@
-package com.passly.application.venue
+package com.passly.data.venue
 
-import com.passly.data.venue.TenantEntity
 import com.passly.domain.venue.Tenant
 import com.passly.domain.venue.TenantRepository
 import org.springframework.stereotype.Repository

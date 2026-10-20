@@ -19,23 +19,12 @@
             </span>
         </a>
 
-        <nav class="side-nav" th:if="${venue != null}" aria-label="Venue">
-            <a th:href="@{/admin/venues/{v}/overview(v=${venue.id})}"
-               th:attr="aria-current=${active == 'overview'} ? 'page' : null">
-                <svg th:replace="~{fragments/icons :: icon('home')}"></svg>Overview</a>
-            <a th:href="@{/admin/venues/{v}(v=${venue.id})}"
-               th:attr="aria-current=${active == 'menu'} ? 'page' : null">
-                <svg th:replace="~{fragments/icons :: icon('menu')}"></svg>Menu</a>
-            <a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}"
-               th:attr="aria-current=${active == 'modifiers'} ? 'page' : null">
-                <svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg>Modifier groups</a>
-            <a th:if="${venue.staffManageable}" th:href="@{/admin/venues/{v}/staff(v=${venue.id})}"
-               th:attr="aria-current=${active == 'staff'} ? 'page' : null">
-                <svg th:replace="~{fragments/icons :: icon('staff')}"></svg>Staff</a>
-        </nav>
-
         <nav class="side-nav" th:if="${venue == null}" aria-label="Main">
-            <a th:href="@{/admin}" th:attr="aria-current=${active == 'venues'} ? 'page' : null">
+            <a th:if="${currentUser != null and currentUser.platformAdmin}" th:href="@{/platform}"
+               th:attr="aria-current=${active == 'businesses'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('business')}"></svg>Businesses</a>
+            <a th:unless="${currentUser != null and currentUser.platformAdmin}" th:href="@{/admin}"
+               th:attr="aria-current=${active == 'venues'} ? 'page' : null">
                 <svg th:replace="~{fragments/icons :: icon('venues')}"></svg>My venues</a>
         </nav>
 

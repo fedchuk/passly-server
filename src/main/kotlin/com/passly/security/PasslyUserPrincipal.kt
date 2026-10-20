@@ -4,7 +4,7 @@ import com.passly.domain.user.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
-import java.util.UUID
+import java.util.*
 
 class PasslyUserPrincipal(
     val userId: UUID,
@@ -12,7 +12,7 @@ class PasslyUserPrincipal(
     private val email: String,
     private val passwordHash: String,
     private val enabled: Boolean,
-    private val platformAdmin: Boolean,
+    val platformAdmin: Boolean,
 ) : UserDetails {
 
     override fun getUsername(): String = email

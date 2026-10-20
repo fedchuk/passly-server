@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Businesses', null, 'businesses', ~{::main})}">
+<body>
+<main>
+    <div class="page-header">
+        <div>
+            <h1>Businesses</h1>
+            <p class="subtitle">Every restaurant business on Passly.</p>
+        </div>
+        <a th:href="@{/platform/businesses/new}" role="button">Add business</a>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Bistro Group is ready</p>
+
+    <p th:if="${businesses.isEmpty()}" class="empty">No businesses yet.</p>
+
+    <div class="overflow-auto" th:unless="${businesses.isEmpty()}">
+        <table class="striped">
+            <thead>
+            <tr>
+                <th>Business</th>
+                <th>Owners</th>
+                <th class="number">Venues</th>
+                <th class="number">Joined</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="business : ${businesses}">
+                <td><strong th:text="${business.name}">Bistro Group</strong></td>
+                <td th:text="${business.owners.isEmpty()} ? '—' : ${business.owners}">max@bistro.es</td>
+                <td class="number" th:text="${business.venues}">2</td>
+                <td class="number" th:text="${#temporals.format(business.createdOn, 'd MMM yyyy')}">20 Oct 2026</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

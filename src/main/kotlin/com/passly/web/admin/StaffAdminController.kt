@@ -11,6 +11,7 @@ import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
+import com.passly.web.parse
 import jakarta.validation.Valid
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
@@ -124,14 +125,6 @@ class StaffAdminController(
         model.addAttribute("roles", ASSIGNABLE_ROLES)
         return "admin/staff-form"
     }
-
-    private fun <T> BindingResult.parse(field: String, block: () -> T): T? =
-        try {
-            block()
-        } catch (e: ValidationException) {
-            if (!hasFieldErrors(field)) rejectValue(field, "invalid", e.message ?: "Invalid value")
-            null
-        }
 
     private fun Role.label() = name.lowercase()
 

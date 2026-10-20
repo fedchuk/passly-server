@@ -104,6 +104,15 @@ export BOOTSTRAP_OWNER_NAME="Owner"
 export BOOTSTRAP_OWNER_PASSWORD="change-me-please"
 ```
 
+To create a platform admin, who sees every business at `/platform` and can add new ones:
+
+```bash
+export PLATFORM_ADMIN_EMAIL="admin@example.com"
+export PLATFORM_ADMIN_PASSWORD="change-me-please"
+```
+
+Both bootstraps run on startup and do nothing if the user already exists.
+
 ## Tests
 
 ```bash
@@ -124,7 +133,6 @@ Production configuration comes only from environment variables: database, JWT pr
 
 ## Roadmap
 
-- Admin pages for modifier groups, staff and platform administration
 - Orders from the waiter app and a kitchen display
 - Menu change events through Kafka with a transactional outbox
 - Kotlin Multiplatform waiter app

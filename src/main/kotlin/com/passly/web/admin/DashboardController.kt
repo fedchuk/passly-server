@@ -13,6 +13,7 @@ class DashboardController(private val access: AccessService) {
 
     @GetMapping("/admin")
     fun dashboard(@AuthenticationPrincipal principal: PasslyUserPrincipal, model: Model): String {
+        if (principal.platformAdmin) return "redirect:/platform"
         model.addAttribute("venues", access.venuesOf(UserId(principal.userId)).map { it.toView() })
         return "admin/dashboard"
     }

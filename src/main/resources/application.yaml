@@ -28,6 +28,10 @@ passly:
     owner-email: ${BOOTSTRAP_OWNER_EMAIL:}
     owner-name: ${BOOTSTRAP_OWNER_NAME:}
     owner-password: ${BOOTSTRAP_OWNER_PASSWORD:}
+  platform-admin:
+    email: ${PLATFORM_ADMIN_EMAIL:}
+    name: ${PLATFORM_ADMIN_NAME:Platform admin}
+    password: ${PLATFORM_ADMIN_PASSWORD:}
 
 server:
   port: ${PORT:8080}
