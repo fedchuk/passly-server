@@ -44,3 +44,6 @@ out/
 
 ### Local secrets ###
 .env
+
+*.pem
+.env
