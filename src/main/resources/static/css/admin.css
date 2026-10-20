@@ -120,3 +120,21 @@
     display: inline-flex;
     margin-right: 1.25rem;
 }
+
+.venue-tabs ul {
+    padding: 0;
+    gap: 1.5rem;
+}
+
+.venue-tabs a[aria-current="page"] {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.options td {
+    vertical-align: top;
+}
+
+.options input {
+    margin-bottom: 0;
+}

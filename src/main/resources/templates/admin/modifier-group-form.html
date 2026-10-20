@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${formTitle})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
+            <li><a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}">Modifier groups</a></li>
+        </ul>
+    </nav>
+    <h1 th:text="${formTitle}">New modifier group</h1>
+
+    <form th:action="@{${formAction}}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
+
+        <input type="hidden" th:field="*{version}">
+
+        <label>
+            Name
+            <input th:field="*{name}" maxlength="120" required placeholder="Doneness"
+                   th:attr="aria-invalid=${#fields.hasErrors('name')} ? 'true' : null">
+            <small class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name must not be blank</small>
+        </label>
+
+        <div class="grid">
+            <label>
+                Guest must choose at least
+                <input type="number" th:field="*{minSelect}" min="0" required
+                       th:attr="aria-invalid=${#fields.hasErrors('minSelect')} ? 'true' : null">
+                <small class="muted">0 makes the group optional</small>
+                <small class="error" th:if="${#fields.hasErrors('minSelect')}" th:errors="*{minSelect}">Must be 0 or more</small>
+            </label>
+            <label>
+                and at most
+                <input type="number" th:field="*{maxSelect}" min="1" required
+                       th:attr="aria-invalid=${#fields.hasErrors('maxSelect')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('maxSelect')}" th:errors="*{maxSelect}">Must be at least 1</small>
+            </label>
+        </div>
+
+        <fieldset>
+            <legend>Options</legend>
+            <table class="options">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Price change</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="option-rows">
+                <tr th:each="option, stat : *{options}">
+                    <td>
+                        <input type="hidden" th:field="*{options[__${stat.index}__].id}">
+                        <input th:field="*{options[__${stat.index}__].name}" maxlength="120" placeholder="Medium" aria-label="Option name">
+                        <small class="error" th:if="${#fields.hasErrors('options[__${stat.index}__].name')}"
+                               th:errors="*{options[__${stat.index}__].name}">Too long</small>
+                    </td>
+                    <td>
+                        <input th:field="*{options[__${stat.index}__].priceDelta}" inputmode="decimal" placeholder="0.00" aria-label="Price change">
+                        <small class="error" th:if="${#fields.hasErrors('options[__${stat.index}__].priceDelta')}"
+                               th:errors="*{options[__${stat.index}__].priceDelta}">Enter an amount</small>
+                    </td>
+                    <td><button type="button" class="outline secondary remove-option" title="Remove">✕</button></td>
+                </tr>
+                </tbody>
+            </table>
+            <button type="button" id="add-option" class="secondary outline">Add option</button>
+            <p><small class="muted">Leave the price change empty if the option costs nothing extra. Use a minus for discounts, for example -0.50.</small></p>
+        </fieldset>
+
+        <div class="buttons">
+            <button type="submit">Save</button>
+            <a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+
+    <template id="option-row">
+        <tr>
+            <td><input name="options[__index__].name" maxlength="120" placeholder="Option" aria-label="Option name"></td>
+            <td><input name="options[__index__].priceDelta" inputmode="decimal" placeholder="0.00" aria-label="Price change"></td>
+            <td><button type="button" class="outline secondary remove-option" title="Remove">✕</button></td>
+        </tr>
+    </template>
+
+    <script>
+        const rows = document.getElementById('option-rows');
+        let nextIndex = rows.querySelectorAll('tr').length;
+
+        document.getElementById('add-option').addEventListener('click', () => {
+            const html = document.getElementById('option-row').innerHTML.replaceAll('__index__', nextIndex++);
+            rows.insertAdjacentHTML('beforeend', html);
+            rows.lastElementChild.querySelector('input').focus();
+        });
+
+        rows.addEventListener('click', event => {
+            if (event.target.closest('.remove-option')) event.target.closest('tr').remove();
+        });
+    </script>
+</main>
+</body>
+</html>

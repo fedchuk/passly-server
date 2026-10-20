@@ -12,6 +12,8 @@
     </nav>
     <h1 th:text="${venue.name}">Bistro Centro</h1>
 
+    <nav th:replace="~{fragments/venue-nav :: tabs(${venue}, 'menu')}"></nav>
+
     <p th:if="${message}" class="notice" th:text="${message}">Category added</p>
     <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
 

@@ -56,7 +56,10 @@
 
         <fieldset>
             <legend>Modifier groups</legend>
-            <p th:if="${modifierGroups.isEmpty()}" class="muted">No modifier groups yet.</p>
+            <p th:if="${modifierGroups.isEmpty()}" class="muted">
+                No modifier groups yet.
+                <a th:href="@{/admin/venues/{v}/modifier-groups/new(v=${venue.id})}">Create one</a>
+            </p>
             <div class="checkboxes">
                 <label th:each="group : ${modifierGroups}">
                     <input type="checkbox" th:field="*{modifierGroupIds}" th:value="${group.id}">
