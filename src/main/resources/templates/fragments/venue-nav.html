@@ -7,6 +7,8 @@
                th:attr="aria-current=${active == 'menu'} ? 'page' : null">Menu</a></li>
         <li><a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}"
                th:attr="aria-current=${active == 'modifiers'} ? 'page' : null">Modifier groups</a></li>
+        <li><a th:href="@{/admin/venues/{v}/staff(v=${venue.id})}"
+               th:attr="aria-current=${active == 'staff'} ? 'page' : null">Staff</a></li>
     </ul>
 </nav>
 </body>

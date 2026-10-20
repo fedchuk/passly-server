@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Staff')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li th:text="${venue.name}">Bistro Centro</li>
+        </ul>
+    </nav>
+    <div class="page-header">
+        <h1 th:text="${venue.name}">Bistro Centro</h1>
+        <a th:href="@{/admin/venues/{v}/staff/new(v=${venue.id})}" role="button">Hire</a>
+    </div>
+    <nav th:replace="~{fragments/venue-nav :: tabs(${venue}, 'staff')}"></nav>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Anna joined as waiter</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
+    <p th:if="${staff.isEmpty()}">Nobody works here yet. Owners of the business are not listed: they manage every venue.</p>
+
+    <div class="overflow-auto" th:unless="${staff.isEmpty()}">
+        <table class="striped">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="member : ${staff}">
+                <td>
+                    <span th:text="${member.name}">Anna</span>
+                    <small class="muted" th:if="${member.you}">(you)</small>
+                </td>
+                <td th:text="${member.email}">anna@bistro.es</td>
+                <td>
+                    <span th:if="${member.you}" th:text="${#strings.capitalize(#strings.toLowerCase(member.role.name()))}">Manager</span>
+                    <form th:unless="${member.you}" class="inline-role"
+                          th:action="@{/admin/venues/{v}/staff/{u}/role(v=${venue.id}, u=${member.userId})}" method="post">
+                        <select name="role" aria-label="Role">
+                            <option th:each="role : ${roles}" th:value="${role}"
+                                    th:text="${#strings.capitalize(#strings.toLowerCase(role.name()))}"
+                                    th:selected="${role == member.role}">Waiter</option>
+                        </select>
+                        <button type="submit" class="outline secondary">Change</button>
+                    </form>
+                </td>
+                <td>
+                    <span class="actions" th:unless="${member.you}">
+                        <form th:action="@{/admin/venues/{v}/staff/{u}/dismiss(v=${venue.id}, u=${member.userId})}" method="post"
+                              onsubmit="return confirm('Remove this person from the venue? Their account stays.')">
+                            <button type="submit" class="outline contrast" title="Dismiss">✕</button>
+                        </form>
+                    </span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

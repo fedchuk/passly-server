@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Hire')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container narrow">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
+            <li><a th:href="@{/admin/venues/{v}/staff(v=${venue.id})}">Staff</a></li>
+        </ul>
+    </nav>
+    <h1>Hire</h1>
+
+    <form th:action="@{/admin/venues/{v}/staff(v=${venue.id})}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Something went wrong</p>
+
+        <label>
+            Name
+            <input th:field="*{displayName}" maxlength="120" required autocomplete="off"
+                   th:attr="aria-invalid=${#fields.hasErrors('displayName')} ? 'true' : null">
+            <small class="error" th:if="${#fields.hasErrors('displayName')}" th:errors="*{displayName}">Name must not be blank</small>
+        </label>
+
+        <label>
+            Email
+            <input type="email" th:field="*{email}" maxlength="254" required autocomplete="off"
+                   th:attr="aria-invalid=${#fields.hasErrors('email')} ? 'true' : null">
+            <small class="muted">They will log in to the Passly app with this email</small>
+            <small class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Invalid email</small>
+        </label>
+
+        <label>
+            Initial password
+            <input type="password" th:field="*{password}" minlength="8" required autocomplete="new-password"
+                   th:attr="aria-invalid=${#fields.hasErrors('password')} ? 'true' : null">
+            <small class="muted">At least 8 characters. Share it with the person in private.</small>
+            <small class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Too short</small>
+        </label>
+
+        <label>
+            Role
+            <select th:field="*{role}">
+                <option th:each="role : ${roles}" th:value="${role}"
+                        th:text="${#strings.capitalize(#strings.toLowerCase(role.name()))}">Waiter</option>
+            </select>
+        </label>
+
+        <div class="buttons">
+            <button type="submit">Hire</button>
+            <a th:href="@{/admin/venues/{v}/staff(v=${venue.id})}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

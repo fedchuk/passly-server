@@ -138,3 +138,17 @@
 .options input {
     margin-bottom: 0;
 }
+
+.inline-role {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin: 0;
+}
+
+.inline-role select,
+.inline-role button {
+    margin: 0;
+    padding: 0.1rem 0.5rem;
+    width: auto;
+    font-size: 0.85em;
+}
