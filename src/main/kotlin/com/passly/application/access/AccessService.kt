@@ -20,4 +20,14 @@ class AccessService(
         val user = users.findById(userId) ?: return false
         return user.can(permission, venue)
     }
+
+    fun venuesOf(userId: UserId): List<AccessibleVenue> {
+        val user = users.findById(userId)?.takeIf { it.enabled } ?: return emptyList()
+        val owned = user.memberships.filter { it.isOwner }.flatMap { venues.findAllByTenant(it.tenantId) }
+        val joined = venues.findAllByIds(user.memberships.mapNotNull { it.venueId })
+        return (owned + joined)
+            .distinctBy { it.id }
+            .mapNotNull { venue -> user.roleIn(venue)?.let { AccessibleVenue(venue.id, venue.name, it) } }
+            .sortedBy { it.name.lowercase() }
+    }
 }

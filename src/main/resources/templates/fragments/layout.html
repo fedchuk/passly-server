@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · Passly'">Passly</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<header th:fragment="header" class="container">
+    <nav>
+        <ul>
+            <li><a th:href="@{/admin}"><strong>Passly</strong></a></li>
+        </ul>
+        <ul th:if="${currentUser != null}">
+            <li th:text="${currentUser.displayName}">Max</li>
+            <li>
+                <form th:action="@{/logout}" method="post" class="inline">
+                    <button type="submit" class="secondary outline">Log out</button>
+                </form>
+            </li>
+        </ul>
+    </nav>
+</header>
+</body>
+</html>

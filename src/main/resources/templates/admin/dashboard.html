@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My venues')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <h1>My venues</h1>
+    <p th:if="${venues.isEmpty()}">You do not manage any venue yet.</p>
+    <div class="grid venues">
+        <article th:each="venue : ${venues}">
+            <header>
+                <a th:if="${venue.manageable}" th:href="@{/admin/venues/{id}(id=${venue.id})}" th:text="${venue.name}">Bistro Centro</a>
+                <span th:unless="${venue.manageable}" th:text="${venue.name}">Bistro Centro</span>
+            </header>
+            <small th:text="${venue.role}">OWNER</small>
+            <p th:unless="${venue.manageable}"><small>Use the Passly mobile app for this venue.</small></p>
+        </article>
+    </div>
+</main>
+</body>
+</html>

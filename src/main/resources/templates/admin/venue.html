@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${venue.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li th:text="${venue.name}">Bistro Centro</li>
+        </ul>
+    </nav>
+    <h1 th:text="${venue.name}">Bistro Centro</h1>
+    <h2>Menu</h2>
+    <p th:if="${tree.isEmpty()}">No categories yet.</p>
+    <ul th:replace="~{fragments/category-tree :: tree(${tree})}"></ul>
+</main>
+</body>
+</html>

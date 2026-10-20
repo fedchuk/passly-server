@@ -1,27 +1,18 @@
 package com.passly.web.api
 
-import com.passly.domain.common.ConflictException
-import com.passly.domain.common.DomainException
-import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.UnauthorizedException
-import com.passly.domain.common.ValidationException
+import com.passly.domain.common.*
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.OptimisticLockingFailureException
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
-import org.springframework.http.ProblemDetail
+import org.springframework.http.*
 import org.springframework.http.ProblemDetail.forStatusAndDetail
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
-import org.springframework.web.servlet.HandlerExceptionResolver
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 @RestControllerAdvice(basePackages = ["com.passly.web.api"])
-class ApiExceptionHandler(private val handlerExceptionResolver: HandlerExceptionResolver) : ResponseEntityExceptionHandler() {
+class ApiExceptionHandler : ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(DomainException::class)
     fun handleDomain(e: DomainException): ProblemDetail {

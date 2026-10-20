@@ -37,12 +37,26 @@ class SecurityConfig {
 
     @Bean
     @Order(2)
-    fun defaultSecurityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    fun webSecurityFilterChain(http: HttpSecurity, venues: VenueAuthorization): SecurityFilterChain {
         http {
             authorizeHttpRequests {
+                authorize("/login", permitAll)
+                authorize("/css/**", permitAll)
                 authorize("/actuator/health", permitAll)
                 authorize("/error", permitAll)
+                authorize("/admin/venues/{venueId}/staff/**", venues.requires(Permission.MANAGE_STAFF))
+                authorize("/admin/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
+                authorize("/platform/**", hasRole("PLATFORM_ADMIN"))
+                authorize("/", authenticated)
+                authorize("/admin", authenticated)
                 authorize(anyRequest, denyAll)
+            }
+            formLogin {
+                loginPage = "/login"
+                defaultSuccessUrl("/admin", true)
+            }
+            logout {
+                logoutSuccessUrl = "/login?logout"
             }
         }
         return http.build()

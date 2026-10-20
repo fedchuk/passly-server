@@ -1,0 +1,29 @@
+.narrow {
+    max-width: 28rem;
+}
+
+.error {
+    color: var(--pico-del-color);
+}
+
+.inline {
+    margin: 0;
+}
+
+.inline button {
+    margin: 0;
+    padding: 0.25rem 0.75rem;
+}
+
+.tree {
+    padding-left: 1.25rem;
+}
+
+.tree li {
+    list-style: disc;
+}
+
+.inactive {
+    color: var(--pico-muted-color);
+    text-decoration: line-through;
+}

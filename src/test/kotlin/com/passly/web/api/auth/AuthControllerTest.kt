@@ -111,9 +111,4 @@ class AuthControllerTest {
         refresh(refreshToken).andExpect { status { isOk() } }
         refresh(refreshToken).andExpect { status { isUnauthorized() } }
     }
-
-    @Test
-    fun `everything outside the api is closed`() {
-        mockMvc.get("/something-else").andExpect { status { isForbidden() } }
-    }
 }

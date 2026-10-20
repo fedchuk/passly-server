@@ -11,6 +11,7 @@ import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -21,7 +22,8 @@ class AccessServiceTest {
     private val competitor = Venue(VenueId.new(), TenantId.new(), "Competitor")
 
     private val users = FakeUserRepository()
-    private val service = AccessService(users, FakeVenueRepository(centro, competitor))
+    private val playa = Venue(VenueId.new(), tenant, "Playa")
+    private val service = AccessService(users, FakeVenueRepository(centro, playa, competitor))
 
     private fun member(role: Role, venue: Venue = centro) =
         User.create(Email.of("${role.name.lowercase()}@bistro.es"), role.name, "hash")
@@ -69,5 +71,27 @@ class AccessServiceTest {
 
         assertFalse(service.isAllowed(UserId.new(), centro.id, Permission.VIEW_MENU))
         assertFalse(service.isAllowed(manager.id, VenueId.new(), Permission.VIEW_MENU))
+    }
+
+    @Test
+    fun `owner sees every venue of the business sorted by name`() {
+        val owner = member(Role.OWNER)
+
+        val venues = service.venuesOf(owner.id)
+
+        assertEquals(listOf("Centro", "Playa"), venues.map { it.name })
+        assertTrue(venues.all { it.role == Role.OWNER })
+    }
+
+    @Test
+    fun `staff member sees only the venues they work at`() {
+        val waiter = member(Role.WAITER)
+
+        assertEquals(listOf(AccessibleVenue(centro.id, "Centro", Role.WAITER)), service.venuesOf(waiter.id))
+    }
+
+    @Test
+    fun `unknown user sees nothing`() {
+        assertTrue(service.venuesOf(UserId.new()).isEmpty())
     }
 }

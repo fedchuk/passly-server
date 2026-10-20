@@ -13,6 +13,7 @@ import com.passly.domain.menu.ModifierGroupId
 import com.passly.domain.menu.ModifierGroupRepository
 import com.passly.domain.menu.StationId
 import com.passly.domain.menu.StationRepository
+import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
@@ -22,6 +23,8 @@ class FakeVenueRepository(vararg venues: Venue) : VenueRepository {
     var locks = 0
     override fun findById(id: VenueId) = byId[id]
     override fun findByIdAndLock(id: VenueId) = findById(id)?.also { locks++ }
+    override fun findAllByTenant(tenantId: TenantId) = byId.values.filter { it.tenantId == tenantId }
+    override fun findAllByIds(ids: Collection<VenueId>) = ids.mapNotNull { byId[it] }
 }
 
 class FakeCategoryRepository : CategoryRepository {

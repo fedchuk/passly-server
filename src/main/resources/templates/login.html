@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Log in')}"></head>
+<body>
+<main class="container narrow">
+    <h1>Passly</h1>
+    <p th:if="${param.error}" class="error">Invalid email or password.</p>
+    <p th:if="${param.logout}">You have been logged out.</p>
+    <form th:action="@{/login}" method="post">
+        <label>
+            Email
+            <input type="email" name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Log in</button>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<ul th:fragment="tree(nodes)" class="tree">
+    <li th:each="node : ${nodes}">
+        <span th:text="${node.name}" th:classappend="${node.active} ? '' : 'inactive'">Wine</span>
+        <th:block th:unless="${node.children.isEmpty()}">
+            <ul th:replace="~{fragments/category-tree :: tree(${node.children})}"></ul>
+        </th:block>
+    </li>
+</ul>
+</body>
+</html>

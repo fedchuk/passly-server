@@ -12,4 +12,6 @@ interface VenueJpaRepository : JpaRepository<VenueEntity, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select v from VenueEntity v where v.id = :id")
     fun findByIdForUpdate(@Param("id") id: UUID): VenueEntity?
+
+    fun findAllByTenantId(tenantId: UUID): List<VenueEntity>
 }
