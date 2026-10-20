@@ -47,13 +47,14 @@ data class ParentOption(
     val value: String get() = id?.toString() ?: ""
 }
 
-fun MenuTree.parentOptionsFor(id: CategoryId): List<ParentOption> {
-    val excluded = descendantsOf(id) + id
-
+fun MenuTree.categoryOptions(excluded: Set<CategoryId> = emptySet()): List<ParentOption> {
     fun optionsUnder(parentId: CategoryId?, depth: Int): List<ParentOption> =
         children(parentId)
             .filter { it.id !in excluded }
             .flatMap { listOf(ParentOption(it.id.value, "— ".repeat(depth) + it.name)) + optionsUnder(it.id, depth + 1) }
 
-    return listOf(ParentOption(null, "Top level")) + optionsUnder(null, 0)
+    return optionsUnder(null, 0)
 }
+
+fun MenuTree.parentOptionsFor(id: CategoryId): List<ParentOption> =
+    listOf(ParentOption(null, "Top level")) + categoryOptions(excluded = descendantsOf(id) + id)

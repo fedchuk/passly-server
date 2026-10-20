@@ -70,6 +70,18 @@
             <a th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${category.id})}" role="button" class="secondary outline">Cancel</a>
         </div>
     </form>
+    <th:block th:if="${moveAction != null}">
+        <h2>Move to</h2>
+        <form th:action="@{${moveAction}}" method="post" role="group">
+            <select name="categoryId" aria-label="Move to category">
+                <option th:each="option : ${categoryOptions}"
+                        th:value="${option.value}"
+                        th:text="${option.label}"
+                        th:selected="${option.id == currentCategoryId}">Wine</option>
+            </select>
+            <button type="submit" class="secondary">Move</button>
+        </form>
+    </th:block>
 </main>
 </body>
 </html>

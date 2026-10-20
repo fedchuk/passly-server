@@ -5,6 +5,7 @@ import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateMenuItemCommand
 import com.passly.application.menu.MenuItemService
 import com.passly.application.menu.ModifierGroupService
+import com.passly.application.menu.MoveMenuItemCommand
 import com.passly.application.menu.StationService
 import com.passly.application.menu.UpdateMenuItemCommand
 import com.passly.domain.common.ConflictException
@@ -176,6 +177,25 @@ class MenuItemAdminController(
         return listPage(venueId, checkNotNull(item.categoryId).value)
     }
 
+    @PostMapping("/items/{id}/move")
+    fun move(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @RequestParam categoryId: UUID,
+        flash: RedirectAttributes,
+    ): String {
+        val venue = VenueId(venueId)
+        val item = items.get(venue, MenuItemId(id))
+        val target = categories.getTree(venue)[CategoryId(categoryId)]
+        if (item.categoryId == target.id) {
+            flash.addFlashAttribute("message", "'${item.name}' is already in ${target.name}")
+        } else {
+            items.move(MoveMenuItemCommand(venue, item.id, target.id))
+            flash.addFlashAttribute("message", "'${item.name}' moved to ${target.name}")
+        }
+        return listPage(venueId, categoryId)
+    }
+
     private fun newPage(venueId: UUID, categoryId: UUID, principal: PasslyUserPrincipal, model: Model): String {
         val category = categories.getTree(VenueId(venueId))[CategoryId(categoryId)]
         model.addAttribute("formTitle", "New item in ${category.name}")
@@ -186,9 +206,13 @@ class MenuItemAdminController(
     private fun editPage(venueId: UUID, id: UUID, principal: PasslyUserPrincipal, model: Model): String {
         val venue = VenueId(venueId)
         val item = items.get(venue, MenuItemId(id))
-        val category = categories.getTree(venue)[checkNotNull(item.categoryId)]
+        val tree = categories.getTree(venue)
+        val category = tree[checkNotNull(item.categoryId)]
         model.addAttribute("formTitle", "Edit ${item.name}")
         model.addAttribute("formAction", "/admin/venues/$venueId/items/$id")
+        model.addAttribute("moveAction", "/admin/venues/$venueId/items/$id/move")
+        model.addAttribute("categoryOptions", tree.categoryOptions())
+        model.addAttribute("currentCategoryId", category.id.value)
         return formPage(venueId, category.id.value, category.name, principal, model)
     }
 

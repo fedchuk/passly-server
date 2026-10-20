@@ -10,6 +10,7 @@ import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.admin.ParentOption
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -295,5 +296,58 @@ class MenuItemAdminTest {
         mockMvc.get("$base/items/${rioja.id}/edit") {
             with(user(userDetailsService.loadUserByUsername("$stranger@test.passly")))
         }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `edit page offers every category with the current one selected`() {
+        val reds = categories.create(CreateCategoryCommand(venueId, "Reds", parentId = wine)).id
+        val beer = categories.create(CreateCategoryCommand(venueId, "Beer")).id
+        val rioja = createItem("Rioja")
+
+        mockMvc.get("$base/items/${rioja.id}/edit") { with(manager) }.andExpect {
+            status { isOk() }
+            model {
+                attribute(
+                    "categoryOptions",
+                    listOf(
+                        ParentOption(wine.value, "Wine"),
+                        ParentOption(reds.value, "— Reds"),
+                        ParentOption(beer.value, "Beer"),
+                    ),
+                )
+                attribute("currentCategoryId", wine.value)
+            }
+        }
+    }
+
+    @Test
+    fun `item moves to another category`() {
+        val reds = categories.create(CreateCategoryCommand(venueId, "Reds", parentId = wine)).id
+        val rioja = createItem("Rioja")
+
+        mockMvc.post("$base/items/${rioja.id}/move") {
+            with(manager)
+            with(csrf())
+            param("categoryId", reds.toString())
+        }.andExpect {
+            redirectedUrl("$base/categories/$reds/items")
+            flash { attribute("message", "'Rioja' moved to Reds") }
+        }
+
+        assertTrue(names().isEmpty())
+        assertEquals(listOf("Rioja"), items.listInCategory(venueId, reds).map { it.name })
+    }
+
+    @Test
+    fun `moving to an unknown category shows the not found page`() {
+        val rioja = createItem("Rioja")
+
+        mockMvc.post("$base/items/${rioja.id}/move") {
+            with(manager)
+            with(csrf())
+            param("categoryId", UUID.randomUUID().toString())
+        }.andExpect { status { isNotFound() } }
+
+        assertEquals(listOf("Rioja"), names())
     }
 }
