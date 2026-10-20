@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Edit category')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main class="container narrow">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin}">My venues</a></li>
+            <li><a th:href="@{/admin/venues/{v}(v=${venue.id})}" th:text="${venue.name}">Bistro Centro</a></li>
+            <li>Edit category</li>
+        </ul>
+    </nav>
+    <h1>Edit category</h1>
+
+    <form th:action="@{/admin/venues/{v}/categories/{c}(v=${venue.id}, c=${categoryId})}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
+
+        <input type="hidden" th:field="*{version}">
+        <input type="hidden" th:field="*{stationId}">
+
+        <label>
+            Name
+            <input th:field="*{name}" maxlength="120"
+                   th:attr="aria-invalid=${#fields.hasErrors('name')} ? 'true' : null">
+            <small class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name must not be blank</small>
+        </label>
+
+        <label>
+            <input type="checkbox" th:field="*{active}">
+            Active (shown in the waiter app)
+        </label>
+
+        <div class="buttons">
+            <button type="submit">Save</button>
+            <a th:href="@{/admin/venues/{v}(v=${venue.id})}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

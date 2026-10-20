@@ -1,11 +1,36 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<ul th:fragment="tree(nodes)" class="tree">
+<ul th:fragment="tree(nodes, venueId)" class="tree">
     <li th:each="node : ${nodes}">
-        <span th:text="${node.name}" th:classappend="${node.active} ? '' : 'inactive'">Wine</span>
+        <div class="node">
+            <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venueId}, c=${node.id})}"
+               th:text="${node.name}" th:classappend="${node.active} ? '' : 'inactive'">Wine</a>
+            <span class="actions">
+                <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venueId}, c=${node.id})}" method="post">
+                    <input type="hidden" name="delta" value="-1">
+                    <button type="submit" class="outline secondary" th:disabled="${node.first}" title="Move up">↑</button>
+                </form>
+                <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venueId}, c=${node.id})}" method="post">
+                    <input type="hidden" name="delta" value="1">
+                    <button type="submit" class="outline secondary" th:disabled="${node.last}" title="Move down">↓</button>
+                </form>
+                <form th:action="@{/admin/venues/{v}/categories/{c}/delete(v=${venueId}, c=${node.id})}" method="post"
+                      onsubmit="return confirm('Delete this category?')">
+                    <button type="submit" class="outline contrast" title="Delete">✕</button>
+                </form>
+            </span>
+        </div>
+        <details class="add-sub">
+            <summary>Add subcategory</summary>
+            <form th:action="@{/admin/venues/{v}/categories(v=${venueId})}" method="post" role="group">
+                <input type="hidden" name="parentId" th:value="${node.id}">
+                <input name="name" placeholder="Subcategory" required maxlength="120" aria-label="Subcategory name">
+                <button type="submit">Add</button>
+            </form>
+        </details>
         <th:block th:unless="${node.children.isEmpty()}">
-            <ul th:replace="~{fragments/category-tree :: tree(${node.children})}"></ul>
+            <ul th:replace="~{fragments/category-tree :: tree(${node.children}, ${venueId})}"></ul>
         </th:block>
     </li>
 </ul>

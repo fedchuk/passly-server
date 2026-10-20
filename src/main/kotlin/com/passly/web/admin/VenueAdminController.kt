@@ -17,7 +17,7 @@ import java.util.UUID
 @Controller
 @RequestMapping("/admin/venues/{venueId}")
 class VenueAdminController(
-    private val access: AccessService,
+    private val venues: AdminVenues,
     private val categories: CategoryService,
 ) {
 
@@ -27,9 +27,7 @@ class VenueAdminController(
         @AuthenticationPrincipal principal: PasslyUserPrincipal,
         model: Model,
     ): String {
-        val venue = access.venuesOf(UserId(principal.userId)).firstOrNull { it.venueId.value == venueId }
-            ?: throw NotFoundException("Venue", venueId)
-        model.addAttribute("venue", venue.toView())
+        model.addAttribute("venue", venues.find(principal, venueId))
         model.addAttribute("tree", categories.getTree(VenueId(venueId)).toNodeViews())
         return "admin/venue"
     }

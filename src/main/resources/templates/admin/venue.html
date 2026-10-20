@@ -11,9 +11,18 @@
         </ul>
     </nav>
     <h1 th:text="${venue.name}">Bistro Centro</h1>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Category added</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
     <h2>Menu</h2>
+    <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post" role="group">
+        <input name="name" placeholder="New category" required maxlength="120" aria-label="Category name">
+        <button type="submit">Add</button>
+    </form>
+
     <p th:if="${tree.isEmpty()}">No categories yet.</p>
-    <ul th:replace="~{fragments/category-tree :: tree(${tree})}"></ul>
+    <ul th:replace="~{fragments/category-tree :: tree(${tree}, ${venue.id})}"></ul>
 </main>
 </body>
 </html>

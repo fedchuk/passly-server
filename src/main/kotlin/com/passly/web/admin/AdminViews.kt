@@ -19,10 +19,23 @@ data class CategoryNodeView(
     val id: UUID,
     val name: String,
     val active: Boolean,
+    val first: Boolean,
+    val last: Boolean,
     val children: List<CategoryNodeView>,
 )
 
 fun AccessibleVenue.toView() = VenueView(venueId.value, name, role)
 
-fun MenuTree.toNodeViews(parentId: CategoryId? = null): List<CategoryNodeView> =
-    children(parentId).map { CategoryNodeView(it.id.value, it.name, it.active, toNodeViews(it.id)) }
+fun MenuTree.toNodeViews(parentId: CategoryId? = null): List<CategoryNodeView> {
+    val siblings = children(parentId)
+    return siblings.mapIndexed { index, category ->
+        CategoryNodeView(
+            id = category.id.value,
+            name = category.name,
+            active = category.active,
+            first = index == 0,
+            last = index == siblings.lastIndex,
+            children = toNodeViews(category.id),
+        )
+    }
+}

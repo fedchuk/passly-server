@@ -27,3 +27,46 @@
     color: var(--pico-muted-color);
     text-decoration: line-through;
 }
+
+.notice {
+    color: var(--pico-ins-color);
+}
+
+.node {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.actions {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-left: auto;
+}
+
+.actions form {
+    margin: 0;
+}
+
+.actions button {
+    margin: 0;
+    padding: 0.1rem 0.6rem;
+}
+
+.add-sub {
+    margin: 0.25rem 0 0.75rem;
+}
+
+.add-sub summary {
+    font-size: 0.85em;
+    color: var(--pico-muted-color);
+}
+
+.add-sub form {
+    margin-top: 0.5rem;
+}
+
+.buttons {
+    display: flex;
+    gap: 0.5rem;
+}
