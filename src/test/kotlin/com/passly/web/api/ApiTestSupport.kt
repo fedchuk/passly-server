@@ -2,8 +2,8 @@ package com.passly.web.api
 
 import com.passly.domain.user.Role
 import org.springframework.jdbc.core.simple.JdbcClient
-import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.request.RequestPostProcessor
@@ -49,5 +49,5 @@ fun WebApplicationContext.mockMvcAs(userId: UUID): MockMvc =
 
 private fun WebApplicationContext.builder(): DefaultMockMvcBuilder =
     MockMvcBuilders.webAppContextSetup(this)
-        .addFilters<DefaultMockMvcBuilder>(CharacterEncodingFilter(Charsets.UTF_8.name(), true))
+        .addFilters<DefaultMockMvcBuilder>(CharacterEncodingFilter(Charsets.UTF_8.name(), true, false))
         .apply<DefaultMockMvcBuilder>(springSecurity())
