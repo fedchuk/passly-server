@@ -1,6 +1,12 @@
-package com.passly.application.menu
+package com.passly.web.admin
 
 import com.passly.TestcontainersConfiguration
+import com.passly.application.menu.CategoryService
+import com.passly.application.menu.CreateCategoryCommand
+import com.passly.application.menu.CreateMenuItemCommand
+import com.passly.application.menu.CreateModifierGroupCommand
+import com.passly.application.menu.MenuItemService
+import com.passly.application.menu.ModifierGroupService
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
@@ -10,7 +16,6 @@ import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
-import com.passly.web.admin.ParentOption
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -78,9 +83,12 @@ class MenuItemAdminTest {
     }
 
     private fun createItem(name: String, price: String = "4.50"): MenuItem =
-        items.create(CreateMenuItemCommand(venueId, wine,
-            MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
-        ))
+        items.create(
+            CreateMenuItemCommand(
+                venueId, wine,
+                MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+            )
+        )
 
     private fun createStation(name: String): StationId {
         val id = UUID.randomUUID()
