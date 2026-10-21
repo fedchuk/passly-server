@@ -6,6 +6,7 @@ import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.createVenue
+import com.passly.web.api.menu.MenuEventStreams
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -23,7 +24,13 @@ import kotlin.test.DefaultAsserter.fail
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@SpringBootTest(properties = ["passly.messaging.kafka-enabled=true", "passly.messaging.relay-interval-ms=200"])
+@SpringBootTest(
+    properties = [
+        "passly.messaging.kafka-enabled=true",
+        "passly.messaging.relay-interval-ms=200",
+        "spring.kafka.consumer.auto-offset-reset=earliest",
+    ],
+)
 @Import(TestcontainersConfiguration::class, KafkaTestcontainersConfiguration::class)
 class KafkaOutboxIntegrationTest {
 
@@ -41,6 +48,9 @@ class KafkaOutboxIntegrationTest {
 
     @Autowired
     lateinit var messaging: MessagingProperties
+
+    @Autowired
+    lateinit var streams: MenuEventStreams
 
     private fun consumer() = KafkaConsumer<String, String>(
         mapOf(
@@ -76,6 +86,19 @@ class KafkaOutboxIntegrationTest {
             val versions = records.map { json.readTree(it.value()).get("menuVersion").asLong() }
             assertEquals(listOf(1L, 2L), versions)
             assertEquals("MenuChanged", String(records.first().headers().lastHeader("eventType").value()))
+        }
+    }
+
+    @Test
+    fun `kafka listener passes changes to the open menu streams`() {
+        val venueId = VenueId(jdbc.createVenue().venueId)
+
+        categories.create(CreateCategoryCommand(venueId, "Wine"))
+
+        val deadline = Instant.now().plusSeconds(30)
+        while (streams.knownVersion(venueId) != 1L) {
+            if (Instant.now().isAfter(deadline)) fail("The Kafka listener did not deliver version 1")
+            Thread.sleep(200)
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.passly.security
 
 import com.passly.domain.user.Permission
+import jakarta.servlet.DispatcherType
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatcher
 
 @Configuration
 class SecurityConfig {
@@ -21,6 +23,7 @@ class SecurityConfig {
         http {
             securityMatcher("/api/**")
             authorizeHttpRequests {
+                authorize(DispatcherTypeRequestMatcher(DispatcherType.ASYNC), permitAll)
                 authorize("/api/v1/auth/login", permitAll)
                 authorize("/api/v1/auth/refresh", permitAll)
                 authorize("/api/v1/auth/logout", permitAll)

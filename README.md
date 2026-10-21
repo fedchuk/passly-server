@@ -68,7 +68,7 @@ src/main/kotlin/com/passly
 ## API
 
 Interactive documentation: [Swagger UI](https://passly-8ece774580f7.herokuapp.com/swagger-ui.html) · [OpenAPI spec](https://passly-8ece774580f7.herokuapp.com/v3/api-docs)
-
+- **Keeping the menu fresh.** `GET /api/v1/venues/{venueId}/menu` returns the whole menu with `ETag: "<menuVersion>"`; send it back in `If-None-Match` to get an empty `304` while nothing changed. For instant updates, keep `GET /api/v1/venues/{venueId}/menu/events` open: it is a server-sent events stream that reports every new `menuVersion`. Reload the menu when the version is greater than yours, and after every reconnect.
 How the API works:
 
 - **Authentication.** `POST /api/v1/auth/login` returns a short-lived access token (15 minutes) and a refresh token. Send the access token as `Authorization: Bearer <token>`. When it expires, call `POST /api/v1/auth/refresh` to get a new pair; each refresh token works only once.
@@ -76,6 +76,8 @@ How the API works:
 - **Optimistic locking.** Updates carry the `version` you last read. If someone changed the resource in between, you get `409 Conflict`.
 - **Errors** use RFC 9457 Problem Details, with field errors for validation failures.
 - **Money** is sent as strings (`"4.50"`) to avoid floating point errors.
+
+- **Keeping the menu fresh.** `GET /api/v1/venues/{venueId}/menu` returns the whole menu with `ETag: "<menuVersion>"`; send it back in `If-None-Match` to get an empty `304` while nothing changed. For instant updates, keep `GET /api/v1/venues/{venueId}/menu/events` open: it is a server-sent events stream that reports every new `menuVersion`. Reload the menu when the version is greater than yours, and after every reconnect.
 
 ```bash
 curl -X POST https://passly-8ece774580f7.herokuapp.com/api/v1/auth/login \
