@@ -1,112 +1,151 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: page('Tables', ${venue}, 'floor', ~{::main})}">
-    <body>
-        <main>
-            <div class="page-header">
-                <div>
-                    <h1>Tables</h1>
-                    <p class="subtitle">Group tables by area. A label is unique in the whole venue.</p>
+<body>
+<main>
+    <div class="page-header">
+        <div>
+            <h1>Tables</h1>
+            <p class="subtitle">Group tables by area. A label is unique in the whole venue.</p>
+        </div>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Area added</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
+    <section class="card">
+        <form th:action="@{/admin/venues/{v}/floor/areas(v=${venue.id})}" method="post" role="group">
+            <input name="name" placeholder="New area, for example Terrace" required maxlength="80" aria-label="Area name">
+            <button type="submit">Add area</button>
+        </form>
+        <p th:if="${areas.isEmpty()}" class="empty">No areas yet. Add one, for example Main hall, then add its tables.</p>
+    </section>
+
+    <section class="card area" th:each="area : ${areas}">
+        <div class="area-header">
+            <div class="area-title">
+                <div class="area-name">
+                    <h2 th:text="${area.name}">Main hall</h2>
+                    <button type="button" class="ghost rename-toggle" title="Rename area" aria-label="Rename area">✎</button>
                 </div>
-            </div>
-
-            <p th:if="${message}" class="notice" th:text="${message}">Area added</p>
-            <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
-
-            <section class="card">
-                <form th:action="@{/admin/venues/{v}/floor/areas(v=${venue.id})}" method="post" role="group">
-                    <input name="name" placeholder="New area, for example Terrace" required maxlength="80" aria-label="Area name">
-                    <button type="submit">Add area</button>
+                <form class="rename-form" hidden role="group"
+                      th:action="@{/admin/venues/{v}/floor/areas/{a}/rename(v=${venue.id}, a=${area.id})}" method="post">
+                    <input type="hidden" name="version" th:value="${area.version}">
+                    <input name="name" th:value="${area.name}" required maxlength="80" aria-label="Area name">
+                    <button type="submit">Save</button>
+                    <button type="button" class="secondary outline rename-cancel">Cancel</button>
                 </form>
-                <p th:if="${areas.isEmpty()}" class="empty">No areas yet. Add one, for example Main hall, then add its tables.</p>
-            </section>
+                <small class="muted" th:text="${area.summary}">12 tables · 48 seats</small>
+            </div>
+            <span class="actions">
+                <form th:action="@{/admin/venues/{v}/floor/areas/{a}/shift(v=${venue.id}, a=${area.id})}" method="post">
+                    <input type="hidden" name="delta" value="-1">
+                    <button type="submit" class="outline secondary" th:disabled="${area.first}" title="Move up">↑</button>
+                </form>
+                <form th:action="@{/admin/venues/{v}/floor/areas/{a}/shift(v=${venue.id}, a=${area.id})}" method="post">
+                    <input type="hidden" name="delta" value="1">
+                    <button type="submit" class="outline secondary" th:disabled="${area.last}" title="Move down">↓</button>
+                </form>
+                <form th:action="@{/admin/venues/{v}/floor/areas/{a}/delete(v=${venue.id}, a=${area.id})}" method="post"
+                      onsubmit="return confirm('Delete this area?')">
+                    <button type="submit" class="outline contrast" title="Delete area">✕</button>
+                </form>
+            </span>
+        </div>
 
-            <section class="card area" th:each="area : ${areas}">
-                <div class="area-header">
-                    <div>
-                        <h2 th:text="${area.name}">Main hall</h2>
-                        <small class="muted" th:text="${area.summary}">12 tables · 48 seats</small>
-                    </div>
-                    <span class="actions">
-                        <form th:action="@{/admin/venues/{v}/floor/areas/{a}/shift(v=${venue.id}, a=${area.id})}" method="post">
-                            <input type="hidden" name="delta" value="-1">
-                            <button type="submit" class="outline secondary" th:disabled="${area.first}" title="Move up">↑</button>
-                        </form>
-                        <form th:action="@{/admin/venues/{v}/floor/areas/{a}/shift(v=${venue.id}, a=${area.id})}" method="post">
-                            <input type="hidden" name="delta" value="1">
-                            <button type="submit" class="outline secondary" th:disabled="${area.last}" title="Move down">↓</button>
-                        </form>
-                        <form th:action="@{/admin/venues/{v}/floor/areas/{a}/delete(v=${venue.id}, a=${area.id})}" method="post"
-                              onsubmit="return confirm('Delete this area?')">
-                            <button type="submit" class="outline contrast" title="Delete area">✕</button>
-                        </form>
-                    </span>
+        <p th:if="${area.tables.isEmpty()}" class="empty">No tables in this area yet.</p>
+
+        <ol class="table-grid" th:unless="${area.tables.isEmpty()}">
+            <li th:each="table : ${area.tables}" class="table-tile" th:classappend="${table.active} ? '' : 'inactive-tile'">
+                <a class="table-label" th:href="@{/admin/venues/{v}/floor/tables/{t}/edit(v=${venue.id}, t=${table.id})}"
+                   th:text="${table.label}" title="Edit table">12</a>
+                <small class="muted" th:text="${table.active} ? ${table.seatsLabel} : 'Inactive'">4 seats</small>
+                <span class="tile-actions">
+                    <form th:action="@{/admin/venues/{v}/floor/tables/{t}/shift(v=${venue.id}, t=${table.id})}" method="post">
+                        <input type="hidden" name="delta" value="-1">
+                        <button type="submit" class="outline secondary" th:disabled="${table.first}" title="Move back">←</button>
+                    </form>
+                    <form th:action="@{/admin/venues/{v}/floor/tables/{t}/shift(v=${venue.id}, t=${table.id})}" method="post">
+                        <input type="hidden" name="delta" value="1">
+                        <button type="submit" class="outline secondary" th:disabled="${table.last}" title="Move forward">→</button>
+                    </form>
+                    <form th:action="@{/admin/venues/{v}/floor/tables/{t}/delete(v=${venue.id}, t=${table.id})}" method="post"
+                          onsubmit="return confirm('Delete this table?')">
+                        <button type="submit" class="outline contrast" title="Delete table">✕</button>
+                    </form>
+                </span>
+            </li>
+        </ol>
+
+        <details class="add-sub" th:open="${area.tables.isEmpty()}">
+            <summary>Add tables</summary>
+
+            <form class="add-tables" th:action="@{/admin/venues/{v}/floor/areas/{a}/numbered-tables(v=${venue.id}, a=${area.id})}" method="post">
+                <h3>Numbered tables</h3>
+                <div class="grid">
+                    <label>
+                        Prefix
+                        <input name="labelPrefix" maxlength="16" placeholder="T">
+                        <small class="muted">Optional: T gives T1, T2…</small>
+                    </label>
+                    <label>
+                        From
+                        <input type="number" name="from" min="1" required th:value="${nextNumber}">
+                    </label>
+                    <label>
+                        To
+                        <input type="number" name="to" min="1" required>
+                    </label>
+                    <label>
+                        Seats each
+                        <input type="number" name="seats" min="1" max="50" value="4" required>
+                    </label>
                 </div>
+                <button type="submit">Add tables</button>
+            </form>
 
-                <p th:if="${area.tables.isEmpty()}" class="empty">No tables in this area yet.</p>
+            <form class="add-tables" th:action="@{/admin/venues/{v}/floor/areas/{a}/tables(v=${venue.id}, a=${area.id})}" method="post">
+                <h3>One table with its own name</h3>
+                <div class="grid">
+                    <label>
+                        Label
+                        <input name="label" maxlength="20" required placeholder="Bar 1">
+                        <small class="muted">For tables outside the numbering, like Bar 1 or VIP</small>
+                    </label>
+                    <label>
+                        Seats
+                        <input type="number" name="seats" min="1" max="50" value="2" required>
+                    </label>
+                </div>
+                <button type="submit">Add table</button>
+            </form>
+        </details>
+    </section>
 
-                <ol class="table-grid" th:unless="${area.tables.isEmpty()}">
-                    <li th:each="table : ${area.tables}" class="table-tile" th:classappend="${table.active} ? '' : 'inactive-tile'">
-                        <a class="table-label" th:href="@{/admin/venues/{v}/floor/tables/{t}/edit(v=${venue.id}, t=${table.id})}"
-                           th:text="${table.label}" title="Edit table">12</a>
-                        <small class="muted" th:text="${table.active} ? ${table.seatsLabel} : 'Inactive'">4 seats</small>
-                        <span class="tile-actions">
-                            <form th:action="@{/admin/venues/{v}/floor/tables/{t}/shift(v=${venue.id}, t=${table.id})}" method="post">
-                                <input type="hidden" name="delta" value="-1">
-                                <button type="submit" class="outline secondary" th:disabled="${table.first}" title="Move back">←</button>
-                            </form>
-                            <form th:action="@{/admin/venues/{v}/floor/tables/{t}/shift(v=${venue.id}, t=${table.id})}" method="post">
-                                <input type="hidden" name="delta" value="1">
-                                <button type="submit" class="outline secondary" th:disabled="${table.last}" title="Move forward">→</button>
-                            </form>
-                            <form th:action="@{/admin/venues/{v}/floor/tables/{t}/delete(v=${venue.id}, t=${table.id})}" method="post"
-                                  onsubmit="return confirm('Delete this table?')">
-                                <button type="submit" class="outline contrast" title="Delete table">✕</button>
-                            </form>
-                        </span>
-                    </li>
-                </ol>
+    <script>
+        function toggleRename(title, open) {
+            const form = title.querySelector('.rename-form');
+            title.querySelector('.area-name').hidden = open;
+            form.hidden = !open;
+            if (open) {
+                const input = form.querySelector('input[name="name"]');
+                input.focus();
+                input.select();
+            } else {
+                form.reset();
+            }
+        }
 
-                <details class="add-sub" th:open="${area.tables.isEmpty()}">
-                    <summary>Add tables</summary>
-                    <form class="add-tables" th:action="@{/admin/venues/{v}/floor/areas/{a}/numbered-tables(v=${venue.id}, a=${area.id})}" method="post">
-                        <div class="grid">
-                            <label>
-                                Prefix
-                                <input name="labelPrefix" maxlength="16" placeholder="T">
-                                <small class="muted">Optional: T gives T1, T2…</small>
-                            </label>
-                            <label>
-                                From
-                                <input type="number" name="from" min="1" required th:value="${nextNumber}">
-                            </label>
-                            <label>
-                                To
-                                <input type="number" name="to" min="1" required>
-                            </label>
-                            <label>
-                                Seats each
-                                <input type="number" name="seats" min="1" max="50" value="4" required>
-                            </label>
-                        </div>
-                        <button type="submit">Add numbered tables</button>
-                    </form>
-                    <form th:action="@{/admin/venues/{v}/floor/areas/{a}/tables(v=${venue.id}, a=${area.id})}" method="post" role="group">
-                        <input name="label" maxlength="20" required placeholder="One table, for example Bar 1" aria-label="Table label">
-                        <input type="number" name="seats" min="1" max="50" value="2" required aria-label="Seats">
-                        <button type="submit">Add table</button>
-                    </form>
-                </details>
+        document.addEventListener('click', event => {
+            const button = event.target.closest('.rename-toggle, .rename-cancel');
+            if (button) toggleRename(button.closest('.area-title'), button.classList.contains('rename-toggle'));
+        });
 
-                <details class="add-sub">
-                    <summary>Rename area</summary>
-                    <form th:action="@{/admin/venues/{v}/floor/areas/{a}/rename(v=${venue.id}, a=${area.id})}" method="post" role="group">
-                        <input type="hidden" name="version" th:value="${area.version}">
-                        <input name="name" th:value="${area.name}" required maxlength="80" aria-label="Area name">
-                        <button type="submit">Rename</button>
-                    </form>
-                </details>
-            </section>
-        </main>
-    </body>
+        document.addEventListener('keydown', event => {
+            const form = event.target.closest('.rename-form');
+            if (form && event.key === 'Escape') toggleRename(form.closest('.area-title'), false);
+        });
+    </script>
+</main>
+</body>
 </html>

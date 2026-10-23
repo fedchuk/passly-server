@@ -1102,7 +1102,15 @@ a.action-card:hover {
 }
 
 .add-tables {
-    margin-bottom: 0.75rem;
+    margin: 0.75rem 0 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-small);
+}
+
+.add-tables h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
 }
 
 @media (max-width: 900px) {
@@ -1158,5 +1166,44 @@ a.action-card:hover {
 
     .workspace > main {
         padding: 1.25rem 1rem;
+    }
+}
+
+.area-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.area-name {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.area-name[hidden],
+.rename-form[hidden] {
+    display: none;
+}
+
+.rename-toggle {
+    padding: 0.15rem 0.45rem;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.area-header:hover .rename-toggle,
+.rename-toggle:focus-visible {
+    opacity: 1;
+}
+
+.rename-form {
+    margin: 0 0 0.25rem;
+    max-width: 420px;
+}
+
+@media (hover: none) {
+    .rename-toggle {
+        opacity: 1;
     }
 }
