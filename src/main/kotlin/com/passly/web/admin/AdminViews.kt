@@ -14,6 +14,7 @@ data class VenueView(
 ) {
     val manageable: Boolean get() = Permission.EDIT_MENU in role.permissions
     val staffManageable: Boolean get() = Permission.MANAGE_STAFF in role.permissions
+    val tablesManageable: Boolean get() = Permission.MANAGE_TABLES in role.permissions
     val roleLabel: String get() = role.name.lowercase().replaceFirstChar { it.uppercase() }
 }
 

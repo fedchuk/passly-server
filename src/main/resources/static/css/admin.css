@@ -1034,6 +1034,77 @@ a.action-card:hover {
     text-align: center;
 }
 
+.area {
+    margin-top: 1rem;
+}
+
+.area-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.area-header h2 {
+    margin: 0 0 0.15rem;
+}
+
+.table-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.table-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.9rem 0.5rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-small);
+    background: var(--surface-muted);
+    text-align: center;
+}
+
+.table-tile:hover {
+    border-color: var(--primary);
+}
+
+.table-tile.inactive-tile {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.table-label {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.tile-actions {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+}
+
+.tile-actions form {
+    margin: 0;
+}
+
+.tile-actions button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.add-tables {
+    margin-bottom: 0.75rem;
+}
+
 @media (max-width: 900px) {
     .app {
         grid-template-columns: 1fr;

@@ -59,6 +59,7 @@ class SecurityConfig {
                 authorize("/swagger-ui.html", permitAll)
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/admin/venues/{venueId}/staff/**", venues.requires(Permission.MANAGE_STAFF))
+                authorize("/admin/venues/{venueId}/floor/**", venues.requires(Permission.MANAGE_TABLES))
                 authorize("/admin/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
                 authorize("/platform/**", hasRole("PLATFORM_ADMIN"))
                 authorize("/", authenticated)

@@ -29,6 +29,9 @@
             <a th:href="@{/admin/venues/{v}/modifier-groups(v=${venue.id})}"
                th:attr="aria-current=${active == 'modifiers'} ? 'page' : null">
                 <svg th:replace="~{fragments/icons :: icon('modifiers')}"></svg>Modifier groups</a>
+            <a th:if="${venue.tablesManageable}" th:href="@{/admin/venues/{v}/floor(v=${venue.id})}"
+               th:attr="aria-current=${active == 'floor'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>Tables</a>
             <a th:if="${venue.staffManageable}" th:href="@{/admin/venues/{v}/staff(v=${venue.id})}"
                th:attr="aria-current=${active == 'staff'} ? 'page' : null">
                 <svg th:replace="~{fragments/icons :: icon('staff')}"></svg>Staff</a>

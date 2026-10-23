@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page(${'Table ' + tableLabel}, ${venue}, 'floor', ~{::main})}">
+<body>
+<main class="narrow">
+    <nav aria-label="breadcrumb">
+        <ul>
+            <li><a th:href="@{/admin/venues/{v}/floor(v=${venue.id})}">Tables</a></li>
+            <li th:text="${'Table ' + tableLabel}">Table 12</li>
+        </ul>
+    </nav>
+    <h1 th:text="${'Table ' + tableLabel}">Table 12</h1>
+
+    <form th:action="@{/admin/venues/{v}/floor/tables/{t}(v=${venue.id}, t=${tableId})}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
+
+        <input type="hidden" th:field="*{version}">
+
+        <div class="grid">
+            <label>
+                Label
+                <input th:field="*{label}" maxlength="20" required
+                       th:attr="aria-invalid=${#fields.hasErrors('label')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('label')}" th:errors="*{label}">Label must not be blank</small>
+            </label>
+            <label>
+                Seats
+                <input type="number" th:field="*{seats}" min="1" max="50" required
+                       th:attr="aria-invalid=${#fields.hasErrors('seats')} ? 'true' : null">
+                <small class="error" th:if="${#fields.hasErrors('seats')}" th:errors="*{seats}">Seats must be from 1 to 50</small>
+            </label>
+        </div>
+
+        <label>
+            Area
+            <select th:field="*{areaId}">
+                <option th:each="option : ${areaOptions}" th:value="${option.id}" th:text="${option.name}">Main hall</option>
+            </select>
+            <small class="error" th:if="${#fields.hasErrors('areaId')}" th:errors="*{areaId}">Choose an area</small>
+        </label>
+
+        <label>
+            <input type="checkbox" th:field="*{active}">
+            Active
+        </label>
+        <p><small class="muted">Inactive tables stay on the floor but waiters cannot open them.</small></p>
+
+        <div class="buttons">
+            <button type="submit">Save</button>
+            <a th:href="@{/admin/venues/{v}/floor(v=${venue.id})}" role="button" class="secondary outline">Cancel</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>
