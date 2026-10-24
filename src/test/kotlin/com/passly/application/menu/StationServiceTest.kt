@@ -65,7 +65,7 @@ class StationServiceTest {
     fun `a station used by a menu item or an order line is not deleted`() {
         val bar = station("Bar")
         val pastry = station("Pastry")
-        val drinks = categories.loadTree(venue.id).add(venue.tenantId, "Drinks").also { categories.saveAll(listOf(it)) }
+        val drinks = categories.loadTree(venue.id).add(venue.tenantId, "Drinks", stationId = bar.id).also { categories.saveAll(listOf(it)) }
         val wine = items.loadCategoryItems(venue.id, drinks.id)
             .add(venue.tenantId, MenuItemDetails("Rioja", null, Money.of("4.50"), TaxRate.of("21"), bar.id))
             .also { items.saveAll(listOf(it)) }

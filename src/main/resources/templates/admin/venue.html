@@ -14,13 +14,22 @@
     <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
 
     <section class="card">
-        <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post" role="group">
+        <p th:if="${stations.isEmpty()}" class="empty">
+            Orders of every category go to a station.
+            <a th:href="@{/admin/venues/{v}/stations(v=${venue.id})}">Add a station</a> first, for example the kitchen.
+        </p>
+
+        <form th:unless="${stations.isEmpty()}" th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post" role="group">
             <input name="name" placeholder="New category" required maxlength="120" aria-label="Category name">
+            <select name="stationId" required aria-label="Station">
+                <option value="" disabled selected>Station</option>
+                <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Kitchen</option>
+            </select>
             <button type="submit">Add</button>
         </form>
 
         <p th:if="${tree.isEmpty()}" class="empty">No categories yet.</p>
-        <ul th:replace="~{fragments/category-tree :: tree(${tree}, ${venue.id})}"></ul>
+        <ul th:replace="~{fragments/category-tree :: tree(${tree}, ${venue.id}, ${stations})}"></ul>
     </section>
 </main>
 </body>

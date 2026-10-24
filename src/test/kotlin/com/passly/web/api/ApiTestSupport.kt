@@ -22,6 +22,14 @@ fun JdbcClient.createVenue(): TestVenue {
     return venue
 }
 
+fun JdbcClient.createStation(venue: TestVenue, name: String = "Test kitchen"): UUID {
+    val id = UUID.randomUUID()
+    sql("insert into station (id, tenant_id, venue_id, name) values (?, ?, ?, ?)")
+        .params(id, venue.tenantId, venue.venueId, name)
+        .update()
+    return id
+}
+
 fun JdbcClient.createMember(venue: TestVenue, role: Role): UUID {
     val userId = UUID.randomUUID()
     sql("insert into app_user (id, email, display_name, password_hash) values (?, ?, ?, ?)")

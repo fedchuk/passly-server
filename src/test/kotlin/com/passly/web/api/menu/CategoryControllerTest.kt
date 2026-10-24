@@ -1,5 +1,6 @@
 package com.passly.web.api.menu
 
+import com.passly.web.api.createStation
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.user.Role
 import com.passly.web.api.createMember
@@ -29,18 +30,20 @@ class CategoryControllerTest {
     lateinit var mockMvc: MockMvc
 
     private lateinit var venueId: UUID
+    private lateinit var stationId: UUID
     private val base get() = "/api/v1/venues/$venueId/categories"
 
     @BeforeEach
     fun createVenueWithManager() {
         val venue = jdbc.createVenue()
         venueId = venue.venueId
+        stationId = jdbc.createStation(venue)
         mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
     }
 
     @Test
     fun `created categories are returned as a nested tree`() {
-        val food = create("""{"name": "Food"}""")
+        val food = create("""{"name": "Food", "stationId": "$stationId"}""")
         create("""{"name": "Starters", "parentId": "$food"}""")
 
         mockMvc.get(base).andExpect {
@@ -52,12 +55,12 @@ class CategoryControllerTest {
 
     @Test
     fun `unchanged tree is answered with 304`() {
-        create("""{"name": "Food"}""")
+        create("""{"name": "Food", "stationId": "$stationId"}""")
         val etag = mockMvc.get(base).andReturn().response.getHeader("ETag")!!
 
         mockMvc.get(base) { header("If-None-Match", etag) }.andExpect { status { isNotModified() } }
 
-        create("""{"name": "Drinks"}""")
+        create("""{"name": "Drinks", "stationId": "$stationId"}""")
         mockMvc.get(base) { header("If-None-Match", etag) }.andExpect { status { isOk() } }
     }
 
@@ -74,8 +77,19 @@ class CategoryControllerTest {
     }
 
     @Test
+    fun `a top-level category without a station is rejected`() {
+        mockMvc.post(base) {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"name": "Food"}"""
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.detail") { value("Choose a station for a top-level category") }
+        }
+    }
+
+    @Test
     fun `moving a category into its own subcategory is a conflict`() {
-        val food = create("""{"name": "Food"}""")
+        val food = create("""{"name": "Food", "stationId": "$stationId"}""")
         val mains = create("""{"name": "Mains", "parentId": "$food"}""")
 
         mockMvc.post("$base/$food/move") {
@@ -89,11 +103,11 @@ class CategoryControllerTest {
 
     @Test
     fun `update with a stale version is a conflict`() {
-        val food = create("""{"name": "Food"}""")
+        val food = create("""{"name": "Food", "stationId": "$stationId"}""")
 
         mockMvc.put("$base/$food") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"name": "Kitchen", "active": true, "version": 0}"""
+            content = """{"name": "Kitchen", "stationId": "$stationId", "active": true, "version": 0}"""
         }.andExpect {
             status { isOk() }
             jsonPath("$.version") { value(1) }
@@ -101,13 +115,13 @@ class CategoryControllerTest {
 
         mockMvc.put("$base/$food") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"name": "Food again", "active": true, "version": 0}"""
+            content = """{"name": "Food again", "stationId": "$stationId", "active": true, "version": 0}"""
         }.andExpect { status { isConflict() } }
     }
 
     @Test
     fun `deleted category is no longer found`() {
-        val food = create("""{"name": "Food"}""")
+        val food = create("""{"name": "Food", "stationId": "$stationId"}""")
 
         mockMvc.delete("$base/$food").andExpect { status { isNoContent() } }
         mockMvc.get("$base/$food").andExpect { status { isNotFound() } }

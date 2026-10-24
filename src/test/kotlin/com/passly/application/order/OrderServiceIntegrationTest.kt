@@ -1,5 +1,7 @@
 package com.passly.application.order
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.floor.CreateAreaCommand
 import com.passly.application.floor.CreateTableCommand
@@ -69,7 +71,7 @@ class OrderServiceIntegrationTest {
         waiterUuid = jdbc.createMember(venue, Role.WAITER)
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))
-        mainsUuid = categories.create(CreateCategoryCommand(venueId, "Mains")).id.value
+        mainsUuid = categories.create(CreateCategoryCommand(venueId, "Mains", stationId = StationId(jdbc.createStation(venue)))).id.value
     }
 
     private fun item(name: String, price: String): MenuItem = items.create(

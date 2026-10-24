@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<ul th:fragment="tree(nodes, venueId)" class="tree">
+<ul th:fragment="tree(nodes, venueId, stations)" class="tree">
     <li th:each="node : ${nodes}">
         <div class="node">
             <a th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venueId}, c=${node.id})}"
                th:text="${node.name}" th:classappend="${node.active} ? '' : 'inactive'">Wine</a>
+            <span class="badge" th:if="${node.station != null}" th:text="${node.station}" title="Station">Bar</span>
             <span class="actions">
                 <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venueId}, c=${node.id})}"
                    role="button" class="outline secondary" title="Edit category">✎</a>
@@ -28,11 +29,15 @@
             <form th:action="@{/admin/venues/{v}/categories(v=${venueId})}" method="post" role="group">
                 <input type="hidden" name="parentId" th:value="${node.id}">
                 <input name="name" placeholder="Subcategory" required maxlength="120" aria-label="Subcategory name">
+                <select name="stationId" aria-label="Station">
+                    <option value="">Same station as the parent</option>
+                    <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Kitchen</option>
+                </select>
                 <button type="submit">Add</button>
             </form>
         </details>
         <th:block th:unless="${node.children.isEmpty()}">
-            <ul th:replace="~{fragments/category-tree :: tree(${node.children}, ${venueId})}"></ul>
+            <ul th:replace="~{fragments/category-tree :: tree(${node.children}, ${venueId}, ${stations})}"></ul>
         </th:block>
     </li>
 </ul>

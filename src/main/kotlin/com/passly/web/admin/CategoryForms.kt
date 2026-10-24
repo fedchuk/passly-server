@@ -3,7 +3,7 @@ package com.passly.web.admin
 import com.passly.domain.menu.Category
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
-import java.util.UUID
+import java.util.*
 
 class NewCategoryForm {
     @NotBlank(message = "Name must not be blank")
@@ -11,6 +11,7 @@ class NewCategoryForm {
     var name: String = ""
 
     var parentId: UUID? = null
+    var stationId: UUID? = null
 }
 
 class EditCategoryForm {

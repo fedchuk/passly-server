@@ -47,6 +47,9 @@ class MenuTree(
 
     fun add(tenantId: TenantId, name: String, parentId: CategoryId? = null, stationId: StationId? = null): Category {
         parentId?.let { get(it) }
+        if (parentId == null && stationId == null) {
+            throw ValidationException("Choose a station for a top-level category", "stationId")
+        }
         val siblings = children(parentId)
         val category = Category.new(
             tenantId = tenantId,
@@ -67,6 +70,10 @@ class MenuTree(
             if (newParentId == id || newParentId in descendantsOf(id)) {
                 throw ConflictException("A category cannot be moved into itself or one of its subcategories")
             }
+        }
+
+        if (newParentId == null && category.stationId == null) {
+            throw ConflictException("Choose a station for '${category.name}' before moving it to the top level")
         }
 
         val oldParentId = category.parentId

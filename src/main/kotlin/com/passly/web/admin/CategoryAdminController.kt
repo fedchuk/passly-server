@@ -1,9 +1,6 @@
 package com.passly.web.admin
 
-import com.passly.application.menu.CategoryService
-import com.passly.application.menu.CreateCategoryCommand
-import com.passly.application.menu.MoveCategoryCommand
-import com.passly.application.menu.UpdateCategoryCommand
+import com.passly.application.menu.*
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.CategoryId
@@ -17,19 +14,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.ModelAttribute
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
-import java.util.UUID
+import java.util.*
 
 @Controller
 @RequestMapping("/admin/venues/{venueId}/categories")
 class CategoryAdminController(
     private val categories: CategoryService,
+    private val stations: StationService,
     private val venues: AdminVenues,
 ) {
 
@@ -46,7 +39,12 @@ class CategoryAdminController(
         }
         return flash.redirectAfter(venueId) {
             val category = categories.create(
-                CreateCategoryCommand(VenueId(venueId), form.name, form.parentId?.let(::CategoryId)),
+                CreateCategoryCommand(
+                    VenueId(venueId),
+                    form.name,
+                    form.parentId?.let(::CategoryId),
+                    form.stationId?.let(::StationId),
+                ),
             )
             "Category '${category.name}' added"
         }
@@ -141,7 +139,13 @@ class CategoryAdminController(
 
     private fun editPage(venueId: UUID, id: UUID, tree: MenuTree, principal: PasslyUserPrincipal, model: Model): String {
         val categoryId = CategoryId(id)
+        val category = tree[categoryId]
+        val venueStations = stations.list(VenueId(venueId))
+        val inherited = category.parentId?.let { tree.effectiveStation(it) }
         model.addAttribute("venue", venues.find(principal, venueId))
+        model.addAttribute("stations", venueStations.map { it.toOption() })
+        model.addAttribute("topLevel", category.parentId == null)
+        model.addAttribute("inheritedStation", venueStations.firstOrNull { it.id == inherited }?.name)
         model.addAttribute("categoryId", id)
         model.addAttribute("parentOptions", tree.parentOptionsFor(categoryId))
         model.addAttribute("currentParentId", tree[categoryId].parentId?.value)

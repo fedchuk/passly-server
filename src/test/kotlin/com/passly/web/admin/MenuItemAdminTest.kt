@@ -79,7 +79,7 @@ class MenuItemAdminTest {
         venue = jdbc.createVenue()
         val managerId = jdbc.createMember(venue, Role.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
-        wineId = categories.create(CreateCategoryCommand(venueId, "Wine")).id.value
+        wineId = categories.create(CreateCategoryCommand(venueId, "Wine", stationId = createStation("Kitchen"))).id.value
     }
 
     private fun createItem(name: String, price: String = "4.50"): MenuItem =
@@ -309,7 +309,7 @@ class MenuItemAdminTest {
     @Test
     fun `edit page offers every category with the current one selected`() {
         val reds = categories.create(CreateCategoryCommand(venueId, "Reds", parentId = wine)).id
-        val beer = categories.create(CreateCategoryCommand(venueId, "Beer")).id
+        val beer = categories.create(CreateCategoryCommand(venueId, "Beer", stationId = createStation("Beer tap"))).id
         val rioja = createItem("Rioja")
 
         mockMvc.get("$base/items/${rioja.id}/edit") { with(manager) }.andExpect {

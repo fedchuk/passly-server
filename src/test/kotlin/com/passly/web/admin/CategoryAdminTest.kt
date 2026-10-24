@@ -4,12 +4,10 @@ import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.domain.menu.CategoryId
+import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
-import com.passly.web.api.TestVenue
-import com.passly.web.api.createMember
-import com.passly.web.api.createVenue
-import com.passly.web.api.securedMockMvc
+import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,7 +24,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.web.context.WebApplicationContext
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertFalse
 
@@ -49,6 +47,7 @@ class CategoryAdminTest {
     lateinit var mockMvc: MockMvc
     lateinit var venue: TestVenue
     lateinit var manager: RequestPostProcessor
+    lateinit var kitchenUuid: UUID
 
     private val venueId get() = VenueId(venue.venueId)
     private val page get() = "/admin/venues/${venue.venueId}"
@@ -57,12 +56,19 @@ class CategoryAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
+        kitchenUuid = jdbc.createStation(venue)
         val managerId = jdbc.createMember(venue, Role.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
     }
 
-    private fun create(name: String, parentId: CategoryId? = null) =
-        categories.create(CreateCategoryCommand(venueId, name, parentId))
+    private fun create(name: String, parentId: CategoryId? = null, station: StationId? = null) =
+        categories.create(
+            CreateCategoryCommand(
+                venueId,
+                name,
+                parentId,
+                station ?: StationId(kitchenUuid).takeIf { parentId == null })
+        )
 
     private fun names(parentId: CategoryId? = null) =
         categories.getTree(venueId).children(parentId).map { it.name }
@@ -73,6 +79,7 @@ class CategoryAdminTest {
             with(manager)
             with(csrf())
             param("name", "Wine")
+            param("stationId", kitchenUuid.toString())
         }.andExpect {
             redirectedUrl(page)
             flash { attribute("message", "Category 'Wine' added") }
@@ -136,6 +143,7 @@ class CategoryAdminTest {
             with(manager)
             with(csrf())
             param("name", "Red wine")
+            param("stationId", kitchenUuid.toString())
             param("version", "0")
             param("_active", "on")
         }.andExpect {
@@ -280,7 +288,7 @@ class CategoryAdminTest {
     @Test
     fun `empty choice moves the category to the top level`() {
         val drinks = create("Drinks")
-        create("Wine", drinks.id)
+        create("Wine", drinks.id, station = StationId(jdbc.createStation(venue, "Bar")))
         val wine = categories.getTree(venueId).children(drinks.id).single()
 
         mockMvc.post("$page/categories/${wine.id}/move") {
@@ -307,5 +315,43 @@ class CategoryAdminTest {
         }
 
         assertEquals(listOf("Drinks"), names())
+    }
+
+    @Test
+    fun `a top-level category without a station is refused`() {
+        mockMvc.post("$page/categories") {
+            with(manager)
+            with(csrf())
+            param("name", "Wine")
+        }.andExpect {
+            redirectedUrl(page)
+            flash { attribute("error", "Choose a station for a top-level category") }
+        }
+
+        assertTrue(names().isEmpty())
+    }
+
+    @Test
+    fun `menu page offers stations and shows the station of each top-level category`() {
+        create("Wine")
+
+        mockMvc.get(page) { with(manager) }.andExpect {
+            status { isOk() }
+            content { string(containsString("name=\"stationId\"")) }
+            content { string(containsString("Test kitchen")) }
+            content { string(containsString("Same station as the parent")) }
+        }
+    }
+
+    @Test
+    fun `subcategory edit page offers the station of the parent`() {
+        val wine = create("Wine")
+        val reds = create("Reds", wine.id)
+
+        mockMvc.get("$page/categories/${reds.id}/edit") { with(manager) }.andExpect {
+            status { isOk() }
+            model { attribute("topLevel", false) }
+            content { string(containsString("Same as the parent (Test kitchen)")) }
+        }
     }
 }

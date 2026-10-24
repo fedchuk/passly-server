@@ -1,6 +1,7 @@
 package com.passly.web.admin
 
 import com.passly.application.menu.CategoryService
+import com.passly.application.menu.StationService
 import com.passly.application.venue.VenueOverviewQuery
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
@@ -17,6 +18,7 @@ import java.util.*
 class VenueAdminController(
     private val venues: AdminVenues,
     private val categories: CategoryService,
+    private val stations: StationService,
     private val overviews: VenueOverviewQuery,
 ) {
 
@@ -26,8 +28,10 @@ class VenueAdminController(
         @AuthenticationPrincipal principal: PasslyUserPrincipal,
         model: Model,
     ): String {
+        val venueStations = stations.list(VenueId(venueId))
         model.addAttribute("venue", venues.find(principal, venueId))
-        model.addAttribute("tree", categories.getTree(VenueId(venueId)).toNodeViews())
+        model.addAttribute("tree", categories.getTree(VenueId(venueId)).toNodeViews(venueStations.associate { it.id to it.name }))
+        model.addAttribute("stations", venueStations.map { it.toOption() })
         return "admin/venue"
     }
 

@@ -1,5 +1,7 @@
 package com.passly.web.api.menu
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
@@ -49,6 +51,7 @@ class MenuControllerTest {
 
     lateinit var waiter: MockMvc
     lateinit var venueUuid: UUID
+    lateinit var stationUuid: UUID
     private val venueId get() = VenueId(venueUuid)
 
     private val base get() = "/api/v1/venues/${venueId.value}/menu"
@@ -57,11 +60,12 @@ class MenuControllerTest {
     fun setUp() {
         val venue = jdbc.createVenue()
         venueUuid = venue.venueId
+        stationUuid = jdbc.createStation(venue)
         waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
     }
 
     private fun category(name: String, parentId: CategoryId? = null) =
-        categories.create(CreateCategoryCommand(venueId, name, parentId))
+        categories.create(CreateCategoryCommand(venueId, name, parentId, if (parentId == null) StationId(stationUuid) else null))
 
     private fun item(categoryId: CategoryId, name: String, price: String = "24.00"): MenuItem =
         items.create(
@@ -88,7 +92,7 @@ class MenuControllerTest {
         )
         items.attachModifierGroups(AttachModifierGroupsCommand(venueId, ribeye.id, listOf(doneness.id)))
         val hidden = category("Seasonal")
-        categories.update(UpdateCategoryCommand(venueId, hidden.id, "Seasonal", null, active = false))
+        categories.update(UpdateCategoryCommand(venueId, hidden.id, "Seasonal", StationId(stationUuid), active = false))
 
         waiter.get(base).andExpect {
             status { isOk() }

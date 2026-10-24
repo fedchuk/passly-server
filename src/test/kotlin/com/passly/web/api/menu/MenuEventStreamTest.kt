@@ -1,5 +1,7 @@
 package com.passly.web.api.menu
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
@@ -42,12 +44,14 @@ class MenuEventStreamTest {
 
     lateinit var waiter: MockMvc
     lateinit var venueUuid: UUID
+    lateinit var stationUuid: UUID
     private val venueId get() = VenueId(venueUuid)
 
     @BeforeEach
     fun setUp() {
         val venue = jdbc.createVenue()
         venueUuid = venue.venueId
+        stationUuid = jdbc.createStation(venue)
         waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
     }
 
@@ -92,7 +96,7 @@ class MenuEventStreamTest {
     fun `without kafka the relay delivers changes in process`() {
         openStream()
 
-        categories.create(CreateCategoryCommand(venueId, "Wine"))
+        categories.create(CreateCategoryCommand(venueId, "Wine", stationId = StationId(stationUuid)))
 
         val deadline = Instant.now().plusSeconds(10)
         while (streams.knownVersion(venueId) != 1L) {

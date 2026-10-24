@@ -13,11 +13,16 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
-import java.util.UUID
+import java.util.*
+
+private const val STATION_DESCRIPTION =
+    "Where orders for this category are prepared. Required for a top-level category. " +
+            "A subcategory without it uses the station of the nearest parent that has one."
 
 data class CreateCategoryRequest(
     @NotBlank @Size(max = 120) val name: String,
     val parentId: UUID? = null,
+    @Schema(description = STATION_DESCRIPTION)
     val stationId: UUID? = null,
 ) {
     fun toCommand(venueId: VenueId) =
@@ -26,6 +31,7 @@ data class CreateCategoryRequest(
 
 data class UpdateCategoryRequest(
     @NotBlank @Size(max = 120) val name: String,
+    @Schema(description = STATION_DESCRIPTION)
     val stationId: UUID? = null,
     @Schema(description = "Inactive categories are hidden in the waiter app")
     val active: Boolean,

@@ -1,6 +1,8 @@
     package com.passly.web.admin
 
     import com.passly.TestcontainersConfiguration
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.domain.user.Role
@@ -116,7 +118,7 @@ import kotlin.test.Test
         @Test
         fun `venue page shows the category tree`() {
             val manager = jdbc.createMember(venue, Role.MANAGER)
-            val wine = categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Wine"))
+            val wine = categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Wine", stationId = StationId(jdbc.createStation(venue))))
             categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Rioja", parentId = wine.id))
 
             mockMvc.get("/admin/venues/${venue.venueId}") { with(loggedIn(manager)) }.andExpect {

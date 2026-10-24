@@ -3,6 +3,7 @@ package com.passly.web.admin
 import com.passly.application.access.AccessibleVenue
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuTree
+import com.passly.domain.menu.StationId
 import com.passly.domain.user.Permission
 import com.passly.domain.user.Role
 import java.util.*
@@ -21,6 +22,7 @@ data class VenueView(
 data class CategoryNodeView(
     val id: UUID,
     val name: String,
+    val station: String?,
     val active: Boolean,
     val first: Boolean,
     val last: Boolean,
@@ -29,16 +31,17 @@ data class CategoryNodeView(
 
 fun AccessibleVenue.toView() = VenueView(venueId.value, name, role)
 
-fun MenuTree.toNodeViews(parentId: CategoryId? = null): List<CategoryNodeView> {
+fun MenuTree.toNodeViews(stationNames: Map<StationId, String>, parentId: CategoryId? = null): List<CategoryNodeView> {
     val siblings = children(parentId)
     return siblings.mapIndexed { index, category ->
         CategoryNodeView(
             id = category.id.value,
             name = category.name,
+            station = category.stationId?.let { stationNames[it] },
             active = category.active,
             first = index == 0,
             last = index == siblings.lastIndex,
-            children = toNodeViews(category.id),
+            children = toNodeViews(stationNames, category.id),
         )
     }
 }

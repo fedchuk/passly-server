@@ -29,6 +29,7 @@ class VenueAuthorizationTest {
 
     lateinit var mockMvc: MockMvc
     lateinit var venue: TestVenue
+    lateinit var stationUuid: UUID
 
     private val categories get() = "/api/v1/venues/${venue.venueId}/categories"
 
@@ -36,6 +37,7 @@ class VenueAuthorizationTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
+        stationUuid = jdbc.createStation(venue)
     }
 
     private fun member(role: Role, at: TestVenue = venue) = jdbc.createMember(at, role)
@@ -43,7 +45,7 @@ class VenueAuthorizationTest {
     private fun createCategory(userId: UUID) = mockMvc.post(categories) {
         with(asUser(userId))
         contentType = MediaType.APPLICATION_JSON
-        content = """{"name": "Wine"}"""
+        content = """{"name": "Wine", "stationId": "$stationUuid"}"""
     }
 
     private fun createdId(userId: UUID, url: String, json: String): String =
@@ -71,7 +73,7 @@ class VenueAuthorizationTest {
     fun `kitchen manages the stop list but cannot edit dishes`() {
         val manager = member(Role.MANAGER)
         val kitchen = member(Role.KITCHEN)
-        val wine = createdId(manager, categories, """{"name": "Wine"}""")
+        val wine = createdId(manager, categories, """{"name": "Wine", "stationId": "$stationUuid"}""")
         val rioja = createdId(
             manager,
             "/api/v1/venues/${venue.venueId}/categories/$wine/items",

@@ -1,5 +1,7 @@
 package com.passly.web.admin
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
@@ -208,7 +210,7 @@ class ModifierGroupAdminTest {
     @Test
     fun `group used by a menu item is kept and an error is shown`() {
         val doneness = createDoneness()
-        val steaks = categories.create(CreateCategoryCommand(venueId, "Steaks")).id
+        val steaks = categories.create(CreateCategoryCommand(venueId, "Steaks", stationId = StationId(jdbc.createStation(venue)))).id
         val ribeye = items.create(
             CreateMenuItemCommand(venueId, steaks, MenuItemDetails("Ribeye", null, Money.of("24"), TaxRate.of("10"))),
         )

@@ -1,5 +1,7 @@
 package com.passly.web.admin
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
@@ -58,6 +60,7 @@ class VenueOverviewAdminTest {
     lateinit var managerId: UUID
 
     private val venueId get() = VenueId(venue.venueId)
+    private val station by lazy { StationId(jdbc.createStation(venue)) }
 
     @BeforeEach
     fun setUp() {
@@ -69,7 +72,7 @@ class VenueOverviewAdminTest {
     private fun loggedIn(userId: UUID) = user(userDetailsService.loadUserByUsername("$userId@test.passly"))
 
     private fun addItem(categoryName: String, vararg names: String) {
-        val category = categories.create(CreateCategoryCommand(venueId, categoryName))
+        val category = categories.create(CreateCategoryCommand(venueId, categoryName, stationId = station))
         names.forEach {
             items.create(
                 CreateMenuItemCommand(

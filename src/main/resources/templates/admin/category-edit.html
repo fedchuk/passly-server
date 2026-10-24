@@ -15,13 +15,22 @@
         <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
 
         <input type="hidden" th:field="*{version}">
-        <input type="hidden" th:field="*{stationId}">
 
         <label>
             Name
             <input th:field="*{name}" maxlength="120"
                    th:attr="aria-invalid=${#fields.hasErrors('name')} ? 'true' : null">
             <small class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name must not be blank</small>
+        </label>
+
+        <label>
+            Station
+            <select th:field="*{stationId}" th:required="${topLevel}">
+                <option th:unless="${topLevel}" value=""
+                        th:text="${inheritedStation != null} ? 'Same as the parent (' + ${inheritedStation} + ')' : 'Same as the parent'">Same as the parent (Kitchen)</option>
+                <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Kitchen</option>
+            </select>
+            <small class="muted" th:if="${topLevel}">Items of this category and its subcategories are prepared here unless they choose another station.</small>
         </label>
 
         <label>
@@ -44,6 +53,7 @@
         </select>
         <button type="submit" class="secondary">Move</button>
     </form>
+    <p th:unless="${topLevel}"><small class="muted">To move this category to the top level, choose its own station first.</small></p>
 </main>
 </body>
 </html>

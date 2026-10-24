@@ -24,8 +24,8 @@ class MenuItemServiceTest {
     private val categoryService = CategoryService(venues, categories, stations, items, menuChanges)
     private val service = MenuItemService(venues, categories, stations, items, modifierGroups, menuChanges)
 
-    private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks")).id
-    private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish")).id
+    private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks", stationId = grill)).id
+    private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish", stationId = grill)).id
 
     private fun details(name: String, price: String = "20.00", station: StationId? = null) =
         MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"), station)

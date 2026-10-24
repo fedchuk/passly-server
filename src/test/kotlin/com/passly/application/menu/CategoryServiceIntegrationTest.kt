@@ -37,6 +37,7 @@ class CategoryServiceIntegrationTest {
 
     private val tenantId = UUID.randomUUID()
     private val venueId = VenueId(UUID.randomUUID())
+    lateinit var defaultStationUuid: UUID
 
     @BeforeEach
     fun createVenue() {
@@ -46,6 +47,7 @@ class CategoryServiceIntegrationTest {
         jdbc.sql("insert into venue (id, tenant_id, name) values (?, ?, ?)")
             .params(venueId.value, tenantId, "Test venue")
             .update()
+        defaultStationUuid = createStation("Default kitchen").value
     }
 
     @Test
@@ -93,7 +95,7 @@ class CategoryServiceIntegrationTest {
     fun `saving a stale category is rejected`() {
         val food = create("Food")
         val stale = service.getTree(venueId)[food.id]
-        service.update(UpdateCategoryCommand(venueId, food.id, "Kitchen", stationId = null, active = true))
+        service.update(UpdateCategoryCommand(venueId, food.id, "Kitchen", stationId = StationId(defaultStationUuid), active = true))
 
         assertFailsWith<OptimisticLockingFailureException> {
             transactions.executeWithoutResult {
@@ -106,7 +108,7 @@ class CategoryServiceIntegrationTest {
     }
 
     private fun create(name: String, parent: Category? = null, stationId: StationId? = null): Category =
-        service.create(CreateCategoryCommand(venueId, name, parent?.id, stationId))
+        service.create(CreateCategoryCommand(venueId, name, parent?.id, stationId ?: StationId(defaultStationUuid).takeIf { parent == null }))
 
     private fun createStation(name: String): StationId {
         val id = UUID.randomUUID()

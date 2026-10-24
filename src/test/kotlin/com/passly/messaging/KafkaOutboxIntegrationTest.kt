@@ -1,5 +1,7 @@
 package com.passly.messaging
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.KafkaTestcontainersConfiguration
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
@@ -76,10 +78,11 @@ class KafkaOutboxIntegrationTest {
     fun `menu changes reach kafka in order with the venue as the key`() {
         val venue = jdbc.createVenue()
         val venueId = VenueId(venue.venueId)
+        val station = StationId(jdbc.createStation(venue))
 
         consumer().use { consumer ->
-            categories.create(CreateCategoryCommand(venueId, "Wine"))
-            categories.create(CreateCategoryCommand(venueId, "Beer"))
+            categories.create(CreateCategoryCommand(venueId, "Wine", stationId = station))
+            categories.create(CreateCategoryCommand(venueId, "Beer", stationId = station))
 
             val records = consumer.awaitRecords(venue.venueId.toString(), 2)
 
@@ -91,9 +94,10 @@ class KafkaOutboxIntegrationTest {
 
     @Test
     fun `kafka listener passes changes to the open menu streams`() {
-        val venueId = VenueId(jdbc.createVenue().venueId)
+        val venue = jdbc.createVenue()
+        val venueId = VenueId(venue.venueId)
 
-        categories.create(CreateCategoryCommand(venueId, "Wine"))
+        categories.create(CreateCategoryCommand(venueId, "Wine", stationId = StationId(jdbc.createStation(venue))))
 
         val deadline = Instant.now().plusSeconds(30)
         while (streams.knownVersion(venueId) != 1L) {

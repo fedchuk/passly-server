@@ -37,6 +37,9 @@ class Category private constructor(
     }
 
     fun assignStation(station: StationId?) {
+        if (parentId == null && station == null) {
+            throw ValidationException("A top-level category needs a station", "stationId")
+        }
         stationId = station
     }
 

@@ -1,5 +1,7 @@
 package com.passly.application.outbox
 
+import com.passly.web.api.createStation
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
@@ -64,8 +66,9 @@ class OutboxMenuChangeRecorderTest {
 
     @Test
     fun `each menu change bumps the version and writes an event`() {
-        categories.create(CreateCategoryCommand(venueId, "Wine"))
-        categories.create(CreateCategoryCommand(venueId, "Beer"))
+        val station = StationId(jdbc.createStation(venue))
+        categories.create(CreateCategoryCommand(venueId, "Wine", stationId = station))
+        categories.create(CreateCategoryCommand(venueId, "Beer", stationId = station))
 
         assertEquals(2, menuVersion())
         assertEquals(listOf(1L, 2L), recordedVersions())

@@ -3,6 +3,7 @@ package com.passly.web.api.menu
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.user.Role
 import com.passly.web.api.createMember
+import com.passly.web.api.createStation
 import com.passly.web.api.createVenue
 import com.passly.web.api.mockMvcAs
 import org.junit.jupiter.api.BeforeEach
@@ -29,12 +30,14 @@ class MenuItemControllerTest {
     lateinit var mockMvc: MockMvc
 
     private lateinit var venueId: UUID
+    private lateinit var stationId: UUID
     private val venue get() = "/api/v1/venues/$venueId"
 
     @BeforeEach
     fun createVenueWithManager() {
         val venue = jdbc.createVenue()
         venueId = venue.venueId
+        stationId = jdbc.createStation(venue)
         mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
     }
 
@@ -172,7 +175,7 @@ class MenuItemControllerTest {
     private fun createCategory(name: String): String =
         mockMvc.post("$venue/categories") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"name": "$name"}"""
+            content = """{"name": "$name", "stationId": "$stationId"}"""
         }.andExpect {
             status { isCreated() }
         }.andReturn().response.getHeader("Location")!!.substringAfterLast('/')

@@ -1,5 +1,6 @@
 package com.passly.application.menu
 
+import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
@@ -37,6 +38,7 @@ class MenuItemServiceIntegrationTest {
     lateinit var modifierGroupService: ModifierGroupService
 
     private val venueId = VenueId(UUID.randomUUID())
+    private val stationUuid = UUID.randomUUID()
 
     @BeforeEach
     fun createVenue() {
@@ -44,6 +46,9 @@ class MenuItemServiceIntegrationTest {
         jdbc.sql("insert into tenant (id, name) values (?, ?)").params(tenantId, "Test tenant").update()
         jdbc.sql("insert into venue (id, tenant_id, name) values (?, ?, ?)")
             .params(venueId.value, tenantId, "Test venue")
+            .update()
+        jdbc.sql("insert into station (id, tenant_id, venue_id, name) values (?, ?, ?, ?)")
+            .params(stationUuid, tenantId, venueId.value, "Kitchen")
             .update()
     }
 
@@ -123,7 +128,7 @@ class MenuItemServiceIntegrationTest {
     ).id
 
     private fun category(name: String): CategoryId =
-        categoryService.create(CreateCategoryCommand(venueId, name)).id
+        categoryService.create(CreateCategoryCommand(venueId, name, stationId = StationId(stationUuid))).id
 
     private fun details(name: String, price: String = "10.00") =
         MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
