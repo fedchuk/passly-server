@@ -4,9 +4,17 @@
 
 Passly is a multi-tenant SaaS backend for restaurants: a REST API for the waiter and kitchen apps, plus a web admin where owners and managers set up their menu, tables and staff.
 
-**Live demo:** https://passly-8ece774580f7.herokuapp.com. The app may take about 20 seconds to wake up on the first request.
+**Live:** https://passly-8ece774580f7.herokuapp.com (admin login required) · [Swagger UI](https://passly-8ece774580f7.herokuapp.com/swagger-ui.html) · [OpenAPI spec](https://passly-8ece774580f7.herokuapp.com/v3/api-docs)
 
-**API docs:** [Swagger UI](https://passly-8ece774580f7.herokuapp.com/swagger-ui.html) · [OpenAPI spec](https://passly-8ece774580f7.herokuapp.com/v3/api-docs)
+## Screenshots
+
+| Menu | Menu item |
+|---|---|
+| ![Category tree with nested categories](docs/screenshots/menu.png) | ![Menu item with price, VAT, station and modifier groups](docs/screenshots/item.png) |
+| **Tables** | **Staff** |
+| ![Areas with table grid](docs/screenshots/tables.png) | ![Staff with roles per venue](docs/screenshots/staff.png) |
+
+![Swagger UI with the REST API](docs/screenshots/swagger.png)
 
 ## What it does
 
@@ -104,6 +112,18 @@ docker compose up -d
 
 The app starts on http://localhost:8080 and applies the database migrations automatically.
 
+### Demo restaurant
+
+To fill a local database with a demo restaurant (nested menu with modifiers and a stop list, three areas with tables, and staff in every role), start with the `demo` profile:
+
+```bash
+DEMO_PASSWORD='pick-a-password' ./gradlew bootRun --args='--spring.profiles.active=demo'
+```
+
+Log in as `owner@demo.passly` with that password. Without `DEMO_PASSWORD`, a random password is generated and printed in the log. The profile never runs together with `prod`, and it does nothing if the demo owner already exists. To start over, run `docker compose down -v`.
+
+### Your own business
+
 To create the first business and owner, set these variables before starting the app:
 
 ```bash
@@ -147,4 +167,4 @@ Production configuration comes only from environment variables: database, JWT pr
 
 - Orders from the waiter app, with server-side stop-list checks
 - Kitchen and bar display
-- Kotlin Multiplatform waiter app
+- Kotlin
