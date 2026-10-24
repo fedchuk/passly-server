@@ -1,5 +1,6 @@
 package com.passly.application.venue
 
+import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
@@ -18,7 +19,8 @@ class OnboardingServiceTest {
     private val tenants = FakeTenantRepository()
     private val venues = FakeVenueRepository()
     private val users = FakeUserRepository()
-    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher())
+    private val stations = FakeStationRepository()
+    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations)
 
     private fun register(email: String = "max@bistro.es", business: String = "Bistro Group", venue: String = "Centro") =
         service.registerBusiness(
@@ -53,5 +55,12 @@ class OnboardingServiceTest {
 
         assertTrue(tenants.stored.isEmpty())
         assertTrue(users.stored.isEmpty())
+    }
+
+    @Test
+    fun `new venue gets a kitchen and a bar to route orders`() {
+        val business = register()
+
+        assertEquals(listOf("Kitchen", "Bar"), stations.findAllInVenue(business.venueId).map { it.name })
     }
 }

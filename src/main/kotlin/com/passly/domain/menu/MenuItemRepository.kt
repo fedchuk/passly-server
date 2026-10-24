@@ -9,4 +9,5 @@ interface MenuItemRepository {
     fun existsInCategory(categoryId: CategoryId): Boolean
     fun saveAll(items: Collection<MenuItem>)
     fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean
+    fun existsWithStation(stationId: StationId): Boolean
 }

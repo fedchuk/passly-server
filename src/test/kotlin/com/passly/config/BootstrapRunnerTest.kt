@@ -1,5 +1,6 @@
 package com.passly.config
 
+import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
@@ -14,7 +15,9 @@ class BootstrapRunnerTest {
 
     private val tenants = FakeTenantRepository()
     private val users = FakeUserRepository()
-    private val onboarding = OnboardingService(tenants, FakeVenueRepository(), users, FakePasswordHasher())
+    private val onboarding = OnboardingService(tenants, FakeVenueRepository(), users, FakePasswordHasher(),
+        FakeStationRepository()
+    )
 
     private fun runner(email: String) = BootstrapRunner(
         BootstrapProperties("Bistro Group", "Bistro Centro", email, "Max", "password-1"),

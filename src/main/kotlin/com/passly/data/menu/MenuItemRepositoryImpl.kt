@@ -34,4 +34,7 @@ class MenuItemRepositoryImpl(
 
     override fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean =
         jpa.existsWithModifierGroup(groupId.value)
+
+    override fun existsWithStation(stationId: StationId): Boolean =
+        jpa.existsByStationId(stationId.value)
 }

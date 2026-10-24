@@ -39,10 +39,31 @@ class FakeCategoryRepository : CategoryRepository {
     )
 }
 
-class FakeStationRepository(private val stationVenues: Map<StationId, VenueId>) : StationRepository {
-    override fun existsInVenue(stationId: StationId, venueId: VenueId) = stationVenues[stationId] == venueId
+class FakeStationRepository(stationVenues: Map<StationId, VenueId> = emptyMap()) : StationRepository {
+    val stored = linkedMapOf<StationId, Station>()
+
+    init {
+        stationVenues.entries.forEachIndexed { index, (id, venueId) ->
+            stored[id] = Station.fromStorage(id, TenantId.new(), venueId, "Station $id", index, 0)
+        }
+    }
+
+    override fun existsInVenue(stationId: StationId, venueId: VenueId) = stored[stationId]?.venueId == venueId
+
     override fun findAllInVenue(venueId: VenueId) =
-        stationVenues.filterValues { it == venueId }.keys.map { Station(it, venueId, "Station $it") }
+        stored.values.filter { it.venueId == venueId }.sortedBy { it.sortOrder }.map(::copyOf)
+
+    override fun load(venueId: VenueId) = StationList(venueId, findAllInVenue(venueId))
+
+    override fun saveAll(stations: Collection<Station>) {
+        stations.forEach { stored[it.id] = copyOf(it) }
+    }
+
+    override fun delete(station: Station) {
+        stored.remove(station.id)
+    }
+
+    private fun copyOf(s: Station) = Station.fromStorage(s.id, s.tenantId, s.venueId, s.name, s.sortOrder, s.version ?: 0)
 }
 
 class FakeMenuItemRepository : MenuItemRepository {
@@ -69,6 +90,7 @@ class FakeMenuItemRepository : MenuItemRepository {
     }
 
     override fun existsWithModifierGroup(groupId: ModifierGroupId) = stored.values.any { groupId in it.modifierGroupIds }
+    override fun existsWithStation(stationId: StationId) = stored.values.any { it.stationId == stationId }
 
     private fun copyOf(i: MenuItem) = MenuItem.fromStorage(
         i.id, i.tenantId, i.venueId, i.categoryId, i.details, i.sortOrder, i.available, i.archived, i.modifierGroupIds, i.version ?: 0,

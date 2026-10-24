@@ -1348,3 +1348,21 @@ a.action-card:hover {
 .profile-venue-list li:first-child {
     border-top: 0;
 }
+
+.station-list {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.station-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.station-row:first-child {
+    border-top: 0;
+}

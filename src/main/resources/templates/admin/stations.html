@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Stations', ${venue}, 'stations', ~{::main})}">
+<body>
+<main class="narrow">
+    <div class="page-header">
+        <div>
+            <h1>Stations</h1>
+            <p class="subtitle">Where orders go to be prepared, such as the kitchen or the bar. Choose a station for a category, and its items follow it.</p>
+        </div>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Station added</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
+    <section class="card">
+        <form th:action="@{/admin/venues/{v}/stations(v=${venue.id})}" method="post" role="group">
+            <input name="name" placeholder="New station, for example Grill" required maxlength="80" aria-label="Station name">
+            <button type="submit">Add station</button>
+        </form>
+
+        <p th:if="${stations.isEmpty()}" class="empty">No stations yet. Add the kitchen and the bar to route orders.</p>
+
+        <ul class="station-list" th:unless="${stations.isEmpty()}">
+            <li th:each="station : ${stations}" class="station-row">
+                <div class="area-title">
+                    <div class="area-name">
+                        <strong th:text="${station.name}">Kitchen</strong>
+                        <button type="button" class="ghost rename-toggle" title="Rename station" aria-label="Rename station">✎</button>
+                    </div>
+                    <form class="rename-form" hidden role="group"
+                          th:action="@{/admin/venues/{v}/stations/{s}/rename(v=${venue.id}, s=${station.id})}" method="post">
+                        <input type="hidden" name="version" th:value="${station.version}">
+                        <input name="name" th:value="${station.name}" required maxlength="80" aria-label="Station name">
+                        <button type="submit">Save</button>
+                        <button type="button" class="secondary outline rename-cancel">Cancel</button>
+                    </form>
+                </div>
+                <span class="actions">
+                    <form th:action="@{/admin/venues/{v}/stations/{s}/shift(v=${venue.id}, s=${station.id})}" method="post">
+                        <input type="hidden" name="delta" value="-1">
+                        <button type="submit" class="outline secondary" th:disabled="${station.first}" title="Move up">↑</button>
+                    </form>
+                    <form th:action="@{/admin/venues/{v}/stations/{s}/shift(v=${venue.id}, s=${station.id})}" method="post">
+                        <input type="hidden" name="delta" value="1">
+                        <button type="submit" class="outline secondary" th:disabled="${station.last}" title="Move down">↓</button>
+                    </form>
+                    <form th:action="@{/admin/venues/{v}/stations/{s}/delete(v=${venue.id}, s=${station.id})}" method="post"
+                          onsubmit="return confirm('Delete this station?')">
+                        <button type="submit" class="outline contrast" title="Delete station">✕</button>
+                    </form>
+                </span>
+            </li>
+        </ul>
+    </section>
+
+    <script>
+        function toggleRename(title, open) {
+            const form = title.querySelector('.rename-form');
+            title.querySelector('.area-name').hidden = open;
+            form.hidden = !open;
+            if (open) {
+                const input = form.querySelector('input[name="name"]');
+                input.focus();
+                input.select();
+            } else {
+                form.reset();
+            }
+        }
+
+        document.addEventListener('click', event => {
+            const button = event.target.closest('.rename-toggle, .rename-cancel');
+            if (button) toggleRename(button.closest('.area-title'), button.classList.contains('rename-toggle'));
+        });
+
+        document.addEventListener('keydown', event => {
+            const form = event.target.closest('.rename-form');
+            if (form && event.key === 'Escape') toggleRename(form.closest('.area-title'), false);
+        });
+    </script>
+</main>
+</body>
+</html>

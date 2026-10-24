@@ -9,7 +9,6 @@ import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
 import com.passly.application.venue.OnboardingService
 import com.passly.application.venue.RegisterBusinessCommand
-import com.passly.application.venue.RegisteredBusiness
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
@@ -23,7 +22,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.context.annotation.Profile
-import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import java.security.SecureRandom
 import java.util.*
@@ -38,7 +36,7 @@ class DemoDataRunner(
     private val modifierGroups: ModifierGroupService,
     private val floors: FloorPlanService,
     private val staff: StaffService,
-    private val jdbc: JdbcClient,
+    private val stations: StationService,
     @Value("\${passly.demo.password:}") private val configuredPassword: String,
 ) : ApplicationRunner {
 
@@ -60,8 +58,9 @@ class DemoDataRunner(
             ),
         )
         val venueId = business.venueId
-        val kitchen = insertStation(business, "Kitchen", 0)
-        val bar = insertStation(business, "Bar", 1)
+        val defaultStations = stations.list(venueId).associate { it.name to it.id }
+        val kitchen = defaultStations.getValue("Kitchen")
+        val bar = defaultStations.getValue("Bar")
 
         createMenu(venueId, kitchen, bar, createModifierGroups(venueId))
         createFloor(venueId)
@@ -217,14 +216,6 @@ class DemoDataRunner(
     private fun randomPassword(): String {
         val bytes = ByteArray(12).also { SecureRandom().nextBytes(it) }
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
-    }
-
-    private fun insertStation(business: RegisteredBusiness, name: String, sortOrder: Int): StationId {
-        val id = StationId.new()
-        jdbc.sql("insert into station (id, tenant_id, venue_id, name, sort_order) values (?, ?, ?, ?, ?)")
-            .params(id.value, business.tenantId.value, business.venueId.value, name, sortOrder)
-            .update()
-        return id
     }
 
     private data class DemoModifierGroups(

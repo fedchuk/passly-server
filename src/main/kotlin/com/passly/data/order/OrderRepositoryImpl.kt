@@ -2,6 +2,7 @@ package com.passly.data.order
 
 import com.passly.data.common.upsert
 import com.passly.domain.floor.DiningTableId
+import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderRepository
@@ -28,6 +29,9 @@ class OrderRepositoryImpl(
 
     override fun existsAtTable(tableId: DiningTableId): Boolean =
         jpa.existsByTableId(tableId.value)
+
+    override fun existsAtStation(stationId: StationId): Boolean =
+        jpa.existsLineAtStation(stationId.value)
 
     override fun save(order: Order) {
         jpa.upsert(order.id.value, order.version, create = { order.toNewEntity() }, update = { updateFrom(order) })

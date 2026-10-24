@@ -88,6 +88,7 @@ class MenuItem private constructor(
         archived = true
         categoryId = null
         sortOrder = 0
+        stationId = null
         modifierGroupIds = emptyList()
     }
 
