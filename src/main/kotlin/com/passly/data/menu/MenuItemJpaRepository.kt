@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.util.UUID
+import java.util.*
 
 interface MenuItemJpaRepository : JpaRepository<MenuItemEntity, UUID> {
 
@@ -13,6 +13,9 @@ interface MenuItemJpaRepository : JpaRepository<MenuItemEntity, UUID> {
 
     @EntityGraph(attributePaths = ["modifierGroupIds"])
     fun findByIdAndVenueIdAndArchivedFalse(id: UUID, venueId: UUID): MenuItemEntity?
+
+    @EntityGraph(attributePaths = ["modifierGroupIds"])
+    fun findAllByIdInAndVenueIdAndArchivedFalse(ids: Collection<UUID>, venueId: UUID): List<MenuItemEntity>
 
     fun existsByCategoryId(categoryId: UUID): Boolean
 

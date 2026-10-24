@@ -1,12 +1,16 @@
 package com.passly.application.floor
 
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.order.FakeOrderRepository
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.floor.DiningArea
+import com.passly.domain.order.Order
+import com.passly.domain.user.UserId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
+import java.time.Instant
 import kotlin.test.*
 
 class FloorPlanServiceTest {
@@ -16,7 +20,8 @@ class FloorPlanServiceTest {
     private val venues = FakeVenueRepository(venue)
     private val plans = FakeFloorPlanRepository()
     private val floorChanges = FakeFloorChangeRecorder()
-    private val service = FloorPlanService(venues, plans, floorChanges)
+    private val orders = FakeOrderRepository()
+    private val service = FloorPlanService(venues, plans, floorChanges, orders)
 
     private fun area(name: String): DiningArea = service.createArea(CreateAreaCommand(venue.id, name))
 
@@ -132,5 +137,15 @@ class FloorPlanServiceTest {
     fun `unknown venue is not found`() {
         assertFailsWith<NotFoundException> { service.createArea(CreateAreaCommand(VenueId.new(), "Hall")) }
         assertFailsWith<NotFoundException> { service.get(VenueId.new()) }
+    }
+
+    @Test
+    fun `a table with orders is not deleted`() {
+        val hall = area("Hall")
+        val table = service.createTable(CreateTableCommand(venue.id, hall.id, "1", 4))
+        orders.save(Order.open(table, null, UserId.new(), Instant.parse("2026-10-24T12:00:00Z")))
+
+        assertFailsWith<ConflictException> { service.deleteTable(venue.id, table.id) }
+        assertTrue(table.id in plans.tables)
     }
 }

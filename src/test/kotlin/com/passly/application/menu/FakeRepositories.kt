@@ -1,19 +1,6 @@
 package com.passly.application.menu
 
-import com.passly.domain.menu.Category
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.CategoryItems
-import com.passly.domain.menu.CategoryRepository
-import com.passly.domain.menu.MenuItem
-import com.passly.domain.menu.MenuItemId
-import com.passly.domain.menu.MenuItemRepository
-import com.passly.domain.menu.MenuTree
-import com.passly.domain.menu.ModifierGroup
-import com.passly.domain.menu.ModifierGroupId
-import com.passly.domain.menu.ModifierGroupRepository
-import com.passly.domain.menu.Station
-import com.passly.domain.menu.StationId
-import com.passly.domain.menu.StationRepository
+import com.passly.domain.menu.*
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
@@ -70,6 +57,9 @@ class FakeMenuItemRepository : MenuItemRepository {
 
     override fun findActive(venueId: VenueId, id: MenuItemId) =
         stored[id]?.takeIf { it.venueId == venueId && !it.archived }?.let(::copyOf)
+
+    override fun findActiveByIds(venueId: VenueId, ids: Collection<MenuItemId>) =
+        ids.mapNotNull { findActive(venueId, it) }
 
     override fun existsInCategory(categoryId: CategoryId) = stored.values.any { it.categoryId == categoryId }
 

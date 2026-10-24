@@ -31,4 +31,11 @@ class MoneyTest {
         assertFailsWith<ValidationException> { TaxRate.of("-1") }
         assertFailsWith<ValidationException> { TaxRate.of("100.01") }
     }
+
+    @Test
+    fun `amounts are added and multiplied by a quantity`() {
+        assertEquals(Money.of("9.30"), Money.of("1.80") + Money.of("7.50"))
+        assertEquals(Money.of("5.40"), Money.of("1.80") * 3)
+        assertEquals("0.00", Money.ZERO.toString())
+    }
 }

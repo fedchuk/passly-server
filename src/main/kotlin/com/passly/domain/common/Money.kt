@@ -10,10 +10,16 @@ value class Money private constructor(val amount: BigDecimal) : Comparable<Money
 
     override fun compareTo(other: Money) = amount.compareTo(other.amount)
 
+    operator fun plus(other: Money) = Money(amount.add(other.amount))
+
+    operator fun times(quantity: Int) = Money(amount.multiply(BigDecimal(quantity)))
+
     override fun toString(): String = amount.toPlainString()
 
     companion object {
         private const val SCALE = 2
+
+        val ZERO = Money(BigDecimal.ZERO.setScale(SCALE))
 
         fun of(amount: BigDecimal): Money {
             if (amount.stripTrailingZeros().scale() > SCALE) {

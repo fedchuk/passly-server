@@ -19,6 +19,10 @@ class MenuItemRepositoryImpl(
     override fun findActive(venueId: VenueId, id: MenuItemId): MenuItem? =
         jpa.findByIdAndVenueIdAndArchivedFalse(id.value, venueId.value)?.toDomain()
 
+    override fun findActiveByIds(venueId: VenueId, ids: Collection<MenuItemId>): List<MenuItem> =
+        if (ids.isEmpty()) emptyList()
+        else jpa.findAllByIdInAndVenueIdAndArchivedFalse(ids.map { it.value }, venueId.value).map { it.toDomain() }
+
     override fun existsInCategory(categoryId: CategoryId): Boolean =
         jpa.existsByCategoryId(categoryId.value)
 

@@ -2,12 +2,8 @@ package com.passly.application.floor
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.floor.DiningArea
-import com.passly.domain.floor.DiningAreaId
-import com.passly.domain.floor.DiningTable
-import com.passly.domain.floor.DiningTableId
-import com.passly.domain.floor.FloorPlan
-import com.passly.domain.floor.FloorPlanRepository
+import com.passly.domain.floor.*
+import com.passly.domain.order.OrderRepository
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
@@ -20,6 +16,7 @@ class FloorPlanService(
     private val venues: VenueRepository,
     private val plans: FloorPlanRepository,
     private val floorChanges: FloorChangeRecorder,
+    private val orders: OrderRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -110,6 +107,9 @@ class FloorPlanService(
         lockVenue(venueId)
         val plan = plans.load(venueId)
         val table = plan.table(tableId)
+        if (orders.existsAtTable(tableId)) {
+            throw ConflictException("Table ${table.label} has orders. Make it inactive instead of deleting it.")
+        }
         val renumbered = plan.removeTable(tableId)
         plans.deleteTable(table)
         plans.saveTables(renumbered)

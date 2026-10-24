@@ -21,8 +21,11 @@ class ApiExceptionHandler : ResponseEntityExceptionHandler() {
             is ConflictException -> HttpStatus.CONFLICT
             is ValidationException -> HttpStatus.BAD_REQUEST
             is UnauthorizedException -> HttpStatus.UNAUTHORIZED
+            is UnavailableItemsException -> HttpStatus.CONFLICT
         }
-        return forStatusAndDetail(status, e.message)
+        return forStatusAndDetail(status, e.message).apply {
+            if (e is UnavailableItemsException) setProperty("unavailableItemIds", e.itemIds)
+        }
     }
 
     @ExceptionHandler(OptimisticLockingFailureException::class)
