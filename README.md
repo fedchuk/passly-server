@@ -168,3 +168,7 @@ Production configuration comes only from environment variables: database, JWT pr
 - Orders from the waiter app, with server-side stop-list checks
 - Kitchen and bar display
 - Kotlin
+
+## License
+
+© 2026 Maksym Fedchuk. All rights reserved. The source code is published for review only.

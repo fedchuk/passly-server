@@ -38,6 +38,8 @@ passly:
     kafka-enabled: ${KAFKA_ENABLED:false}
     menu-topic: passly.menu-events
     relay-interval-ms: 1000
+  demo:
+    password: ${DEMO_PASSWORD:}
 
 server:
   port: ${PORT:8080}
