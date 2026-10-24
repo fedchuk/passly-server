@@ -69,6 +69,11 @@
                         <strong th:text="${currentUser.displayName}">Max</strong>
                         <small class="muted" th:text="${currentUser.username}">max@example.com</small>
                     </div>
+                    <a class="user-menu-item" th:href="@{/account/profile}"
+                       th:attr="aria-current=${active == 'profile'} ? 'page' : null">
+                        <svg th:replace="~{fragments/icons :: icon('user')}"></svg>
+                        <span>Profile</span>
+                    </a>
                     <a class="user-menu-item" th:href="@{/account/password}"
                        th:attr="aria-current=${active == 'password'} ? 'page' : null">
                         <svg th:replace="~{fragments/icons :: icon('lock')}"></svg>

@@ -1302,3 +1302,49 @@ a.action-card:hover {
         display: none;
     }
 }
+
+.profile-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+}
+
+.profile-identity div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.avatar.avatar-large {
+    width: 56px;
+    height: 56px;
+    font-size: 1.4rem;
+}
+
+.profile-venues {
+    margin-top: 1.5rem;
+}
+
+.profile-venues h2 {
+    margin: 0 0 0.75rem;
+}
+
+.profile-venue-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.profile-venue-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.profile-venue-list li:first-child {
+    border-top: 0;
+}

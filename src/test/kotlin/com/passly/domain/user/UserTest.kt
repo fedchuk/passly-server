@@ -109,4 +109,16 @@ class UserTest {
         assertFalse(anna.can(Permission.EDIT_MENU, centro))
         assertFalse(anna.can(Permission.VIEW_MENU, playa))
     }
+
+    @Test
+    fun `rename trims the name and rejects a blank one`() {
+        val user = User.create(Email.of("max@test.passly"), "Max", "hash")
+
+        user.rename("  Maksym ")
+
+        assertEquals("Maksym", user.displayName)
+        assertFailsWith<ValidationException> { user.rename("   ") }
+        assertFailsWith<ValidationException> { user.rename("x".repeat(User.MAX_NAME_LENGTH + 1)) }
+        assertEquals("Maksym", user.displayName)
+    }
 }

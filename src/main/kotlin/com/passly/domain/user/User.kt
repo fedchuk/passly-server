@@ -65,6 +65,10 @@ class User private constructor(
         memberships = memberships + Membership(tenantId, null, Role.OWNER)
     }
 
+    fun rename(newName: String) {
+        displayName = validName(newName)
+    }
+
     fun changePasswordHash(newHash: String) {
         passwordHash = newHash
     }

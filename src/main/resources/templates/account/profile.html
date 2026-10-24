@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Profile', null, 'profile', ~{::main})}">
+<body>
+<main class="narrow">
+    <h1>Profile</h1>
+    <p class="subtitle">Your name is shown to your team in the admin site and in the Passly apps.</p>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Profile saved</p>
+
+    <form th:action="@{/account/profile}" th:object="${form}" method="post">
+        <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Something went wrong</p>
+
+        <div class="profile-identity">
+            <span class="avatar avatar-large"
+                  th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">M</span>
+            <div>
+                <strong th:text="${currentUser.displayName}">Maksym</strong>
+                <small class="muted" th:text="${email}">max@example.com</small>
+            </div>
+        </div>
+
+        <label>
+            Name
+            <input th:field="*{displayName}" maxlength="120" required autocomplete="name"
+                   th:attr="aria-invalid=${#fields.hasErrors('displayName')} ? 'true' : null">
+            <small class="error" th:if="${#fields.hasErrors('displayName')}" th:errors="*{displayName}">Name must not be blank</small>
+        </label>
+
+        <label>
+            Email
+            <input type="email" th:value="${email}" disabled>
+            <small class="muted">Email is your login and cannot be changed here.</small>
+        </label>
+
+        <div class="buttons">
+            <button type="submit">Save</button>
+            <a th:href="@{/account/password}" role="button" class="secondary outline">Change password</a>
+        </div>
+    </form>
+
+    <section class="card profile-venues">
+        <h2>Where you work</h2>
+        <p th:if="${platformAdmin}" class="empty">You manage the Passly platform and do not work at venues.</p>
+        <p th:if="${!platformAdmin and venues.isEmpty()}" class="empty">You are not a member of any venue yet.</p>
+        <ul class="profile-venue-list" th:unless="${venues.isEmpty()}">
+            <li th:each="v : ${venues}">
+                <a th:href="@{/admin/venues/{id}/overview(id=${v.id})}" th:text="${v.name}">Bistro Centro</a>
+                <span class="badge" th:text="${v.roleLabel}">Manager</span>
+            </li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>
