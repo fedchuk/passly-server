@@ -111,6 +111,15 @@ class UserTest {
     }
 
     @Test
+    fun `waiters take orders and the kitchen does not`() {
+        val pablo = user().apply { joinVenue(centro, Role.WAITER) }
+        val anna = user().apply { joinVenue(centro, Role.KITCHEN) }
+
+        assertTrue(pablo.can(Permission.TAKE_ORDERS, centro))
+        assertFalse(anna.can(Permission.TAKE_ORDERS, centro))
+    }
+
+    @Test
     fun `rename trims the name and rejects a blank one`() {
         val user = User.create(Email.of("max@test.passly"), "Max", "hash")
 

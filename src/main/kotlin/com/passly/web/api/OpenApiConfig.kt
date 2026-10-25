@@ -3,20 +3,13 @@ package com.passly.web.api
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.PathItem
-import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.Content
-import io.swagger.v3.oas.models.media.IntegerSchema
-import io.swagger.v3.oas.models.media.MapSchema
-import io.swagger.v3.oas.models.media.MediaType
-import io.swagger.v3.oas.models.media.ObjectSchema
-import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.*
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import org.springdoc.core.customizers.OpenApiCustomizer
-import io.swagger.v3.oas.models.info.Info
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -77,6 +70,11 @@ class OpenApiConfig {
         .addProperty("status", IntegerSchema().example(409))
         .addProperty("detail", StringSchema().example("Category Wine was changed by someone else. Reload and try again."))
         .addProperty("instance", StringSchema().example("/api/v1/venues/00000000-0000-0000-0000-000000000010/categories"))
+        .addProperty(
+            "unavailableItemIds",
+            ArraySchema().items(StringSchema().format("uuid"))
+                .description("Menu items that cannot be ordered now, present only when an order is rejected because of them"),
+        )
         .addProperty(
             "errors",
             MapSchema().additionalProperties(ArraySchema().items(StringSchema()))

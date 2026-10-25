@@ -29,6 +29,7 @@ class SecurityConfig {
                 authorize("/api/v1/auth/logout", permitAll)
                 authorize("/api/v1/venues/{venueId}/staff/**", venues.requires(Permission.MANAGE_STAFF))
                 authorize(HttpMethod.PUT, "/api/v1/venues/{venueId}/items/{itemId}/availability", venues.requires(Permission.MANAGE_STOP_LIST))
+                authorize("/api/v1/venues/{venueId}/orders/**", venues.requires(Permission.TAKE_ORDERS))
                 authorize(HttpMethod.GET, "/api/v1/venues/{venueId}/**", venues.requires(Permission.VIEW_MENU))
                 authorize("/api/v1/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
                 authorize(anyRequest, authenticated)

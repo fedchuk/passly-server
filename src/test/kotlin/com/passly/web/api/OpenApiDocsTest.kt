@@ -31,6 +31,8 @@ class OpenApiDocsTest {
             jsonPath("$.info.title") { value("Passly API") }
             jsonPath("$.paths['/api/v1/auth/login'].post") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories'].get") { exists() }
+            jsonPath("$.paths['/api/v1/venues/{venueId}/orders'].post") { exists() }
+            jsonPath("$.paths['/api/v1/venues/{venueId}/orders/{id}/rounds'].post") { exists() }
             jsonPath("$.paths['/admin']") { doesNotExist() }
             jsonPath("$.paths['/login']") { doesNotExist() }
         }
@@ -49,6 +51,7 @@ class OpenApiDocsTest {
     fun `errors are documented as problem details`() {
         mockMvc.get("/v3/api-docs").andExpect {
             jsonPath("$.components.schemas.ProblemDetail.properties.detail") { exists() }
+            jsonPath("$.components.schemas.ProblemDetail.properties.unavailableItemIds") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories/{id}'].put.responses['409']") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories/{id}'].put.responses['401']") { exists() }
             jsonPath("$.paths['/api/v1/auth/login'].post.responses['403']") { doesNotExist() }
