@@ -1,5 +1,6 @@
 package com.passly.web.admin
 
+import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
@@ -13,7 +14,6 @@ import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.securedMockMvc
 import org.hamcrest.CoreMatchers.containsString
-import org.hamcrest.CoreMatchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -117,7 +117,7 @@ class StaffAdminTest {
             status { isOk() }
             view { name("admin/staff-form") }
             model { attributeHasFieldErrors("form", "email", "password") }
-            content { string(not(containsString("value=\"short\""))) }
+            content { string(doesNotContain("value=\"short\"")) }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.passly.web
 
+import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.user.Role
 import com.passly.web.api.TestVenue
@@ -7,7 +8,6 @@ import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.securedMockMvc
 import org.hamcrest.CoreMatchers.containsString
-import org.hamcrest.CoreMatchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -65,7 +65,7 @@ class WorkspaceTest {
         mockMvc.get(service) { with(waiter) }.andExpect {
             status { isOk() }
             view { name("service/floor") }
-            content { string(not(containsString(backOffice))) }
+            content { string(doesNotContain(backOffice)) }
         }
         mockMvc.get(kitchen) { with(waiter) }.andExpect { status { isForbidden() } }
         mockMvc.get(backOffice) { with(waiter) }.andExpect { status { isForbidden() } }

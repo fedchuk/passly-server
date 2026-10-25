@@ -6,14 +6,40 @@
     <div class="page-header">
         <div>
             <h1>Tables</h1>
-            <p class="subtitle">Pick a table to open an order or add a round.</p>
+            <p class="subtitle" th:text="|${summary.busy} of ${summary.total} tables busy|">3 of 12 tables busy</p>
         </div>
     </div>
 
-    <div class="placeholder">
+    <div th:if="${areas.isEmpty()}" class="placeholder">
         <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>
-        <p>The floor with live tables is coming next.</p>
+        <p>There are no tables yet. A manager adds them in the back office.</p>
     </div>
+
+    <section class="service-area" th:each="area : ${areas}">
+        <h2 th:text="${area.name}">Main hall</h2>
+        <ol class="service-grid">
+            <li th:each="table : ${area.tables}">
+                <a class="service-tile" th:classappend="${table.busy} ? 'busy' : 'free'"
+                   th:href="@{/service/venues/{v}/tables/{t}(v=${venue.id}, t=${table.id})}">
+                    <span class="service-tile-label" th:text="${table.label}">7</span>
+                    <th:block th:if="${table.busy}">
+                        <strong class="service-tile-total" th:text="${table.total}">42.50</strong>
+                        <small>
+                            <span th:if="${table.guests != null}" th:text="|${table.guests} guests · |">2 guests · </span>
+                            <span th:text="${table.openFor}">35 min</span>
+                        </small>
+                    </th:block>
+                    <small th:unless="${table.busy}" th:text="|Free · ${table.seats} seats|">Free · 4 seats</small>
+                </a>
+            </li>
+        </ol>
+    </section>
+
+    <script>
+        setInterval(() => {
+            if (document.visibilityState === 'visible') location.reload();
+        }, 30000);
+    </script>
 </main>
 </body>
 </html>

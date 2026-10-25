@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/workspace :: page(|Table ${table.label}|, ${venue}, 'service', ~{::main})}">
+<body>
+<main class="work-main narrow-work">
+    <a class="back-link" th:href="@{/service/venues/{v}(v=${venue.id})}">← All tables</a>
+
+    <div class="page-header">
+        <div>
+            <h1 th:text="|Table ${table.label}|">Table 7</h1>
+            <p class="subtitle" th:text="|${table.area} · ${table.seats} seats|">Main hall · 4 seats</p>
+        </div>
+        <div th:if="${table.order != null}" class="table-total">
+            <small>Total</small>
+            <strong th:text="${table.order.total}">42.50</strong>
+        </div>
+    </div>
+
+    <div th:if="${table.order == null}" class="placeholder">
+        <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>
+        <p>This table is free.</p>
+    </div>
+
+    <th:block th:if="${table.order != null}">
+        <p class="muted order-meta">
+            <span th:if="${table.order.guests != null}" th:text="|${table.order.guests} guests · |">2 guests · </span>
+            <span th:text="|open for ${table.order.openFor}|">open for 35 min</span>
+        </p>
+
+        <p th:if="${table.order.rounds.isEmpty()}" class="empty">Nothing ordered yet.</p>
+
+        <section class="card round" th:each="round : ${table.order.rounds}">
+            <h2 th:text="|Round ${round.number}|">Round 1</h2>
+            <ul class="round-lines">
+                <li th:each="line : ${round.lines}">
+                    <span class="line-quantity" th:text="|${line.quantity}×|">2×</span>
+                    <span class="line-name">
+                        <strong th:text="${line.name}">Ribeye</strong>
+                        <small th:if="${line.modifiers != null}" class="muted" th:text="${line.modifiers}">Medium rare</small>
+                        <small th:if="${line.comment != null}" class="line-comment" th:text="${line.comment}">No salt</small>
+                    </span>
+                    <span class="line-total" th:text="${line.total}">52.00</span>
+                </li>
+            </ul>
+        </section>
+    </th:block>
+</main>
+</body>
+</html>

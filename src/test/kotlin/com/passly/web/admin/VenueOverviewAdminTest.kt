@@ -1,5 +1,6 @@
 package com.passly.web.admin
 
+import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
@@ -15,7 +16,6 @@ import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
-import org.hamcrest.CoreMatchers.not
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -105,7 +105,7 @@ class VenueOverviewAdminTest {
         mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(loggedIn(managerId)) }.andExpect {
             status { isOk() }
             content { string(containsString("Menu items")) }
-            content { string(not(containsString("/admin/venues/${venue.venueId}/staff"))) }
+            content { string(doesNotContain("/admin/venues/${venue.venueId}/staff")) }
         }
     }
 
