@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(title, venue, zone, content)">
+<head th:replace="~{fragments/layout :: head(${title})}"></head>
+<body>
+<div class="work-app">
+    <header class="work-bar">
+        <a class="work-venue" th:href="@{/admin}" title="Switch venue">
+            <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
+            <span class="work-venue-text">
+                <strong th:text="${venue.name}">Bistro Centro</strong>
+                <small th:text="${venue.roleLabel}">Waiter</small>
+            </span>
+        </a>
+        <nav class="zone-nav" aria-label="Workspaces">
+            <a th:if="${venue.takesOrders}" class="topbar-link"
+               th:href="@{/service/venues/{v}(v=${venue.id})}"
+               th:attr="aria-current=${zone == 'service'} ? 'page' : null">Service</a>
+            <a th:if="${venue.preparesOrders}" class="topbar-link"
+               th:href="@{/kitchen/venues/{v}(v=${venue.id})}"
+               th:attr="aria-current=${zone == 'kitchen'} ? 'page' : null">Kitchen</a>
+            <a th:if="${venue.manageable}" class="topbar-link"
+               th:href="@{/admin/venues/{v}/overview(v=${venue.id})}">Back office</a>
+        </nav>
+        <details th:replace="~{fragments/user-menu :: menu(null)}"></details>
+    </header>
+    <main th:replace="${content}"></main>
+</div>
+<script th:replace="~{fragments/user-menu :: script}"></script>
+</body>
+</html>

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.servlet.ModelAndView
 
-@ControllerAdvice(basePackages = ["com.passly.web.admin"])
+@ControllerAdvice(basePackages = ["com.passly.web.admin", "com.passly.web.service", "com.passly.web.kitchen"])
 class AdminExceptionHandler {
 
     @ExceptionHandler(NotFoundException::class)

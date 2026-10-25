@@ -1,7 +1,5 @@
 package com.passly.web.admin
 
-import com.passly.web.api.createStation
-import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
@@ -12,13 +10,12 @@ import com.passly.application.venue.VenueOverviewQuery
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.MenuItemDetails
+import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
-import com.passly.web.api.TestVenue
-import com.passly.web.api.createMember
-import com.passly.web.api.createVenue
-import com.passly.web.api.securedMockMvc
+import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.not
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -102,12 +99,22 @@ class VenueOverviewAdminTest {
     }
 
     @Test
-    fun `manager sees the overview with links to the sections`() {
+    fun `manager sees the overview without the staff section`() {
         addItem("Wine", "Rioja")
 
         mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(loggedIn(managerId)) }.andExpect {
             status { isOk() }
             content { string(containsString("Menu items")) }
+            content { string(not(containsString("/admin/venues/${venue.venueId}/staff"))) }
+        }
+    }
+
+    @Test
+    fun `owner sees the link to the staff`() {
+        val ownerId = jdbc.createMember(venue, Role.OWNER)
+
+        mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(loggedIn(ownerId)) }.andExpect {
+            status { isOk() }
             content { string(containsString("/admin/venues/${venue.venueId}/staff")) }
         }
     }

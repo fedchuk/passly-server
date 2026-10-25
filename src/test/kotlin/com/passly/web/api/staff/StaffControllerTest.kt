@@ -27,16 +27,18 @@ class StaffControllerTest {
     lateinit var jdbc: JdbcClient
 
     lateinit var mockMvc: MockMvc
+    lateinit var managerMockMvc: MockMvc
 
     private lateinit var venueId: UUID
     private val base get() = "/api/v1/venues/$venueId/staff"
     private val email = "lucia-${UUID.randomUUID().toString().take(8)}@bistro.es"
 
     @BeforeEach
-    fun createVenueWithManager() {
+    fun createVenueWithOwner() {
         val venue = jdbc.createVenue()
         venueId = venue.venueId
-        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
+        managerMockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
+        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.OWNER))
     }
 
     private fun hire(role: String = "WAITER") = mockMvc.post(base) {
@@ -58,8 +60,7 @@ class StaffControllerTest {
 
         mockMvc.get(base).andExpect {
             status { isOk() }
-            jsonPath("$.length()") { value(2) }
-            jsonPath("$[0].displayName") { value("Lucia") }
+            jsonPath("$[?(@.displayName == 'Lucia')].role") { value("WAITER") }
         }
     }
 
@@ -101,6 +102,17 @@ class StaffControllerTest {
         }
 
         mockMvc.delete("$base/$lucia").andExpect { status { isNoContent() } }
-        mockMvc.get(base).andExpect { jsonPath("$.length()") { value(1) } }
+        mockMvc.get(base).andExpect { jsonPath("$[?(@.userId == '$lucia')]") { isEmpty() } }
+    }
+
+    @Test
+    fun `manager cannot see or hire the staff`() {
+        managerMockMvc.get(base).andExpect { status { isForbidden() } }
+
+        managerMockMvc.post(base) {
+            contentType = MediaType.APPLICATION_JSON
+            content = """{"email": "$email", "displayName": "Lucia", "password": "password-1", "role": "WAITER"}"""
+        }.andExpect { status { isForbidden() } }
     }
 }
+

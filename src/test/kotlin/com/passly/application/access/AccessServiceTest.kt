@@ -2,11 +2,7 @@ package com.passly.application.access
 
 import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.user.FakeUserRepository
-import com.passly.domain.user.Email
-import com.passly.domain.user.Permission
-import com.passly.domain.user.Role
-import com.passly.domain.user.User
-import com.passly.domain.user.UserId
+import com.passly.domain.user.*
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
@@ -48,14 +44,18 @@ class AccessServiceTest {
     }
 
     @Test
-    fun `manager and owner can do everything in their venue`() {
-        val manager = member(Role.MANAGER)
+    fun `owner can do everything in their venue`() {
         val owner = member(Role.OWNER)
 
-        Permission.entries.forEach {
-            assertTrue(service.isAllowed(manager.id, centro.id, it))
-            assertTrue(service.isAllowed(owner.id, centro.id, it))
-        }
+        Permission.entries.forEach { assertTrue(service.isAllowed(owner.id, centro.id, it)) }
+    }
+
+    @Test
+    fun `manager can do everything except hiring and dismissing`() {
+        val manager = member(Role.MANAGER)
+
+        (Permission.entries - Permission.MANAGE_STAFF).forEach { assertTrue(service.isAllowed(manager.id, centro.id, it)) }
+        assertFalse(service.isAllowed(manager.id, centro.id, Permission.MANAGE_STAFF))
     }
 
     @Test

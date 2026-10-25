@@ -62,6 +62,8 @@ class SecurityConfig {
                 authorize("/admin/venues/{venueId}/staff/**", venues.requires(Permission.MANAGE_STAFF))
                 authorize("/admin/venues/{venueId}/floor/**", venues.requires(Permission.MANAGE_TABLES))
                 authorize("/admin/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
+                authorize("/service/venues/{venueId}/**", venues.requires(Permission.TAKE_ORDERS))
+                authorize("/kitchen/venues/{venueId}/**", venues.requires(Permission.PREPARE_ORDERS))
                 authorize("/platform/**", hasRole("PLATFORM_ADMIN"))
                 authorize("/", authenticated)
                 authorize("/admin", authenticated)

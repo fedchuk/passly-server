@@ -6,27 +6,27 @@
     <div class="page-header">
         <div>
             <h1>My venues</h1>
-            <p class="subtitle">Choose a venue to manage its menu and team.</p>
+            <p class="subtitle">Choose a venue to start working.</p>
         </div>
     </div>
 
-    <p th:if="${venues.isEmpty()}" class="empty">You do not manage any venue yet.</p>
+    <p th:if="${venues.isEmpty()}" class="empty">You do not work at any venue yet.</p>
 
     <div class="venue-grid">
         <th:block th:each="venue : ${venues}">
-            <a th:if="${venue.manageable}" class="venue-card" th:href="@{/admin/venues/{id}/overview(id=${venue.id})}">
+            <a th:if="${venue.home != null}" class="venue-card" th:href="@{${venue.home}}">
                 <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
                 <span>
                     <strong th:text="${venue.name}">Bistro Centro</strong>
                     <span class="badge" th:text="${venue.roleLabel}">Owner</span>
                 </span>
             </a>
-            <div th:unless="${venue.manageable}" class="venue-card disabled">
+            <div th:unless="${venue.home != null}" class="venue-card disabled">
                 <span class="venue-avatar" th:text="${#strings.toUpperCase(#strings.substring(venue.name, 0, 1))}">B</span>
                 <span>
                     <strong th:text="${venue.name}">Bistro Centro</strong>
                     <span class="badge" th:text="${venue.roleLabel}">Waiter</span>
-                    <small class="muted">Use the Passly mobile app for this venue.</small>
+                    <small class="muted">There is no workspace for this role yet.</small>
                 </span>
             </div>
         </th:block>

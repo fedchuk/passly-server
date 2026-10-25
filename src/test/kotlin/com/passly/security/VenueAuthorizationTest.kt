@@ -114,12 +114,14 @@ class VenueAuthorizationTest {
     }
 
     @Test
-    fun `only managers see the staff`() {
+    fun `only the owner sees the staff`() {
         val waiter = member(Role.WAITER)
         val manager = member(Role.MANAGER)
+        val owner = member(Role.OWNER)
         val staff = "/api/v1/venues/${venue.venueId}/staff"
 
         mockMvc.get(staff) { with(asUser(waiter)) }.andExpect { status { isForbidden() } }
-        mockMvc.get(staff) { with(asUser(manager)) }.andExpect { status { isOk() } }
+        mockMvc.get(staff) { with(asUser(manager)) }.andExpect { status { isForbidden() } }
+        mockMvc.get(staff) { with(asUser(owner)) }.andExpect { status { isOk() } }
     }
 }

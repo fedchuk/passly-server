@@ -50,8 +50,8 @@ class StaffAdminTest {
 
     lateinit var mockMvc: MockMvc
     lateinit var venue: TestVenue
-    lateinit var managerId: UUID
-    lateinit var manager: RequestPostProcessor
+    lateinit var ownerId: UUID
+    lateinit var owner: RequestPostProcessor
 
     private val venueId get() = VenueId(venue.venueId)
     private val base get() = "/admin/venues/${venue.venueId}/staff"
@@ -61,9 +61,11 @@ class StaffAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        managerId = jdbc.createMember(venue, Role.MANAGER)
-        manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
+        ownerId = jdbc.createMember(venue, Role.OWNER)
+        owner = loggedIn(ownerId)
     }
+
+    private fun loggedIn(userId: UUID) = user(userDetailsService.loadUserByUsername("$userId@test.passly"))
 
     private fun email(name: String) = "$name-$unique@bistro.es"
 
@@ -74,20 +76,19 @@ class StaffAdminTest {
     private fun roleOf(userId: UUID) = staff.list(venueId).single { it.userId == UserId(userId) }.role
 
     @Test
-    fun `list shows the staff and marks the current user`() {
+    fun `owner sees the staff`() {
         hireLucia()
 
-        mockMvc.get(base) { with(manager) }.andExpect {
+        mockMvc.get(base) { with(owner) }.andExpect {
             status { isOk() }
             content { string(containsString("Lucia")) }
-            content { string(containsString("(you)")) }
         }
     }
 
     @Test
     fun `new waiter is hired and can log in`() {
         mockMvc.post(base) {
-            with(manager)
+            with(owner)
             with(csrf())
             param("displayName", "Pablo")
             param("email", email("pablo"))
@@ -106,7 +107,7 @@ class StaffAdminTest {
     @Test
     fun `invalid email and short password are shown next to the fields`() {
         mockMvc.post(base) {
-            with(manager)
+            with(owner)
             with(csrf())
             param("displayName", "Pablo")
             param("email", "pablo")
@@ -125,7 +126,7 @@ class StaffAdminTest {
         hireLucia()
 
         mockMvc.post(base) {
-            with(manager)
+            with(owner)
             with(csrf())
             param("displayName", "Lucia again")
             param("email", email("lucia"))
@@ -142,7 +143,7 @@ class StaffAdminTest {
         val lucia = hireLucia()
 
         mockMvc.post("$base/${lucia.id}/role") {
-            with(manager)
+            with(owner)
             with(csrf())
             param("role", "KITCHEN")
         }.andExpect {
@@ -158,7 +159,7 @@ class StaffAdminTest {
         val lucia = hireLucia()
 
         mockMvc.post("$base/${lucia.id}/dismiss") {
-            with(manager)
+            with(owner)
             with(csrf())
         }.andExpect { redirectedUrl(base) }
 
@@ -166,27 +167,41 @@ class StaffAdminTest {
     }
 
     @Test
-    fun `manager cannot dismiss themselves or change their own role`() {
-        mockMvc.post("$base/$managerId/dismiss") {
-            with(manager)
+    fun `owner cannot dismiss themselves or change their own role`() {
+        mockMvc.post("$base/$ownerId/dismiss") {
+            with(owner)
             with(csrf())
         }.andExpect { flash { attribute("error", "You cannot dismiss yourself") } }
 
-        mockMvc.post("$base/$managerId/role") {
-            with(manager)
+        mockMvc.post("$base/$ownerId/role") {
+            with(owner)
             with(csrf())
             param("role", "WAITER")
         }.andExpect { flash { attribute("error", "You cannot change your own role") } }
-
-        assertEquals(Role.MANAGER, roleOf(managerId))
     }
 
     @Test
-    fun `waiter cannot open the staff page`() {
-        val waiterId = jdbc.createMember(venue, Role.WAITER)
+    fun `manager and waiter cannot open the staff page`() {
+        val manager = jdbc.createMember(venue, Role.MANAGER)
+        val waiter = jdbc.createMember(venue, Role.WAITER)
 
-        mockMvc.get(base) {
-            with(user(userDetailsService.loadUserByUsername("$waiterId@test.passly")))
+        mockMvc.get(base) { with(loggedIn(manager)) }.andExpect { status { isForbidden() } }
+        mockMvc.get(base) { with(loggedIn(waiter)) }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `manager cannot hire`() {
+        val manager = jdbc.createMember(venue, Role.MANAGER)
+
+        mockMvc.post(base) {
+            with(loggedIn(manager))
+            with(csrf())
+            param("displayName", "Pablo")
+            param("email", email("pablo"))
+            param("password", "password-1")
+            param("role", "WAITER")
         }.andExpect { status { isForbidden() } }
+
+        assertTrue(staff.list(venueId).none { it.displayName == "Pablo" })
     }
 }

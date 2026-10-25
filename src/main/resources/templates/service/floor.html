@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/workspace :: page('Service', ${venue}, 'service', ~{::main})}">
+<body>
+<main class="work-main">
+    <div class="page-header">
+        <div>
+            <h1>Tables</h1>
+            <p class="subtitle">Pick a table to open an order or add a round.</p>
+        </div>
+    </div>
+
+    <div class="placeholder">
+        <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>
+        <p>The floor with live tables is coming next.</p>
+    </div>
+</main>
+</body>
+</html>

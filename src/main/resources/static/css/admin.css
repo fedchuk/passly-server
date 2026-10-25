@@ -1366,3 +1366,105 @@ a.action-card:hover {
 .station-row:first-child {
     border-top: 0;
 }
+
+
+.zone-nav {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.work-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.work-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.work-bar .zone-nav {
+    margin-left: auto;
+}
+
+.work-venue {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+    color: var(--text);
+}
+
+.work-venue:hover {
+    text-decoration: none;
+}
+
+.work-venue-text {
+    min-width: 0;
+}
+
+.work-venue-text strong,
+.work-venue-text small {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.work-venue-text small {
+    color: var(--muted);
+}
+
+.work-main {
+    flex: 1;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem;
+}
+
+.placeholder {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1.5rem;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    text-align: center;
+}
+
+.placeholder .icon {
+    width: 32px;
+    height: 32px;
+}
+
+.placeholder p {
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .work-bar {
+        flex-wrap: wrap;
+    }
+
+    .work-bar .zone-nav {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
+        overflow-x: auto;
+    }
+
+    .work-bar .user-menu {
+        margin-left: auto;
+    }
+}

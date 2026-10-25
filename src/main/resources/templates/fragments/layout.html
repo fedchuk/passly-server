@@ -61,53 +61,17 @@
 
     <div class="workspace">
         <header class="topbar" th:if="${currentUser != null}">
-            <details class="user-menu">
-                <summary class="user" aria-label="Account menu">
-                    <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">M</span>
-                    <span class="user-name" th:text="${currentUser.displayName}">Max</span>
-                    <svg th:replace="~{fragments/icons :: icon('chevron')}"></svg>
-                </summary>
-                <div class="user-menu-panel">
-                    <div class="user-menu-header">
-                        <strong th:text="${currentUser.displayName}">Max</strong>
-                        <small class="muted" th:text="${currentUser.username}">max@example.com</small>
-                    </div>
-                    <a class="user-menu-item" th:href="@{/account/profile}"
-                       th:attr="aria-current=${active == 'profile'} ? 'page' : null">
-                        <svg th:replace="~{fragments/icons :: icon('user')}"></svg>
-                        <span>Profile</span>
-                    </a>
-                    <a class="user-menu-item" th:href="@{/account/password}"
-                       th:attr="aria-current=${active == 'password'} ? 'page' : null">
-                        <svg th:replace="~{fragments/icons :: icon('lock')}"></svg>
-                        <span>Change password</span>
-                    </a>
-                    <form th:action="@{/logout}" method="post">
-                        <button type="submit" class="user-menu-item">
-                            <svg th:replace="~{fragments/icons :: icon('logout')}"></svg>
-                            <span>Log out</span>
-                        </button>
-                    </form>
-                </div>
-            </details>
+            <nav class="zone-nav" th:if="${venue != null}" aria-label="Workspaces">
+                <a th:if="${venue.takesOrders}" class="topbar-link"
+                   th:href="@{/service/venues/{v}(v=${venue.id})}">Service</a>
+                <a th:if="${venue.preparesOrders}" class="topbar-link"
+                   th:href="@{/kitchen/venues/{v}(v=${venue.id})}">Kitchen</a>
+            </nav>
+            <details th:replace="~{fragments/user-menu :: menu(${active})}"></details>
         </header>
         <main th:replace="${content}"></main>
     </div>
 </div>
-<script>
-    document.addEventListener('click', event => {
-        document.querySelectorAll('.user-menu[open]').forEach(menu => {
-            if (!menu.contains(event.target)) menu.open = false;
-        });
-    });
-
-    document.addEventListener('keydown', event => {
-        if (event.key !== 'Escape') return;
-        document.querySelectorAll('.user-menu[open]').forEach(menu => {
-            menu.open = false;
-            menu.querySelector('summary').focus();
-        });
-    });
-</script>
+<script th:replace="~{fragments/user-menu :: script}"></script>
 </body>
 </html>
