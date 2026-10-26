@@ -93,7 +93,11 @@
                             <dd class="muted" th:text="${tax.tax}">3.86</dd>
                         </th:block>
                         <th:block th:each="payment : ${table.order.payments}">
-                            <dt th:text="|Paid by ${#strings.toLowerCase(payment.method)}|">Paid by cash</dt>
+                            <dt>
+                                <span th:text="|Paid by ${#strings.toLowerCase(payment.method)}|">Paid by cash</span>
+                                <small class="muted" th:if="${payment.foreign != null}" th:text="|· ${payment.foreign}|">· 50.00 EUR at 0.95</small>
+                                <small class="muted" th:if="${payment.change != null}" th:text="|· change ${payment.change}|">· change 2.50</small>
+                            </dt>
                             <dd th:text="|−${payment.amount}|">−20.00</dd>
                         </th:block>
                         <dt class="bill-due">To pay</dt>
@@ -101,20 +105,18 @@
                     </dl>
 
                     <form th:if="${venue.closesOrders and !table.order.settled}" class="payment-form" method="post"
-                          th:action="@{/service/venues/{v}/tables/{t}/payments(v=${venue.id}, t=${table.id})}">
+                          th:action="@{/service/venues/{v}/tables/{t}/payments(v=${venue.id}, t=${table.id})}"
+                          th:attr="data-due=${table.order.due}, data-main=${paymentCurrencies[0].code}">
                         <input type="hidden" name="orderId" th:value="${table.order.id}">
-                        <div class="grid">
-                            <label>
-                                Amount
-                                <input type="text" name="amount" inputmode="decimal" required
-                                       th:value="${table.order.due}">
-                            </label>
-                            <label>
-                                Cash received
-                                <input type="text" name="received" inputmode="decimal" placeholder="Optional">
-                                <small class="muted" id="change-label"></small>
-                            </label>
+                        <div class="payment-amount" role="group">
+                            <input type="text" name="amount" inputmode="decimal" required aria-label="Amount the guest hands over"
+                                   th:value="${table.order.due}">
+                            <select name="currency" aria-label="Currency" th:disabled="${paymentCurrencies.size() == 1}">
+                                <option th:each="currency : ${paymentCurrencies}" th:value="${currency.code}"
+                                        th:attr="data-rate=${currency.rate}" th:text="${currency.code}">EUR</option>
+                            </select>
                         </div>
+                        <small class="muted payment-hint" id="payment-hint">Cash above the due is given back as change.</small>
                         <div class="payment-actions">
                             <button type="submit" name="method" value="CASH">Cash</button>
                             <button type="submit" name="method" value="CARD">Card</button>
@@ -412,15 +414,28 @@
             const paymentForm = document.querySelector('.payment-form');
             if (paymentForm) {
                 const amountInput = paymentForm.amount;
-                const receivedInput = paymentForm.received;
-                const changeLabel = document.getElementById('change-label');
-                const showChange = () => {
-                    const received = cents((receivedInput.value || '').replace(',', '.'));
+                const currencySelect = paymentForm.currency;
+                const hint = document.getElementById('payment-hint');
+                const defaultHint = hint.textContent;
+                const due = cents(paymentForm.dataset.due);
+                const main = paymentForm.dataset.main;
+                const rateOf = () => parseFloat(currencySelect.selectedOptions[0].dataset.rate || '1');
+                const foreign = () => currencySelect.value !== main;
+                const showHint = () => {
                     const amount = cents((amountInput.value || '').replace(',', '.'));
-                    changeLabel.textContent = received > amount ? 'Change ' + money(received - amount) : '';
+                    const received = amount > 0 ? Math.round(amount * rateOf()) : 0;
+                    const tolerance = foreign() ? Math.round(rateOf()) : 0;
+                    const parts = [];
+                    if (foreign() && received > 0) parts.push('= ' + money(received) + ' ' + main);
+                    if (received - due > tolerance) parts.push('cash: change ' + money(received - due) + ' ' + main);
+                    hint.textContent = parts.length > 0 ? parts.join(' · ') : defaultHint;
                 };
-                receivedInput.addEventListener('input', showChange);
-                amountInput.addEventListener('input', showChange);
+                currencySelect.addEventListener('change', () => {
+                    amountInput.value = money(Math.ceil(due / rateOf()));
+                    showHint();
+                });
+                amountInput.addEventListener('input', showHint);
+                showHint();
                 let paying = false;
                 paymentForm.addEventListener('submit', event => {
                     if (paying) event.preventDefault();

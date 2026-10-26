@@ -1,18 +1,13 @@
 package com.passly.application.order
 
-import com.passly.domain.common.ConflictException
-import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.UnavailableItemsException
-import com.passly.domain.common.ValidationException
+import com.passly.domain.common.*
 import com.passly.domain.floor.FloorPlanRepository
 import com.passly.domain.menu.CategoryRepository
 import com.passly.domain.menu.MenuItemRepository
 import com.passly.domain.menu.ModifierGroupRepository
 import com.passly.domain.menu.stationFor
 import com.passly.domain.order.*
-import com.passly.domain.venue.Venue
-import com.passly.domain.venue.VenueId
-import com.passly.domain.venue.VenueRepository
+import com.passly.domain.venue.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -26,6 +21,7 @@ class OrderService(
     private val items: MenuItemRepository,
     private val modifierGroups: ModifierGroupRepository,
     private val categories: CategoryRepository,
+    private val settings: VenueSettingsRepository,
     private val clock: Clock,
 ) {
 
@@ -61,7 +57,7 @@ class OrderService(
 
     fun pay(command: PayOrderCommand): Order {
         val order = lockOrder(command.venueId, command.orderId)
-        order.pay(command.method, command.amount, command.takenBy, clock.instant())
+        order.pay(command.method, tender(command.venueId, command.amount, command.currency), command.takenBy, clock.instant())
         orders.save(order)
         return order
     }
@@ -71,6 +67,14 @@ class OrderService(
         order.close(command.closedBy, clock.instant())
         orders.save(order)
         return order
+    }
+
+    private fun tender(venueId: VenueId, amount: Money, currency: CurrencyCode?): Tender {
+        val venueSettings = settings.find(venueId) ?: throw NotFoundException("Venue", venueId)
+        if (currency == null || currency == venueSettings.currency) return Tender.main(amount, venueSettings.currency)
+        val accepted = venueSettings.acceptedCurrencies.firstOrNull { it.currency == currency }
+            ?: throw ValidationException("$currency is not accepted here", "currency")
+        return Tender(amount, currency, accepted.rate)
     }
 
     private fun lockOrder(venueId: VenueId, orderId: OrderId): Order =

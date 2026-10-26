@@ -1,9 +1,6 @@
 package com.passly.web.api.order
 
-import com.passly.domain.order.Order
-import com.passly.domain.order.OrderLine
-import com.passly.domain.order.OrderStatus
-import com.passly.domain.order.PaymentMethod
+import com.passly.domain.order.*
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import java.util.*
@@ -46,8 +43,16 @@ data class TaxShareResponse(
 data class PaymentResponse(
     val id: UUID,
     val method: PaymentMethod,
-    @Schema(example = "20.00")
+    @Schema(description = "Counted towards the bill, in the main currency", example = "20.00")
     val amount: String,
+    @Schema(description = "What the guest handed over, in the payment currency", example = "25.00")
+    val tendered: String,
+    @Schema(example = "EUR")
+    val currency: String,
+    @Schema(description = "Main currency units for one unit of the payment currency. Empty for the main currency.", example = "0.95")
+    val rate: String?,
+    @Schema(description = "Change returned in the main currency", example = "3.75")
+    val change: String,
     val takenBy: UUID,
     val takenAt: Instant,
 )
@@ -97,7 +102,7 @@ fun Order.toResponse() = OrderResponse(
     due = due.toString(),
     taxes = taxShares.map { TaxShareResponse(it.rate.percent.toPlainString(), it.gross.toString(), it.tax.toString(), it.net.toString()) },
     lines = lines.map { it.toResponse() },
-    payments = payments.map { PaymentResponse(it.id.value, it.method, it.amount.toString(), it.takenBy.value, it.takenAt) },
+    payments = payments.map { it.toResponse() },
     closedBy = closedBy?.value,
     closedAt = closedAt,
 )
@@ -116,4 +121,16 @@ private fun OrderLine.toResponse() = OrderLineResponse(
     modifiers = modifiers.map { OrderLineModifierResponse(it.modifierId.value, it.groupName, it.name, it.priceDelta.toString()) },
     addedBy = addedBy.value,
     addedAt = addedAt,
+)
+
+private fun Payment.toResponse() = PaymentResponse(
+    id = id.value,
+    method = method,
+    amount = amount.toString(),
+    tendered = tender.amount.toString(),
+    currency = tender.currency.value,
+    rate = tender.rate?.toString(),
+    change = change.toString(),
+    takenBy = takenBy.value,
+    takenAt = takenAt,
 )

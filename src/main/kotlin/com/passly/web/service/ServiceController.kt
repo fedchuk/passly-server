@@ -2,6 +2,7 @@ package com.passly.web.service
 
 import com.passly.application.menu.WaiterMenuService
 import com.passly.application.order.*
+import com.passly.application.venue.VenueSettingsService
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.UnavailableItemsException
@@ -10,6 +11,7 @@ import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderStatus
 import com.passly.domain.user.UserId
+import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import com.passly.web.admin.AdminVenues
@@ -30,6 +32,7 @@ class ServiceController(
     private val floorStatus: FloorStatusQuery,
     private val menus: WaiterMenuService,
     private val orders: OrderService,
+    private val settings: VenueSettingsService,
     private val clock: Clock,
 ) {
 
@@ -60,6 +63,7 @@ class ServiceController(
         val menu = menus.menu(VenueId(venueId))
         model.addAttribute("sections", menu.toSectionViews())
         model.addAttribute("modifierGroups", menu.toModifierGroupViews())
+        model.addAttribute("paymentCurrencies", settings.get(VenueId(venueId)).toPaymentCurrencies())
         return "service/table"
     }
 
@@ -142,14 +146,17 @@ class ServiceController(
                     OrderId(orderId),
                     UserId(principal.userId),
                     method,
-                    amount
+                    amount,
+                    form.currency?.takeIf { it.isNotBlank() }?.let(CurrencyCode::of),
                 )
             )
+            val payment = order.payments.last()
+            val change = if (payment.change.isZero) "" else ", change ${payment.change}"
             if (order.status == OrderStatus.CLOSED) {
-                flash.addFlashAttribute("message", "Table closed, ${order.paid} paid")
+                flash.addFlashAttribute("message", "Table closed, ${order.paid} paid$change")
                 "redirect:/service/venues/$venueId"
             } else {
-                flash.addFlashAttribute("message", "${method.label()} $amount taken, ${order.due} left to pay")
+                flash.addFlashAttribute("message", "${payment.takenLabel()} taken$change, ${order.due} left to pay")
                 tablePage
             }
         } catch (e: ValidationException) {

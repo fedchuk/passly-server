@@ -1909,8 +1909,33 @@ a.action-card:hover {
     font-weight: 700;
 }
 
-.payment-form label {
-    margin-bottom: 0.75rem;
+.payment-amount {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.payment-amount input {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.payment-amount select {
+    flex: 0 0 6rem;
+    margin: 0;
+}
+
+.payment-hint {
+    display: block;
+    min-height: 1.25rem;
+    margin: 0.4rem 0 0.75rem;
+}
+
+.bill-lines dt small {
+    display: block;
 }
 
 .payment-actions {

@@ -4,7 +4,9 @@ import com.passly.application.order.FloorStatus
 import com.passly.application.order.TableStatus
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLine
+import com.passly.domain.order.Payment
 import com.passly.domain.order.PaymentMethod
+import com.passly.domain.venue.VenueSettings
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -60,6 +62,13 @@ data class TaxLineView(
 data class PaymentView(
     val method: String,
     val amount: String,
+    val foreign: String?,
+    val change: String?,
+)
+
+data class PaymentCurrencyView(
+    val code: String,
+    val rate: String?,
 )
 
 data class RoundView(
@@ -120,9 +129,24 @@ private fun Order.toPageView(now: Instant) = OrderPageView(
     settled = due.isZero,
     partlyPaid = payments.isNotEmpty(),
     taxes = taxShares.map { TaxLineView("${it.rate.percent.stripTrailingZeros().toPlainString()}%", it.tax.toString()) },
-    payments = payments.map { PaymentView(it.method.label(), it.amount.toString()) },
+    payments = payments.map { it.toView() },
     rounds = lines.groupBy { it.round }.toSortedMap().map { (number, lines) -> RoundView(number, lines.map { it.toView() }) },
 )
+
+private fun Payment.toView() = PaymentView(
+    method = method.label(),
+    amount = amount.toString(),
+    foreign = tender.rate?.let { rate -> "${tender.amount} ${tender.currency} at $rate" },
+    change = change.takeUnless { it.isZero }?.toString(),
+)
+
+fun Payment.takenLabel(): String =
+    if (tender.foreign) "${method.label()} ${tender.amount} ${tender.currency} (${tender.inMainCurrency})"
+    else "${method.label()} ${tender.amount}"
+
+fun VenueSettings.toPaymentCurrencies(): List<PaymentCurrencyView> =
+    listOf(PaymentCurrencyView(currency.value, null)) +
+            acceptedCurrencies.map { PaymentCurrencyView(it.currency.value, it.rate.toString()) }
 
 private fun OrderLine.toView() = LineView(
     quantity = quantity,

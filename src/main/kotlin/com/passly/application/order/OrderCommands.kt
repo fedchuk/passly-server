@@ -6,6 +6,7 @@ import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.PaymentMethod
 import com.passly.domain.user.UserId
+import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
 
 data class OpenOrderCommand(
@@ -29,6 +30,7 @@ data class PayOrderCommand(
     val takenBy: UserId,
     val method: PaymentMethod,
     val amount: Money,
+    val currency: CurrencyCode? = null,
 )
 
 data class CloseOrderCommand(

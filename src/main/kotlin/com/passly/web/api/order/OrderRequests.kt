@@ -35,6 +35,15 @@ data class AddRoundRequest(
 
 data class PaymentRequest(
     val method: PaymentMethod,
-    @Schema(description = "Amount to take, at most what is still due. Change for cash is given outside the system.", example = "20.00")
+    @Schema(
+        description = "Amount the guest hands over, in the payment currency. Cash may be more than what is due: " +
+                "the due is counted and the rest is returned as change in the main currency. A card payment must not be more than the due.",
+        example = "20.00",
+    )
     @Pattern(regexp = """^\d{1,8}(\.\d{1,2})?$""") val amount: String,
+    @Schema(
+        description = "ISO 4217 code of the payment currency: the main one or one listed in GET …/currencies. Empty means the main currency.",
+        example = "EUR",
+    )
+    @Pattern(regexp = "^[A-Z]{3}$") val currency: String? = null,
 )

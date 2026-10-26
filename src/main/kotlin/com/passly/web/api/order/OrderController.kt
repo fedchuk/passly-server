@@ -4,6 +4,7 @@ import com.passly.application.order.*
 import com.passly.domain.common.Money
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
+import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.IdempotentResponses
 import com.passly.web.api.auth.userId
@@ -84,7 +85,8 @@ class OrderController(
     @PostMapping("/{id}/payments")
     @Operation(
         summary = "Take a payment",
-        description = "Adds a cash or card payment. The amount must not be more than what is due; the payment that " +
+        description = "Adds a cash or card payment in the main currency or in an accepted one, converted at the venue rate. " +
+                "Cash above the due returns change in the main currency; a card cannot pay more than the due. The payment that " +
                 "covers the rest closes the order and frees the table. Send a new Idempotency-Key for every payment " +
                 "and the same key when you retry it: a repeated request returns the stored response with " +
                 "Idempotent-Replayed: true and takes no money twice. Reusing a key for another request fails with 422.",
@@ -99,7 +101,14 @@ class OrderController(
     ): ResponseEntity<OrderResponse> =
         idempotent.respond(jwt.userId(), idempotencyKey, "payment:$venueId:$id", request, HttpStatus.OK, OrderResponse::class.java) {
             orders.pay(
-                PayOrderCommand(VenueId(venueId), OrderId(id), jwt.userId(), request.method, Money.of(request.amount)),
+                PayOrderCommand(
+                    VenueId(venueId),
+                    OrderId(id),
+                    jwt.userId(),
+                    request.method,
+                    Money.of(request.amount),
+                    request.currency?.let(CurrencyCode::of),
+                ),
             ).toResponse()
         }
 

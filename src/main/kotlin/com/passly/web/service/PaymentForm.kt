@@ -7,4 +7,5 @@ class PaymentForm {
     var orderId: UUID? = null
     var method: PaymentMethod? = null
     var amount: String = ""
+    var currency: String? = null
 }

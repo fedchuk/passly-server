@@ -8,6 +8,8 @@ import com.passly.domain.menu.ModifierId
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.*
 import com.passly.domain.user.UserId
+import com.passly.domain.venue.CurrencyCode
+import com.passly.domain.venue.ExchangeRate
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 
@@ -112,6 +114,8 @@ private fun OrderPaymentEntity.toDomain() = Payment(
     id = PaymentId(id),
     method = method,
     amount = Money.of(amount),
+    tender = Tender(Money.of(tenderedAmount), CurrencyCode.of(tenderedCurrency), exchangeRate?.let(ExchangeRate::of)),
+    change = Money.of(changeGiven),
     takenBy = UserId(takenBy),
     takenAt = takenAt,
 )
@@ -122,6 +126,10 @@ private fun Payment.toEntity(order: OrderEntity, position: Int) = OrderPaymentEn
     position = position,
     method = method,
     amount = amount.amount,
+    tenderedAmount = tender.amount.amount,
+    tenderedCurrency = tender.currency.value,
+    exchangeRate = tender.rate?.value,
+    changeGiven = change.amount,
     takenBy = takenBy.value,
     takenAt = takenAt,
 )

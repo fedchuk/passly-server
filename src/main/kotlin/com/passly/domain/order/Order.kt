@@ -84,15 +84,23 @@ class Order private constructor(
         return round
     }
 
-    fun pay(method: PaymentMethod, amount: Money, takenBy: UserId, takenAt: Instant): Payment {
+    fun pay(method: PaymentMethod, tender: Tender, takenBy: UserId, takenAt: Instant): Payment {
         requireOpen()
         if (lines.isEmpty()) throw ValidationException("There is nothing to pay yet", "amount")
-        if (amount.isNegative || amount.isZero) throw ValidationException("Amount must be more than zero", "amount")
-        if (amount > due) throw ValidationException("Amount $amount is more than the $due due", "amount")
+        if (tender.amount.isNegative || tender.amount.isZero) throw ValidationException("Amount must be more than zero", "amount")
         if (payments.size >= MAX_PAYMENTS) {
             throw ValidationException("An order can have at most $MAX_PAYMENTS payments", "amount")
         }
-        val payment = Payment(PaymentId.new(), method, amount, takenBy, takenAt)
+        val received = tender.inMainCurrency
+        if (received.isZero) throw ValidationException("${tender.amount} ${tender.currency} is less than one cent", "amount")
+        val counted = minOf(received, due)
+        val over = received - counted
+        val change = when {
+            over.isZero || over <= tender.smallestCoinInMainCurrency -> Money.ZERO
+            method == PaymentMethod.CASH -> over
+            else -> throw ValidationException("Amount $received is more than the $due due", "amount")
+        }
+        val payment = Payment(PaymentId.new(), method, counted, tender, change, takenBy, takenAt)
         payments = payments + payment
         if (due.isZero) markClosed(takenBy, takenAt)
         return payment

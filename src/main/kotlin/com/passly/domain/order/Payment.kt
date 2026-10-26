@@ -8,6 +8,8 @@ data class Payment(
     val id: PaymentId,
     val method: PaymentMethod,
     val amount: Money,
+    val tender: Tender,
+    val change: Money,
     val takenBy: UserId,
     val takenAt: Instant,
 )

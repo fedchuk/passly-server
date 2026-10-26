@@ -26,6 +26,18 @@ class OrderPaymentEntity(
     @Column(name = "amount", nullable = false, updatable = false, precision = 10, scale = 2)
     val amount: BigDecimal,
 
+    @Column(name = "tendered_amount", nullable = false, updatable = false, precision = 10, scale = 2)
+    val tenderedAmount: BigDecimal,
+
+    @Column(name = "tendered_currency", nullable = false, updatable = false, length = 3)
+    val tenderedCurrency: String,
+
+    @Column(name = "exchange_rate", updatable = false, precision = 13, scale = 6)
+    val exchangeRate: BigDecimal?,
+
+    @Column(name = "change_given", nullable = false, updatable = false, precision = 10, scale = 2)
+    val changeGiven: BigDecimal,
+
     @Column(name = "taken_by", nullable = false, updatable = false)
     val takenBy: UUID,
 

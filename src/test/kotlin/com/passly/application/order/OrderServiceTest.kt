@@ -5,16 +5,16 @@ import com.passly.application.menu.FakeCategoryRepository
 import com.passly.application.menu.FakeMenuItemRepository
 import com.passly.application.menu.FakeModifierGroupRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.*
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.OrderStatus
 import com.passly.domain.order.PaymentMethod
+import com.passly.domain.order.Tender
 import com.passly.domain.user.UserId
-import com.passly.domain.venue.TenantId
-import com.passly.domain.venue.Venue
-import com.passly.domain.venue.VenueId
+import com.passly.domain.venue.*
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -36,8 +36,12 @@ class OrderServiceTest {
     private val items = FakeMenuItemRepository()
     private val groups = FakeModifierGroupRepository()
     private val categories = FakeCategoryRepository()
+    private val settings = FakeVenueSettingsRepository(
+        VenueSettings.fromStorage(venue.id, CountryCode.of("CH"), CurrencyCode.of("CHF"), version = 0)
+            .apply { acceptCurrency(CurrencyCode.of("EUR"), ExchangeRate.of("0.95"), now) },
+    )
     private val service = OrderService(
-        venues, floors, orders, items, groups, categories, Clock.fixed(now, ZoneOffset.UTC),
+        venues, floors, orders, items, groups, categories, settings, Clock.fixed(now, ZoneOffset.UTC),
     )
 
     private val table: DiningTable = floors.load(venue.id).let { plan ->
@@ -112,6 +116,42 @@ class OrderServiceTest {
         assertEquals(now, stored.closedAt)
         assertEquals(2, orders.locks)
         assertEquals(null, orders.findOpenAtTable(table.id))
+    }
+
+    @Test
+    fun `cash in an accepted currency is converted at the venue rate and change is in the main currency`() {
+        val coffee = item("Espresso", "4.50")
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(coffee, 10))))
+
+        service.pay(PayOrderCommand(venue.id, order.id, waiter, PaymentMethod.CASH, Money.of("50.00"), CurrencyCode.of("EUR")))
+
+        val payment = orders.stored.getValue(order.id).payments.single()
+        assertEquals(Money.of("45.00"), payment.amount)
+        assertEquals(Tender(Money.of("50.00"), CurrencyCode.of("EUR"), ExchangeRate.of("0.95")), payment.tender)
+        assertEquals(Money.of("2.50"), payment.change)
+        assertEquals(OrderStatus.CLOSED, orders.stored.getValue(order.id).status)
+    }
+
+    @Test
+    fun `payment in the main currency keeps no rate`() {
+        val coffee = item("Espresso", "4.50")
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(coffee))))
+
+        service.pay(PayOrderCommand(venue.id, order.id, waiter, PaymentMethod.CARD, Money.of("2.00")))
+
+        assertEquals(Tender.main(Money.of("2.00"), CurrencyCode.of("CHF")), orders.stored.getValue(order.id).payments.single().tender)
+    }
+
+    @Test
+    fun `currency the venue does not accept is refused`() {
+        val coffee = item("Espresso", "4.50")
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(coffee))))
+
+        val error = assertFailsWith<ValidationException> {
+            service.pay(PayOrderCommand(venue.id, order.id, waiter, PaymentMethod.CASH, Money.of("5.00"), CurrencyCode.of("USD")))
+        }
+        assertEquals("currency", error.field)
+        assertTrue(orders.stored.getValue(order.id).payments.isEmpty())
     }
 
     @Test
