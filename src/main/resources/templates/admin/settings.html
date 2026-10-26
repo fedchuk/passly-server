@@ -6,11 +6,12 @@
     <div class="page-header">
         <div>
             <h1>Settings</h1>
-            <p class="subtitle">Where the venue works and which currency its prices and bills use.</p>
+            <p class="subtitle">Where the venue works and which currencies its guests pay in.</p>
         </div>
     </div>
 
     <p th:if="${message}" class="notice" th:text="${message}">Settings saved</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
 
     <section class="card">
         <form th:action="@{/admin/venues/{v}/settings(v=${venue.id})}" th:object="${form}" method="post">
@@ -42,6 +43,51 @@
             <div class="buttons">
                 <button type="submit">Save</button>
             </div>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Additional currencies</h2>
+        <p class="muted">Guests can also pay in these currencies, in cash or by card. The amount is converted to
+            <strong th:text="${mainCurrency}">EUR</strong> at the rate you set here.</p>
+
+        <p th:if="${accepted.isEmpty()}" class="empty">Only <span th:text="${mainCurrency}">EUR</span> is accepted.</p>
+
+        <ul class="currency-list" th:unless="${accepted.isEmpty()}">
+            <li class="currency-row" th:each="currency : ${accepted}">
+                <div class="currency-name">
+                    <strong th:text="${currency.label}">CHF · Swiss Franc</strong>
+                    <small class="muted" th:text="|Rate set on ${currency.rateSetOn}|">Rate set on 26 Oct 2026</small>
+                </div>
+                <form class="currency-rate" method="post" role="group"
+                      th:action="@{/admin/venues/{v}/settings/currencies/{c}(v=${venue.id}, c=${currency.code})}">
+                    <span class="rate-prefix" th:text="|1 ${currency.code} =|">1 CHF =</span>
+                    <input name="rate" th:value="${currency.rate}" inputmode="decimal" required
+                           th:aria-label="|Rate of ${currency.code} in ${mainCurrency}|">
+                    <span class="rate-suffix" th:text="${mainCurrency}">EUR</span>
+                    <button type="submit" class="secondary">Save rate</button>
+                </form>
+                <form method="post" th:action="@{/admin/venues/{v}/settings/currencies/{c}/delete(v=${venue.id}, c=${currency.code})}"
+                      onsubmit="return confirm('Stop accepting this currency?')">
+                    <button type="submit" class="outline contrast icon-button" th:title="|Stop accepting ${currency.code}|"
+                            th:aria-label="|Stop accepting ${currency.code}|">✕</button>
+                </form>
+            </li>
+        </ul>
+
+        <form class="currency-add" method="post" th:action="@{/admin/venues/{v}/settings/currencies(v=${venue.id})}">
+            <label>
+                Currency
+                <select name="currency" required>
+                    <option value="" disabled selected>Choose a currency</option>
+                    <option th:each="currency : ${addableCurrencies}" th:value="${currency.code}" th:text="${currency.label}">CHF · Swiss Franc</option>
+                </select>
+            </label>
+            <label>
+                <span th:text="|Rate in ${mainCurrency}|">Rate in EUR</span>
+                <input name="rate" inputmode="decimal" placeholder="1.05" required>
+            </label>
+            <button type="submit">Accept currency</button>
         </form>
     </section>
 </main>

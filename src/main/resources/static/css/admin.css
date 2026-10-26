@@ -2336,3 +2336,76 @@ a.action-card:hover {
     opacity: 0.7;
     pointer-events: none;
 }
+
+.currency-list {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    list-style: none;
+}
+
+.currency-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-small);
+}
+
+.currency-name {
+    display: grid;
+    flex: 1;
+    min-width: 12rem;
+}
+
+form.currency-rate {
+    align-items: center;
+    margin: 0;
+}
+
+form.currency-rate input {
+    flex: 0 0 7.5rem;
+    width: 7.5rem;
+    border-radius: 0;
+    text-align: right;
+}
+
+form.currency-rate button {
+    white-space: nowrap;
+}
+
+.narrow > .card + .card {
+    margin-top: 1.25rem;
+}
+
+.card > h2:first-child {
+    margin-top: 0;
+}
+
+.rate-prefix,
+.rate-suffix {
+    padding: 0 0.6rem;
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.currency-add {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.currency-add label {
+    margin: 0;
+}
+
+@media (max-width: 700px) {
+    .currency-add {
+        grid-template-columns: 1fr;
+    }
+}

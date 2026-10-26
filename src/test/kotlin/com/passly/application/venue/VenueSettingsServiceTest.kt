@@ -9,7 +9,9 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.order.Order
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.*
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 import kotlin.test.*
 
 class VenueSettingsServiceTest {
@@ -21,7 +23,8 @@ class VenueSettingsServiceTest {
     )
     private val orders = FakeOrderRepository()
     private val menuChanges = FakeMenuChangeRecorder()
-    private val service = VenueSettingsService(venues, settings, orders, menuChanges)
+    private val now = Instant.parse("2026-10-26T20:00:00Z")
+    private val service = VenueSettingsService(venues, settings, orders, menuChanges, Clock.fixed(now, ZoneOffset.UTC))
 
     private fun update(country: String, currency: String, version: Long? = null) = service.update(
         UpdateVenueSettingsCommand(venue.id, CountryCode.of(country), CurrencyCode.of(currency), version),
@@ -67,5 +70,29 @@ class VenueSettingsServiceTest {
     fun `stale form is refused`() {
         assertFailsWith<ConflictException> { update("CH", "CHF", version = 2) }
         assertFalse(service.currencyLocked(venue.id))
+    }
+
+    @Test
+    fun `accepted currency is stored with the time of its rate`() {
+        update("CH", "CHF")
+
+        service.acceptCurrency(AcceptCurrencyCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.95")))
+
+        val accepted = service.get(venue.id).accepted(CurrencyCode.of("EUR"))
+        assertEquals(ExchangeRate.of("0.95"), accepted.rate)
+        assertEquals(now, accepted.rateSetAt)
+        assertEquals(1, menuChanges.recorded.size)
+    }
+
+    @Test
+    fun `rate changes and the currency can be removed`() {
+        update("CH", "CHF")
+        service.acceptCurrency(AcceptCurrencyCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.95")))
+
+        service.changeRate(ChangeRateCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.93")))
+        assertEquals(ExchangeRate.of("0.93"), service.get(venue.id).accepted(CurrencyCode.of("EUR")).rate)
+
+        service.stopAccepting(venue.id, CurrencyCode.of("EUR"))
+        assertTrue(service.get(venue.id).acceptedCurrencies.isEmpty())
     }
 }

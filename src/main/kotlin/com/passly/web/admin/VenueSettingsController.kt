@@ -1,11 +1,14 @@
 package com.passly.web.admin
 
+import com.passly.application.venue.AcceptCurrencyCommand
+import com.passly.application.venue.ChangeRateCommand
 import com.passly.application.venue.UpdateVenueSettingsCommand
 import com.passly.application.venue.VenueSettingsService
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.venue.CountryCode
 import com.passly.domain.venue.CurrencyCode
+import com.passly.domain.venue.ExchangeRate
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
@@ -55,7 +58,7 @@ class VenueSettingsController(
                     ),
                 )
                 flash.addFlashAttribute("message", "Settings saved")
-                return "redirect:/admin/venues/$venueId/settings"
+                return settingsPage(venueId)
             } catch (e: ValidationException) {
                 if (e.field != null) binding.rejectValue(e.field, "invalid", e.message ?: "Invalid value")
                 else binding.reject("invalid", e.message ?: "Invalid data")
@@ -68,11 +71,65 @@ class VenueSettingsController(
         return page(venueId, principal, model)
     }
 
+    @PostMapping("/currencies")
+    fun acceptCurrency(
+        @PathVariable venueId: UUID,
+        @RequestParam currency: String,
+        @RequestParam rate: String,
+        flash: RedirectAttributes,
+    ): String = flash.redirectAfter(venueId) {
+        val accepted = settings.acceptCurrency(
+            AcceptCurrencyCommand(VenueId(venueId), CurrencyCode.of(currency), ExchangeRate.of(rate)),
+        )
+        "${accepted.currency} is accepted at ${accepted.rate}"
+    }
+
+    @PostMapping("/currencies/{code}")
+    fun changeRate(
+        @PathVariable venueId: UUID,
+        @PathVariable code: String,
+        @RequestParam rate: String,
+        flash: RedirectAttributes,
+    ): String = flash.redirectAfter(venueId) {
+        val accepted = settings.changeRate(
+            ChangeRateCommand(VenueId(venueId), CurrencyCode.of(code), ExchangeRate.of(rate)),
+        )
+        "Rate of ${accepted.currency} is now ${accepted.rate}"
+    }
+
+    @PostMapping("/currencies/{code}/delete")
+    fun stopAccepting(
+        @PathVariable venueId: UUID,
+        @PathVariable code: String,
+        flash: RedirectAttributes,
+    ): String = flash.redirectAfter(venueId) {
+        val currency = CurrencyCode.of(code)
+        settings.stopAccepting(VenueId(venueId), currency)
+        "$currency is no longer accepted"
+    }
+
     private fun page(venueId: UUID, principal: PasslyUserPrincipal, model: Model): String {
+        val current = settings.get(VenueId(venueId))
         model.addAttribute("venue", venues.find(principal, venueId))
         model.addAttribute("countries", countryOptions())
         model.addAttribute("currencies", currencyOptions())
         model.addAttribute("currencyLocked", settings.currencyLocked(VenueId(venueId)))
+        model.addAttribute("mainCurrency", current.currency.value)
+        model.addAttribute("accepted", current.acceptedCurrencies.map { it.toView() })
+        model.addAttribute("addableCurrencies", current.addableCurrencyOptions())
         return "admin/settings"
     }
+
+    private fun RedirectAttributes.redirectAfter(venueId: UUID, action: () -> String): String {
+        try {
+            addFlashAttribute("message", action())
+        } catch (e: ValidationException) {
+            addFlashAttribute("error", e.message)
+        } catch (e: ConflictException) {
+            addFlashAttribute("error", e.message)
+        }
+        return settingsPage(venueId)
+    }
+
+    private fun settingsPage(venueId: UUID) = "redirect:/admin/venues/$venueId/settings"
 }
