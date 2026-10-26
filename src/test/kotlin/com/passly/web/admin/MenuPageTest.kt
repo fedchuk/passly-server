@@ -26,7 +26,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.web.context.WebApplicationContext
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @SpringBootTest
 @Import(TestcontainersConfiguration::class)
@@ -86,66 +88,59 @@ class MenuPageTest {
     private fun open(url: String) =
         mockMvc.get(url) { with(manager) }.andExpect { status { isOk() } }.andReturn().modelAndView!!.model
 
+    @Suppress("UNCHECKED_CAST")
+    private fun roots(url: String) = open(url)["roots"] as List<MenuNodeView>
+
     @Test
     fun `first top-level category is open by default`() {
-        val model = open(page)
+        val roots = roots(page)
 
-        @Suppress("UNCHECKED_CAST")
-        val roots = model["roots"] as List<MenuRootView>
         assertEquals(listOf("Entrées", "Plats"), roots.map { it.name })
         assertEquals(listOf(true, false), roots.map { it.open })
         assertEquals(listOf(0, 2), roots.map { it.subcategories })
-
-        val focus = model["focus"] as MenuFocusView
-        assertEquals("Entrées", focus.name)
-        assertTrue(focus.root)
-        assertEquals(listOf("Soupe à l'oignon"), focus.items.map { it.name })
+        assertEquals(listOf("Soupe à l'oignon"), roots[0].dishes.map { it.name })
+        assertTrue(roots[1].children.isEmpty())
     }
 
     @Test
-    fun `subcategory stays in the row of its siblings and shows its dishes`() {
-        val model = open("$page/categories/${meat.id}/items")
+    fun `open category lists its subcategories one under another`() {
+        val plats = roots("$page/categories/${mains.id}/items")[1]
 
-        @Suppress("UNCHECKED_CAST")
-        val roots = model["roots"] as List<MenuRootView>
+        assertTrue(plats.open)
+        assertEquals(listOf("Viandes" to 2, "Poissons" to 0), plats.children.map { it.name to it.items })
+        assertTrue(plats.children.none { it.open })
+        assertTrue(plats.dishes.isEmpty())
+    }
+
+    @Test
+    fun `subcategory opens inside its parent with its dishes`() {
+        val roots = roots("$page/categories/${meat.id}/items")
+
         assertEquals(listOf(false, true), roots.map { it.open })
-
-        val focus = model["focus"] as MenuFocusView
-        assertFalse(focus.root)
-        val row = focus.levels.single()
-        assertEquals(mains.id.value, row.parentId)
-        assertEquals(listOf("Viandes" to true, "Poissons" to false), row.cards.map { it.name to it.selected })
-        assertEquals(listOf(mains.id.value, row.cards[1].id), row.cards.map { it.targetId })
-        assertEquals(listOf("Entrecôte", "Magret de canard"), focus.items.map { it.name })
-        assertEquals(listOf(false, true), focus.items.map { it.available })
-        assertEquals("28.00", focus.items.first().price)
+        val viandes = roots[1].children.single { it.open }
+        assertEquals("Viandes", viandes.name)
+        assertEquals(mains.id.value, viandes.parentId)
+        assertEquals(listOf("Entrecôte", "Magret de canard"), viandes.dishes.map { it.name })
+        assertEquals(listOf(false, true), viandes.dishes.map { it.available })
+        assertEquals("28.00", viandes.dishes.first().price)
+        assertTrue(roots[1].children.single { it.name == "Poissons" }.dishes.isEmpty())
     }
 
     @Test
-    fun `root shows its subcategories as cards with dish counts`() {
-        val focus = open("$page/categories/${mains.id}/items")["focus"] as MenuFocusView
-
-        val row = focus.levels.single()
-        assertEquals(listOf("Viandes" to 2, "Poissons" to 0), row.cards.map { it.name to it.items })
-        assertTrue(row.cards.none { it.selected })
-        assertTrue(focus.items.isEmpty())
-    }
-
-    @Test
-    fun `deeper subcategory adds a second row under the first`() {
+    fun `deeper subcategory opens inside the open branch`() {
         val grill = categories.create(CreateCategoryCommand(venueId, "Grillades", parentId = meat.id))
 
-        val focus = open("$page/categories/${grill.id}/items")["focus"] as MenuFocusView
+        val viandes = roots("$page/categories/${grill.id}/items")[1].children.single { it.open }
 
-        assertEquals(listOf(mains.id.value, meat.id.value), focus.levels.map { it.parentId })
-        assertEquals(listOf("Viandes", "Grillades"), focus.levels.map { level -> level.cards.single { it.selected }.name })
+        assertEquals(listOf("Grillades" to true), viandes.children.map { it.name to it.open })
     }
 
     @Test
-    fun `top-level category without subcategories has no rows`() {
-        val focus = open(page)["focus"] as MenuFocusView
-
-        assertTrue(focus.levels.isEmpty())
+    fun `nested lists can be reordered by their own handle`() {
+        mockMvc.get("$page/categories/${meat.id}/items") { with(manager) }.andExpect {
+            content { string(containsString("data-parent-id=\"${mains.id.value}\"")) }
+            content { string(containsString("data-handle=\".handle-d1\"")) }
+        }
     }
 
     @Test
@@ -182,7 +177,6 @@ class MenuPageTest {
         val model = mockMvc.get("/admin/venues/${empty.venueId}") { with(owner) }
             .andExpect { status { isOk() } }.andReturn().modelAndView!!.model
 
-        assertNull(model["focus"])
-        assertEquals(emptyList<MenuRootView>(), model["roots"])
+        assertEquals(emptyList<MenuNodeView>(), model["roots"])
     }
 }

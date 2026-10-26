@@ -22,16 +22,14 @@ class MenuPages(
         val venue = VenueId(venueId)
         val tree = categories.getTree(venue)
         val focus = focusId ?: tree.children(null).firstOrNull()?.id
-        val openRootId = focus?.let { tree.pathTo(it).first().id }
+        val openPath = focus?.let { tree.pathTo(it).map { category -> category.id }.toSet() }.orEmpty()
         val venueStations = stations.list(venue)
-        val itemCounts = items.countByCategory(venue)
 
         model.addAttribute("venue", venues.find(principal, venueId))
         model.addAttribute("stations", venueStations.map { it.toOption() })
-        model.addAttribute("roots", tree.toRootViews(itemCounts, venueStations, openRootId))
         model.addAttribute(
-            "focus",
-            focus?.let { tree.toFocusView(it, items.listInCategory(venue, it), itemCounts, venueStations) },
+            "roots",
+            tree.toNodeViews(openPath, items.countByCategory(venue), venueStations) { items.listInCategory(venue, it) },
         )
         return "admin/menu"
     }

@@ -4,8 +4,9 @@ import com.passly.domain.menu.*
 import java.util.*
 import kotlin.math.absoluteValue
 
-data class MenuRootView(
+data class MenuNodeView(
     val id: UUID,
+    val parentId: UUID?,
     val name: String,
     val initial: String,
     val hue: Int,
@@ -14,32 +15,8 @@ data class MenuRootView(
     val subcategories: Int,
     val items: Int,
     val open: Boolean,
-)
-
-data class MenuFocusView(
-    val id: UUID,
-    val name: String,
-    val root: Boolean,
-    val active: Boolean,
-    val levels: List<SubcategoryLevelView>,
-    val items: List<MenuItemCardView>,
-)
-
-data class SubcategoryLevelView(
-    val parentId: UUID,
-    val cards: List<SubcategoryCardView>,
-)
-
-data class SubcategoryCardView(
-    val id: UUID,
-    val name: String,
-    val initial: String,
-    val hue: Int,
-    val active: Boolean,
-    val items: Int,
-    val subcategories: Int,
-    val selected: Boolean,
-    val targetId: UUID,
+    val children: List<MenuNodeView>,
+    val dishes: List<MenuItemCardView>,
 )
 
 data class MenuItemCardView(
@@ -54,11 +31,31 @@ data class MenuItemCardView(
     val modifierGroups: Int,
 )
 
-fun MenuTree.toRootViews(itemCounts: Map<CategoryId, Int>, stations: List<Station>, openId: CategoryId?): List<MenuRootView> {
-    val names = stations.associate { it.id to it.name }
-    return children(null).map { category ->
-        MenuRootView(
+fun MenuTree.toNodeViews(
+    openPath: Set<CategoryId>,
+    itemCounts: Map<CategoryId, Int>,
+    stations: List<Station>,
+    itemsOf: (CategoryId) -> List<MenuItem>,
+): List<MenuNodeView> {
+    val names: Map<StationId, String> = stations.associate { it.id to it.name }
+
+    fun dishCard(item: MenuItem) = MenuItemCardView(
+        id = item.id.value,
+        name = item.name,
+        initial = initialOf(item.name),
+        hue = hueOf(item.name),
+        description = item.description,
+        price = item.price.toString(),
+        station = stationFor(item)?.let { names[it] },
+        available = item.available,
+        modifierGroups = item.modifierGroupIds.size,
+    )
+
+    fun nodes(parentId: CategoryId?): List<MenuNodeView> = children(parentId).map { category ->
+        val open = category.id in openPath
+        MenuNodeView(
             id = category.id.value,
+            parentId = category.parentId?.value,
             name = category.name,
             initial = initialOf(category.name),
             hue = hueOf(category.name),
@@ -66,60 +63,13 @@ fun MenuTree.toRootViews(itemCounts: Map<CategoryId, Int>, stations: List<Statio
             active = category.active,
             subcategories = children(category.id).size,
             items = itemCounts[category.id] ?: 0,
-            open = category.id == openId,
+            open = open,
+            children = if (open) nodes(category.id) else emptyList(),
+            dishes = if (open) itemsOf(category.id).map { dishCard(it) } else emptyList(),
         )
     }
-}
 
-fun MenuTree.toFocusView(
-    focusId: CategoryId,
-    items: List<MenuItem>,
-    itemCounts: Map<CategoryId, Int>,
-    stations: List<Station>,
-): MenuFocusView {
-    val focus = this[focusId]
-    val path = pathTo(focusId)
-    val names: Map<StationId, String> = stations.associate { it.id to it.name }
-    return MenuFocusView(
-        id = focus.id.value,
-        name = focus.name,
-        root = focus.parentId == null,
-        active = focus.active,
-        levels = path.mapIndexedNotNull { depth, parent ->
-            val selectedId = path.getOrNull(depth + 1)?.id
-            children(parent.id).takeIf { it.isNotEmpty() }?.let { cards ->
-                SubcategoryLevelView(
-                    parentId = parent.id.value,
-                    cards = cards.map { child ->
-                        SubcategoryCardView(
-                            id = child.id.value,
-                            name = child.name,
-                            initial = initialOf(child.name),
-                            hue = hueOf(child.name),
-                            active = child.active,
-                            items = itemCounts[child.id] ?: 0,
-                            subcategories = children(child.id).size,
-                            selected = child.id == selectedId,
-                            targetId = if (child.id == selectedId) parent.id.value else child.id.value,
-                        )
-                    },
-                )
-            }
-        },
-        items = items.map { item ->
-            MenuItemCardView(
-                id = item.id.value,
-                name = item.name,
-                initial = initialOf(item.name),
-                hue = hueOf(item.name),
-                description = item.description,
-                price = item.price.toString(),
-                station = stationFor(item)?.let { names[it] },
-                available = item.available,
-                modifierGroups = item.modifierGroupIds.size,
-            )
-        },
-    )
+    return nodes(null)
 }
 
 fun MenuTree.pathTo(id: CategoryId): List<Category> =
