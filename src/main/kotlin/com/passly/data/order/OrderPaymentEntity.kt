@@ -1,7 +1,7 @@
-package com.passly.domain.order
+package com.passly.data.order
 
 import com.passly.data.common.BaseEntity
-import com.passly.data.order.OrderEntity
+import com.passly.domain.order.PaymentMethod
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.Instant

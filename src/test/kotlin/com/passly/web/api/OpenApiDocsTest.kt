@@ -33,6 +33,7 @@ class OpenApiDocsTest {
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories'].get") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/orders'].post") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/orders/{id}/rounds'].post") { exists() }
+            jsonPath("$.paths['/api/v1/venues/{venueId}/orders/{id}/payments'].post") { exists() }
             jsonPath("$.paths['/admin']") { doesNotExist() }
             jsonPath("$.paths['/login']") { doesNotExist() }
         }

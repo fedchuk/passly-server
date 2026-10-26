@@ -3,12 +3,10 @@ package com.passly.web.api.order
 import com.passly.domain.menu.MenuItemId
 import com.passly.domain.menu.ModifierId
 import com.passly.domain.order.OrderLineRequest
+import com.passly.domain.order.PaymentMethod
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.Size
+import jakarta.validation.constraints.*
 import java.util.*
 
 data class OrderLineBody(
@@ -33,4 +31,10 @@ data class OpenOrderRequest(
 
 data class AddRoundRequest(
     @NotEmpty @Valid val lines: List<OrderLineBody>,
+)
+
+data class PaymentRequest(
+    val method: PaymentMethod,
+    @Schema(description = "Amount to take, at most what is still due. Change for cash is given outside the system.", example = "20.00")
+    @Pattern(regexp = """^\d{1,8}(\.\d{1,2})?$""") val amount: String,
 )

@@ -1,7 +1,6 @@
 package com.passly.data.order
 
 import com.passly.data.common.BaseEntity
-import com.passly.domain.order.OrderPaymentEntity
 import com.passly.domain.order.OrderStatus
 import jakarta.persistence.*
 import org.hibernate.annotations.BatchSize

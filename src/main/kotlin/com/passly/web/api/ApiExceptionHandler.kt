@@ -1,5 +1,6 @@
 package com.passly.web.api
 
+import com.passly.application.idempotency.IdempotencyKeyReusedException
 import com.passly.domain.common.*
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.dao.OptimisticLockingFailureException
@@ -13,6 +14,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice(basePackages = ["com.passly.web.api"])
 class ApiExceptionHandler : ResponseEntityExceptionHandler() {
+
+    @ExceptionHandler(IdempotencyKeyReusedException::class)
+    fun handleReusedKey(e: IdempotencyKeyReusedException): ProblemDetail =
+        forStatusAndDetail(HttpStatusCode.valueOf(422), e.message)
 
     @ExceptionHandler(DomainException::class)
     fun handleDomain(e: DomainException): ProblemDetail {

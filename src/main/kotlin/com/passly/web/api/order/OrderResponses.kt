@@ -3,6 +3,7 @@ package com.passly.web.api.order
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLine
 import com.passly.domain.order.OrderStatus
+import com.passly.domain.order.PaymentMethod
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import java.util.*
@@ -18,8 +19,37 @@ data class OrderResponse(
     val rounds: Int,
     @Schema(description = "Sum of all lines before discounts", example = "31.90")
     val total: String,
+    @Schema(description = "Sum of all payments", example = "20.00")
+    val paid: String,
+    @Schema(description = "What is still to pay", example = "11.90")
+    val due: String,
+    @Schema(description = "VAT included in the total, one entry per rate")
+    val taxes: List<TaxShareResponse>,
     @Schema(description = "Lines in the order they were sent")
     val lines: List<OrderLineResponse>,
+    val payments: List<PaymentResponse>,
+    val closedBy: UUID?,
+    val closedAt: Instant?,
+)
+
+data class TaxShareResponse(
+    @Schema(example = "10.00")
+    val rate: String,
+    @Schema(description = "Amount with VAT", example = "29.80")
+    val gross: String,
+    @Schema(example = "2.71")
+    val tax: String,
+    @Schema(description = "Amount without VAT", example = "27.09")
+    val net: String,
+)
+
+data class PaymentResponse(
+    val id: UUID,
+    val method: PaymentMethod,
+    @Schema(example = "20.00")
+    val amount: String,
+    val takenBy: UUID,
+    val takenAt: Instant,
 )
 
 data class OrderLineResponse(
@@ -63,7 +93,13 @@ fun Order.toResponse() = OrderResponse(
     openedAt = openedAt,
     rounds = rounds,
     total = total.toString(),
+    paid = paid.toString(),
+    due = due.toString(),
+    taxes = taxShares.map { TaxShareResponse(it.rate.percent.toPlainString(), it.gross.toString(), it.tax.toString(), it.net.toString()) },
     lines = lines.map { it.toResponse() },
+    payments = payments.map { PaymentResponse(it.id.value, it.method, it.amount.toString(), it.takenBy.value, it.takenAt) },
+    closedBy = closedBy?.value,
+    closedAt = closedAt,
 )
 
 private fun OrderLine.toResponse() = OrderLineResponse(
