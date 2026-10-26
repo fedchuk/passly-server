@@ -54,6 +54,7 @@ class OpenApiDocsTest {
             jsonPath("$.components.schemas.ProblemDetail.properties.unavailableItemIds") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories/{id}'].put.responses['409']") { exists() }
             jsonPath("$.paths['/api/v1/venues/{venueId}/categories/{id}'].put.responses['401']") { exists() }
+            jsonPath("$.paths['/api/v1/venues/{venueId}/stations'].get") { exists() }
             jsonPath("$.paths['/api/v1/auth/login'].post.responses['403']") { doesNotExist() }
         }
     }
