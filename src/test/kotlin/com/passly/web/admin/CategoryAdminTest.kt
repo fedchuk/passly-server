@@ -75,31 +75,34 @@ class CategoryAdminTest {
 
     @Test
     fun `new category is added and a message is shown`() {
-        mockMvc.post("$page/categories") {
+        val response = mockMvc.post("$page/categories") {
             with(manager)
             with(csrf())
             param("name", "Wine")
             param("stationId", kitchenUuid.toString())
         }.andExpect {
-            redirectedUrl(page)
             flash { attribute("message", "Category 'Wine' added") }
-        }
+        }.andReturn().response
 
-        assertEquals(listOf("Wine"), names())
+        val wine = categories.getTree(venueId).children(null).single()
+        assertEquals("Wine", wine.name)
+        assertEquals("$page/categories/${wine.id}/items", response.redirectedUrl)
     }
 
     @Test
     fun `subcategory goes under its parent`() {
         val wine = create("Wine")
 
-        mockMvc.post("$page/categories") {
+        val response = mockMvc.post("$page/categories") {
             with(manager)
             with(csrf())
             param("name", "Rioja")
             param("parentId", wine.id.toString())
-        }.andExpect { redirectedUrl("$page/categories/${wine.id}/items") }
+        }.andReturn().response
 
-        assertEquals(listOf("Rioja"), names(wine.id))
+        val rioja = categories.getTree(venueId).children(wine.id).single()
+        assertEquals("Rioja", rioja.name)
+        assertEquals("$page/categories/${rioja.id}/items", response.redirectedUrl)
     }
 
     @Test

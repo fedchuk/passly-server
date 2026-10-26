@@ -39,7 +39,7 @@ class CategoryAdminController(
             flash.addFlashAttribute("error", binding.allErrors.first().defaultMessage)
             return target
         }
-        return flash.redirectAfter(target) {
+        return try {
             val category = categories.create(
                 CreateCategoryCommand(
                     VenueId(venueId),
@@ -48,7 +48,14 @@ class CategoryAdminController(
                     form.stationId?.let(::StationId),
                 ),
             )
-            "Category '${category.name}' added"
+            flash.addFlashAttribute("message", "Category '${category.name}' added")
+            categoryPage(venueId, category.id.value)
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+            target
+        } catch (e: ValidationException) {
+            flash.addFlashAttribute("error", e.message)
+            target
         }
     }
 
