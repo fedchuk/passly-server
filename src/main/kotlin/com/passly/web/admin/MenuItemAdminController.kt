@@ -9,6 +9,7 @@ import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
 import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -128,21 +129,13 @@ class MenuItemAdminController(
         return listPage(venueId, checkNotNull(item.categoryId).value)
     }
 
-    @PostMapping("/items/{id}/shift")
-    fun shift(
+    @PostMapping("/categories/{categoryId}/items/order")
+    fun reorder(
         @PathVariable venueId: UUID,
-        @PathVariable id: UUID,
-        @RequestParam delta: Int,
-        flash: RedirectAttributes,
-    ): String {
-        val venue = VenueId(venueId)
-        val categoryId = checkNotNull(items.get(venue, MenuItemId(id)).categoryId).value
-        if (delta == -1 || delta == 1) {
-            items.shift(venue, MenuItemId(id), delta)
-        } else {
-            flash.addFlashAttribute("error", "An item moves one step at a time")
-        }
-        return listPage(venueId, categoryId)
+        @PathVariable categoryId: UUID,
+        @RequestParam orderedIds: List<UUID>,
+    ): ResponseEntity<Void> = reordered {
+        items.reorder(ReorderMenuItemsCommand(VenueId(venueId), CategoryId(categoryId), orderedIds.map(::MenuItemId)))
     }
 
     @PostMapping("/items/{id}/archive")

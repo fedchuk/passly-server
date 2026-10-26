@@ -193,17 +193,48 @@ class CategoryAdminTest {
     }
 
     @Test
-    fun `category moves up`() {
-        create("Wine")
+    fun `categories are put in the dragged order`() {
+        val wine = create("Wine")
         val beer = create("Beer")
+        val cider = create("Cider")
 
-        mockMvc.post("$page/categories/${beer.id}/shift") {
+        mockMvc.post("$page/categories/order") {
             with(manager)
             with(csrf())
-            param("delta", "-1")
-        }.andExpect { redirectedUrl(page) }
+            param("orderedIds", cider.id.toString(), wine.id.toString(), beer.id.toString())
+        }.andExpect { status { isNoContent() } }
 
-        assertEquals(listOf("Beer", "Wine"), names())
+        assertEquals(listOf("Cider", "Wine", "Beer"), names())
+    }
+
+    @Test
+    fun `subcategories are reordered under their parent`() {
+        val drinks = create("Drinks")
+        val wine = create("Wine", drinks.id)
+        val beer = create("Beer", drinks.id)
+
+        mockMvc.post("$page/categories/order") {
+            with(manager)
+            with(csrf())
+            param("parentId", drinks.id.toString())
+            param("orderedIds", beer.id.toString(), wine.id.toString())
+        }.andExpect { status { isNoContent() } }
+
+        assertEquals(listOf("Beer", "Wine"), names(drinks.id))
+    }
+
+    @Test
+    fun `order of another level is refused`() {
+        val drinks = create("Drinks")
+        val wine = create("Wine", drinks.id)
+
+        mockMvc.post("$page/categories/order") {
+            with(manager)
+            with(csrf())
+            param("orderedIds", wine.id.toString(), drinks.id.toString())
+        }.andExpect { status { isEqualTo(422) } }
+
+        assertEquals(listOf("Drinks"), names())
     }
 
     @Test

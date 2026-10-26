@@ -55,6 +55,8 @@ class SecurityConfig {
             authorizeHttpRequests {
                 authorize("/login", permitAll)
                 authorize("/css/**", permitAll)
+                authorize("/js/**", permitAll)
+                authorize("/webjars/**", permitAll)
                 authorize("/actuator/health", permitAll)
                 authorize("/error", permitAll)
                 authorize("/v3/api-docs", permitAll)
@@ -67,8 +69,6 @@ class SecurityConfig {
                 authorize("/service/venues/{venueId}/tables/{tableId}/payments", venues.requires(Permission.CLOSE_ORDERS))
                 authorize("/service/venues/{venueId}/tables/{tableId}/close", venues.requires(Permission.CLOSE_ORDERS))
                 authorize("/service/venues/{venueId}/**", venues.requires(Permission.TAKE_ORDERS))
-                authorize("/kitchen/venues/{venueId}/stop-list/**", venues.requires(Permission.MANAGE_STOP_LIST))
-                authorize("/kitchen/venues/{venueId}/**", venues.requires(Permission.PREPARE_ORDERS))
                 authorize("/kitchen/venues/{venueId}/stop-list/**", venues.requires(Permission.MANAGE_STOP_LIST))
                 authorize("/kitchen/venues/{venueId}/**", venues.requires(Permission.PREPARE_ORDERS))
                 authorize("/platform/**", hasRole("PLATFORM_ADMIN"))

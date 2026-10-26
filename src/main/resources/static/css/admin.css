@@ -2108,20 +2108,32 @@ a.action-card:hover {
 .sub-card {
     display: flex;
     align-items: center;
-    gap: 0.7rem;
-    padding: 0.6rem 0.7rem;
+    gap: 0.35rem;
+    padding: 0.6rem 0.7rem 0.6rem 0.25rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
     color: var(--text);
 }
 
-a.sub-card:hover {
+.sub-card:hover {
     border-color: var(--primary);
+}
+
+.sub-card-link {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    color: var(--text);
+}
+
+.sub-card-link:hover {
     text-decoration: none;
 }
 
-.sub-card > .icon {
+.sub-card-link > .icon {
     margin-left: auto;
     color: var(--muted);
     transform: rotate(-90deg);
@@ -2139,32 +2151,36 @@ a.sub-card:hover {
 }
 
 .add-sub-card {
-    display: block;
-    border-style: dashed;
+    margin-bottom: 1rem;
     color: var(--muted);
 }
 
 .add-sub-card > summary {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    min-height: 44px;
+    padding: 0.45rem 0.9rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
     font-weight: 600;
     list-style: none;
     cursor: pointer;
+}
+
+.add-sub-card > summary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .add-sub-card > summary::-webkit-details-marker {
     display: none;
 }
 
-.add-sub-card[open] {
-    grid-column: span 2;
-}
-
 .add-sub-card form {
     display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    max-width: 640px;
+    margin-top: 0.6rem;
 }
 
 .add-sub-card input,
@@ -2259,7 +2275,59 @@ a.sub-card:hover {
         justify-content: flex-end;
     }
 
-    .add-sub-card[open] {
-        grid-column: auto;
+    .add-sub-card form {
+        grid-template-columns: 1fr;
     }
+}
+
+.drag-handle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 1.75rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: var(--muted);
+    cursor: grab;
+    touch-action: none;
+}
+
+.drag-handle:hover,
+.drag-handle:focus-visible {
+    background: var(--surface-muted);
+    color: var(--text);
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-handle .icon {
+    width: 18px;
+    height: 18px;
+    stroke-width: 3;
+}
+
+.grip-hint {
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: -0.15em;
+}
+
+.drag-ghost {
+    opacity: 0.4;
+    outline: 2px dashed var(--primary);
+    outline-offset: -2px;
+}
+
+.drag-chosen {
+    box-shadow: var(--shadow);
+}
+
+[data-order-url].saving {
+    opacity: 0.7;
+    pointer-events: none;
 }

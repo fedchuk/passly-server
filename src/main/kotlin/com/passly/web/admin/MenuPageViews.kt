@@ -13,8 +13,6 @@ data class MenuRootView(
     val active: Boolean,
     val subcategories: Int,
     val items: Int,
-    val first: Boolean,
-    val last: Boolean,
     val open: Boolean,
 )
 
@@ -23,8 +21,6 @@ data class MenuFocusView(
     val name: String,
     val root: Boolean,
     val active: Boolean,
-    val first: Boolean,
-    val last: Boolean,
     val path: List<CategoryRefView>,
     val children: List<SubcategoryCardView>,
     val items: List<MenuItemCardView>,
@@ -50,14 +46,11 @@ data class MenuItemCardView(
     val station: String?,
     val available: Boolean,
     val modifierGroups: Int,
-    val first: Boolean,
-    val last: Boolean,
 )
 
 fun MenuTree.toRootViews(itemCounts: Map<CategoryId, Int>, stations: List<Station>, openId: CategoryId?): List<MenuRootView> {
     val names = stations.associate { it.id to it.name }
-    val roots = children(null)
-    return roots.mapIndexed { index, category ->
+    return children(null).map { category ->
         MenuRootView(
             id = category.id.value,
             name = category.name,
@@ -67,8 +60,6 @@ fun MenuTree.toRootViews(itemCounts: Map<CategoryId, Int>, stations: List<Statio
             active = category.active,
             subcategories = children(category.id).size,
             items = itemCounts[category.id] ?: 0,
-            first = index == 0,
-            last = index == roots.lastIndex,
             open = category.id == openId,
         )
     }
@@ -81,15 +72,12 @@ fun MenuTree.toFocusView(
     stations: List<Station>,
 ): MenuFocusView {
     val focus = this[focusId]
-    val siblings = children(focus.parentId)
     val names: Map<StationId, String> = stations.associate { it.id to it.name }
     return MenuFocusView(
         id = focus.id.value,
         name = focus.name,
         root = focus.parentId == null,
         active = focus.active,
-        first = siblings.first() == focus,
-        last = siblings.last() == focus,
         path = pathTo(focusId).map { CategoryRefView(it.id.value, it.name) },
         children = children(focusId).map { child ->
             SubcategoryCardView(
@@ -102,7 +90,7 @@ fun MenuTree.toFocusView(
                 subcategories = children(child.id).size,
             )
         },
-        items = items.mapIndexed { index, item ->
+        items = items.map { item ->
             MenuItemCardView(
                 id = item.id.value,
                 name = item.name,
@@ -113,8 +101,6 @@ fun MenuTree.toFocusView(
                 station = stationFor(item)?.let { names[it] },
                 available = item.available,
                 modifierGroups = item.modifierGroupIds.size,
-                first = index == 0,
-                last = index == items.lastIndex,
             )
         },
     )

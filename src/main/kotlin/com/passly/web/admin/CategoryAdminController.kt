@@ -10,6 +10,7 @@ import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
 import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -98,16 +99,19 @@ class CategoryAdminController(
         return editPage(venueId, id, categories.getTree(VenueId(venueId)), principal, model)
     }
 
-    @PostMapping("/{id}/shift")
-    fun shift(
+    @PostMapping("/order")
+    fun reorder(
         @PathVariable venueId: UUID,
-        @PathVariable id: UUID,
-        @RequestParam delta: Int,
-        flash: RedirectAttributes,
-    ): String = flash.redirectAfter(parentPage(venueId, id)) {
-        if (delta != -1 && delta != 1) throw ValidationException("A category moves one step at a time")
-        categories.shift(VenueId(venueId), CategoryId(id), delta)
-        null
+        @RequestParam(required = false) parentId: UUID?,
+        @RequestParam orderedIds: List<UUID>,
+    ): ResponseEntity<Void> = reordered {
+        categories.reorder(
+            ReorderCategoriesCommand(
+                VenueId(venueId),
+                parentId?.let(::CategoryId),
+                orderedIds.map(::CategoryId),
+            ),
+        )
     }
 
     @PostMapping("/{id}/delete")

@@ -138,6 +138,21 @@ class MenuPageTest {
     }
 
     @Test
+    fun `page loads the drag and drop scripts`() {
+        mockMvc.get(page) { with(manager) }.andExpect {
+            content { string(containsString("/webjars/sortablejs/1.15.7/Sortable.min.js")) }
+            content { string(containsString("/js/menu-order.js")) }
+            content { string(containsString("data-order-url=\"/admin/venues/${venue.venueId}/categories/order\"")) }
+        }
+    }
+
+    @Test
+    fun `drag and drop scripts are served without a login`() {
+        mockMvc.get("/webjars/sortablejs/1.15.7/Sortable.min.js").andExpect { status { isOk() } }
+        mockMvc.get("/js/menu-order.js").andExpect { status { isOk() } }
+    }
+
+    @Test
     fun `empty menu has nothing to open`() {
         val empty = jdbc.createVenue()
         val owner = user(userDetailsService.loadUserByUsername("${jdbc.createMember(empty, Role.MANAGER)}@test.passly"))

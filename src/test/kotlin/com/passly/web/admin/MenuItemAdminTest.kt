@@ -1,19 +1,10 @@
 package com.passly.web.admin
 
 import com.passly.TestcontainersConfiguration
-import com.passly.application.menu.CategoryService
-import com.passly.application.menu.CreateCategoryCommand
-import com.passly.application.menu.CreateMenuItemCommand
-import com.passly.application.menu.CreateModifierGroupCommand
-import com.passly.application.menu.MenuItemService
-import com.passly.application.menu.ModifierGroupService
+import com.passly.application.menu.*
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.MenuItem
-import com.passly.domain.menu.MenuItemDetails
-import com.passly.domain.menu.ModifierDraft
-import com.passly.domain.menu.StationId
+import com.passly.domain.menu.*
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.TestVenue
@@ -34,7 +25,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.web.context.WebApplicationContext
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -260,17 +251,42 @@ class MenuItemAdminTest {
     }
 
     @Test
-    fun `item moves up`() {
-        createItem("Rioja")
+    fun `items are put in the dragged order`() {
+        val rioja = createItem("Rioja")
         val albarino = createItem("Albariño")
+        val verdejo = createItem("Verdejo")
 
-        mockMvc.post("$base/items/${albarino.id}/shift") {
+        mockMvc.post("$wineItems/order") {
             with(manager)
             with(csrf())
-            param("delta", "-1")
-        }.andExpect { redirectedUrl(wineItems) }
+            param("orderedIds", verdejo.id.toString(), rioja.id.toString(), albarino.id.toString())
+        }.andExpect { status { isNoContent() } }
 
-        assertEquals(listOf("Albariño", "Rioja"), names())
+        assertEquals(listOf("Verdejo", "Rioja", "Albariño"), names())
+    }
+
+    @Test
+    fun `order that misses an item is refused`() {
+        val rioja = createItem("Rioja")
+        createItem("Albariño")
+
+        mockMvc.post("$wineItems/order") {
+            with(manager)
+            with(csrf())
+            param("orderedIds", rioja.id.toString())
+        }.andExpect { status { isEqualTo(422) } }
+
+        assertEquals(listOf("Rioja", "Albariño"), names())
+    }
+
+    @Test
+    fun `order without a csrf token is rejected`() {
+        val rioja = createItem("Rioja")
+
+        mockMvc.post("$wineItems/order") {
+            with(manager)
+            param("orderedIds", rioja.id.toString())
+        }.andExpect { status { isForbidden() } }
     }
 
     @Test

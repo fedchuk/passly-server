@@ -6,7 +6,7 @@
     <div class="page-header">
         <div>
             <h1>Menu</h1>
-            <p class="subtitle">Open a category to see its subcategories and dishes.</p>
+            <p class="subtitle">Open a category to see its subcategories and dishes. Drag <span class="grip-hint">⋮⋮</span> to change the order.</p>
         </div>
         <details class="add-category" th:unless="${stations.isEmpty()}">
             <summary role="button">+ Add category</summary>
@@ -40,9 +40,18 @@
         <p>No categories yet. Add the first one, for example Starters.</p>
     </div>
 
-    <section class="menu-accordion" aria-label="Categories">
-        <article class="card menu-root" th:each="root : ${roots}" th:classappend="${root.open} ? 'open' : ''">
+    <input type="hidden" id="order-csrf" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+    <section class="menu-accordion" aria-label="Categories"
+             th:data-order-url="@{/admin/venues/{v}/categories/order(v=${venue.id})}"
+             data-draggable=".menu-root" data-handle=".root-handle">
+        <article class="card menu-root" th:each="root : ${roots}" th:data-id="${root.id}"
+                 th:classappend="${root.open} ? 'open' : ''">
             <header class="menu-root-header">
+                <button type="button" class="drag-handle root-handle" title="Drag to reorder"
+                        th:aria-label="|Move ${root.name}. Use Alt and the arrow keys.|">
+                    <svg th:replace="~{fragments/icons :: icon('grip')}"></svg>
+                </button>
                 <a class="menu-root-title"
                    th:href="${root.open} ? @{/admin/venues/{v}(v=${venue.id})} : @{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${root.id})}"
                    th:attr="aria-expanded=${root.open}">
@@ -60,14 +69,6 @@
                     </span>
                 </a>
                 <span class="actions">
-                    <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venue.id}, c=${root.id})}" method="post">
-                        <input type="hidden" name="delta" value="-1">
-                        <button type="submit" class="ghost" th:disabled="${root.first}" title="Move up" aria-label="Move up">↑</button>
-                    </form>
-                    <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venue.id}, c=${root.id})}" method="post">
-                        <input type="hidden" name="delta" value="1">
-                        <button type="submit" class="ghost" th:disabled="${root.last}" title="Move down" aria-label="Move down">↓</button>
-                    </form>
                     <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venue.id}, c=${root.id})}"
                        role="button" class="outline secondary icon-button" title="Edit category" aria-label="Edit category">✎</a>
                     <form th:action="@{/admin/venues/{v}/categories/{c}/delete(v=${venue.id}, c=${root.id})}" method="post"
@@ -93,33 +94,42 @@
                     </ul>
                 </nav>
 
-                <div class="sub-cards">
-                    <a class="sub-card" th:each="child : ${focus.children}"
-                       th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${child.id})}">
-                        <span class="menu-tile" th:style="|--hue: ${child.hue}|" th:text="${child.initial}">V</span>
-                        <span class="sub-card-text">
-                            <strong th:text="${child.name}" th:classappend="${child.active} ? '' : 'inactive'">Viandes</strong>
-                            <small class="muted">
-                                <span th:text="${child.items == 1} ? '1 dish' : |${child.items} dishes|">4 dishes</span>
-                                <span th:if="${child.subcategories > 0}"
-                                      th:text="| · ${child.subcategories} sub|"> · 2 sub</span>
-                            </small>
-                        </span>
-                        <svg th:replace="~{fragments/icons :: icon('chevron')}"></svg>
-                    </a>
-                    <details class="sub-card add-sub-card">
-                        <summary>+ Add subcategory</summary>
-                        <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post">
-                            <input type="hidden" name="parentId" th:value="${focus.id}">
-                            <input name="name" placeholder="Subcategory" required maxlength="120" aria-label="Subcategory name">
-                            <select name="stationId" aria-label="Station">
-                                <option value="">Same station as the parent</option>
-                                <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Kitchen</option>
-                            </select>
-                            <button type="submit" class="wide">Add</button>
-                        </form>
-                    </details>
+                <div class="sub-cards" th:unless="${focus.children.isEmpty()}"
+                     th:data-order-url="@{/admin/venues/{v}/categories/order(v=${venue.id})}"
+                     th:data-parent-id="${focus.id}"
+                     data-draggable=".sub-card" data-handle=".sub-handle">
+                    <div class="sub-card" th:each="child : ${focus.children}" th:data-id="${child.id}">
+                        <button type="button" class="drag-handle sub-handle" title="Drag to reorder"
+                                th:aria-label="|Move ${child.name}. Use Alt and the arrow keys.|">
+                            <svg th:replace="~{fragments/icons :: icon('grip')}"></svg>
+                        </button>
+                        <a class="sub-card-link" th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${child.id})}">
+                            <span class="menu-tile" th:style="|--hue: ${child.hue}|" th:text="${child.initial}">V</span>
+                            <span class="sub-card-text">
+                                <strong th:text="${child.name}" th:classappend="${child.active} ? '' : 'inactive'">Viandes</strong>
+                                <small class="muted">
+                                    <span th:text="${child.items == 1} ? '1 dish' : |${child.items} dishes|">4 dishes</span>
+                                    <span th:if="${child.subcategories > 0}"
+                                          th:text="| · ${child.subcategories} sub|"> · 2 sub</span>
+                                </small>
+                            </span>
+                            <svg th:replace="~{fragments/icons :: icon('chevron')}"></svg>
+                        </a>
+                    </div>
                 </div>
+
+                <details class="add-sub-card">
+                    <summary>+ Add subcategory</summary>
+                    <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post">
+                        <input type="hidden" name="parentId" th:value="${focus.id}">
+                        <input name="name" placeholder="Subcategory" required maxlength="120" aria-label="Subcategory name">
+                        <select name="stationId" aria-label="Station">
+                            <option value="">Same station as the parent</option>
+                            <option th:each="station : ${stations}" th:value="${station.id}" th:text="${station.name}">Kitchen</option>
+                        </select>
+                        <button type="submit">Add</button>
+                    </form>
+                </details>
 
                 <section class="dish-panel" aria-label="Dishes">
                     <header class="dish-panel-header">
@@ -128,14 +138,6 @@
                         <span class="badge muted-badge" th:unless="${focus.active}">Hidden</span>
                         <span class="actions">
                             <th:block th:unless="${focus.root}">
-                                <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venue.id}, c=${focus.id})}" method="post">
-                                    <input type="hidden" name="delta" value="-1">
-                                    <button type="submit" class="ghost" th:disabled="${focus.first}" title="Move up" aria-label="Move up">↑</button>
-                                </form>
-                                <form th:action="@{/admin/venues/{v}/categories/{c}/shift(v=${venue.id}, c=${focus.id})}" method="post">
-                                    <input type="hidden" name="delta" value="1">
-                                    <button type="submit" class="ghost" th:disabled="${focus.last}" title="Move down" aria-label="Move down">↓</button>
-                                </form>
                                 <a th:href="@{/admin/venues/{v}/categories/{c}/edit(v=${venue.id}, c=${focus.id})}"
                                    role="button" class="outline secondary icon-button" title="Edit subcategory" aria-label="Edit subcategory">✎</a>
                                 <form th:action="@{/admin/venues/{v}/categories/{c}/delete(v=${venue.id}, c=${focus.id})}" method="post"
@@ -150,8 +152,15 @@
 
                     <p th:if="${focus.items.isEmpty()}" class="empty">No dishes here yet.</p>
 
-                    <ul class="dish-list" th:unless="${focus.items.isEmpty()}">
-                        <li class="dish-row" th:each="item : ${focus.items}" th:classappend="${item.available} ? '' : 'stopped'">
+                    <ul class="dish-list" th:unless="${focus.items.isEmpty()}"
+                        th:data-order-url="@{/admin/venues/{v}/categories/{c}/items/order(v=${venue.id}, c=${focus.id})}"
+                        data-draggable=".dish-row" data-handle=".dish-handle">
+                        <li class="dish-row" th:each="item : ${focus.items}" th:data-id="${item.id}"
+                            th:classappend="${item.available} ? '' : 'stopped'">
+                            <button type="button" class="drag-handle dish-handle" title="Drag to reorder"
+                                    th:aria-label="|Move ${item.name}. Use Alt and the arrow keys.|">
+                                <svg th:replace="~{fragments/icons :: icon('grip')}"></svg>
+                            </button>
                             <span class="menu-tile" th:style="|--hue: ${item.hue}|" th:text="${item.initial}">E</span>
                             <a class="dish-text" th:href="@{/admin/venues/{v}/items/{i}/edit(v=${venue.id}, i=${item.id})}">
                                 <strong th:text="${item.name}">Entrecôte</strong>
@@ -170,14 +179,6 @@
                                 <button type="submit" th:unless="${item.available}" class="contrast" title="Back on the menu">Stop list</button>
                             </form>
                             <span class="actions">
-                                <form th:action="@{/admin/venues/{v}/items/{i}/shift(v=${venue.id}, i=${item.id})}" method="post">
-                                    <input type="hidden" name="delta" value="-1">
-                                    <button type="submit" class="ghost" th:disabled="${item.first}" title="Move up" aria-label="Move up">↑</button>
-                                </form>
-                                <form th:action="@{/admin/venues/{v}/items/{i}/shift(v=${venue.id}, i=${item.id})}" method="post">
-                                    <input type="hidden" name="delta" value="1">
-                                    <button type="submit" class="ghost" th:disabled="${item.last}" title="Move down" aria-label="Move down">↓</button>
-                                </form>
                                 <a th:href="@{/admin/venues/{v}/items/{i}/edit(v=${venue.id}, i=${item.id})}"
                                    role="button" class="outline secondary icon-button" title="Edit dish" aria-label="Edit dish">✎</a>
                                 <form th:action="@{/admin/venues/{v}/items/{i}/archive(v=${venue.id}, i=${item.id})}" method="post"
@@ -191,6 +192,9 @@
             </div>
         </article>
     </section>
+
+    <script th:src="@{/webjars/sortablejs/1.15.7/Sortable.min.js}"></script>
+    <script th:src="@{/js/menu-order.js}"></script>
 </main>
 </body>
 </html>
