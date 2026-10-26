@@ -2,6 +2,7 @@ package com.passly.application.venue
 
 import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
 import com.passly.domain.common.ConflictException
@@ -20,7 +21,8 @@ class OnboardingServiceTest {
     private val venues = FakeVenueRepository()
     private val users = FakeUserRepository()
     private val stations = FakeStationRepository()
-    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations)
+    private val taxRates = FakeTaxRateRepository()
+    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations, taxRates)
 
     private fun register(email: String = "max@bistro.es", business: String = "Bistro Group", venue: String = "Centro") =
         service.registerBusiness(
@@ -62,5 +64,14 @@ class OnboardingServiceTest {
         val business = register()
 
         assertEquals(listOf("Kitchen", "Bar"), stations.findAllInVenue(business.venueId).map { it.name })
+    }
+
+    @Test
+    fun `new venue starts with the usual french tax rates`() {
+        val business = register()
+
+        val rates = taxRates.load(business.venueId).rates
+        assertEquals(listOf("Food and soft drinks", "Alcohol", "Reduced"), rates.map { it.name })
+        assertEquals(listOf("10%", "20%", "5.5%"), rates.map { it.percentLabel })
     }
 }

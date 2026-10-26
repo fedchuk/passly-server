@@ -2,6 +2,7 @@ package com.passly.config
 
 import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
 import com.passly.application.venue.FakeTenantRepository
@@ -15,8 +16,13 @@ class BootstrapRunnerTest {
 
     private val tenants = FakeTenantRepository()
     private val users = FakeUserRepository()
-    private val onboarding = OnboardingService(tenants, FakeVenueRepository(), users, FakePasswordHasher(),
-        FakeStationRepository()
+    private val onboarding = OnboardingService(
+        tenants,
+        FakeVenueRepository(),
+        users,
+        FakePasswordHasher(),
+        FakeStationRepository(),
+        FakeTaxRateRepository(),
     )
 
     private fun runner(email: String) = BootstrapRunner(

@@ -2389,3 +2389,33 @@ form.currency-rate button {
         grid-template-columns: 1fr;
     }
 }
+
+form.tax-rate-form {
+    flex: 1;
+    align-items: center;
+    margin: 0;
+}
+
+form.tax-rate-form input[name="name"] {
+    flex: 1;
+    min-width: 8rem;
+}
+
+form.tax-rate-form .tax-rate-percent {
+    flex: 0 0 5.5rem;
+    width: 5.5rem;
+    border-radius: 0;
+    text-align: right;
+}
+
+form.tax-rate-form button {
+    white-space: nowrap;
+}
+
+.tax-presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}

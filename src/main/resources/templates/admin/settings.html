@@ -90,6 +90,50 @@
             <button type="submit">Accept currency</button>
         </form>
     </section>
+
+    <section class="card" id="tax-rates">
+        <h2>Tax rates</h2>
+        <p class="muted">VAT included in menu prices. A new rate applies to new orders; orders already taken keep the rate they had.</p>
+
+        <p th:if="${taxRates.isEmpty()}" class="empty">No tax rates yet.</p>
+
+        <ul class="currency-list" th:unless="${taxRates.isEmpty()}">
+            <li class="currency-row" th:each="taxRate : ${taxRates}">
+                <form class="tax-rate-form" method="post" role="group"
+                      th:action="@{/admin/venues/{v}/settings/tax-rates/{t}(v=${venue.id}, t=${taxRate.id})}">
+                    <input type="hidden" name="version" th:value="${taxRate.version}">
+                    <input name="name" th:value="${taxRate.name}" required maxlength="80" aria-label="Name">
+                    <input name="rate" class="tax-rate-percent" th:value="${taxRate.rate}" inputmode="decimal" required
+                           th:aria-label="|Rate of ${taxRate.name} in percent|">
+                    <span class="rate-suffix">%</span>
+                    <button type="submit" class="secondary">Save</button>
+                </form>
+                <form method="post" th:action="@{/admin/venues/{v}/settings/tax-rates/{t}/delete(v=${venue.id}, t=${taxRate.id})}"
+                      onsubmit="return confirm('Delete this tax rate?')">
+                    <button type="submit" class="outline contrast icon-button" th:title="|Delete ${taxRate.name}|"
+                            th:aria-label="|Delete ${taxRate.name}|">✕</button>
+                </form>
+            </li>
+        </ul>
+
+        <form class="currency-add" method="post" th:action="@{/admin/venues/{v}/settings/tax-rates(v=${venue.id})}">
+            <label>
+                Name
+                <input name="name" placeholder="Alcohol" required maxlength="80">
+            </label>
+            <label>
+                Rate, %
+                <input name="rate" inputmode="decimal" placeholder="20" required>
+            </label>
+            <button type="submit">Add rate</button>
+        </form>
+
+        <form class="tax-presets" method="post" th:unless="${taxPresets.isEmpty()}"
+              th:action="@{/admin/venues/{v}/settings/tax-rates/presets(v=${venue.id})}">
+            <button type="submit" class="secondary outline" th:text="|Add the usual rates for ${countryName}|">Add the usual rates for France</button>
+            <small class="muted" th:text="${taxPresets}">Food and soft drinks 10%, Alcohol 20%</small>
+        </form>
+    </section>
 </main>
 </body>
 </html>
