@@ -4,6 +4,7 @@ import com.passly.application.order.FloorStatus
 import com.passly.application.order.TableStatus
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLine
+import com.passly.domain.order.PaymentMethod
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -38,10 +39,27 @@ data class TablePageView(
 )
 
 data class OrderPageView(
+    val id: UUID,
     val guests: Int?,
     val openFor: String,
     val total: String,
+    val paid: String,
+    val due: String,
+    val settled: Boolean,
+    val partlyPaid: Boolean,
+    val taxes: List<TaxLineView>,
+    val payments: List<PaymentView>,
     val rounds: List<RoundView>,
+)
+
+data class TaxLineView(
+    val rate: String,
+    val tax: String,
+)
+
+data class PaymentView(
+    val method: String,
+    val amount: String,
 )
 
 data class RoundView(
@@ -93,9 +111,16 @@ fun TableStatus.toPageView(now: Instant) = TablePageView(
 )
 
 private fun Order.toPageView(now: Instant) = OrderPageView(
+    id = id.value,
     guests = guests,
     openFor = Duration.between(openedAt, now).toElapsedLabel(),
     total = total.toString(),
+    paid = paid.toString(),
+    due = due.toString(),
+    settled = due.isZero,
+    partlyPaid = payments.isNotEmpty(),
+    taxes = taxShares.map { TaxLineView("${it.rate.percent.stripTrailingZeros().toPlainString()}%", it.tax.toString()) },
+    payments = payments.map { PaymentView(it.method.label(), it.amount.toString()) },
     rounds = lines.groupBy { it.round }.toSortedMap().map { (number, lines) -> RoundView(number, lines.map { it.toView() }) },
 )
 
@@ -114,4 +139,9 @@ fun Duration.toElapsedLabel(): String {
         minutes < 60 -> "$minutes min"
         else -> "${minutes / 60} h ${"%02d".format(minutes % 60)} min"
     }
+}
+
+fun PaymentMethod.label(): String = when (this) {
+    PaymentMethod.CASH -> "Cash"
+    PaymentMethod.CARD -> "Card"
 }

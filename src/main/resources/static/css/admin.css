@@ -1883,3 +1883,38 @@ a.action-card:hover {
         max-height: 30vh;
     }
 }
+
+
+.bill-lines {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 1rem;
+    margin: 0 0 1rem;
+}
+
+.bill-lines dt,
+.bill-lines dd {
+    margin: 0;
+}
+
+.bill-lines dd {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.bill-lines .bill-due {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.payment-form label {
+    margin-bottom: 0.75rem;
+}
+
+.payment-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}

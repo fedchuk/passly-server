@@ -10,6 +10,9 @@
         </div>
     </div>
 
+    <p th:if="${message}" class="notice" th:text="${message}">Table closed</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
     <div th:if="${areas.isEmpty()}" class="placeholder">
         <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>
         <p>There are no tables yet. A manager adds them in the back office.</p>

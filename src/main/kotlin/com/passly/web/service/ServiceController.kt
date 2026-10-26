@@ -1,15 +1,14 @@
 package com.passly.web.service
 
 import com.passly.application.menu.WaiterMenuService
-import com.passly.application.order.AddRoundCommand
-import com.passly.application.order.FloorStatusQuery
-import com.passly.application.order.OpenOrderCommand
-import com.passly.application.order.OrderService
+import com.passly.application.order.*
 import com.passly.domain.common.ConflictException
+import com.passly.domain.common.Money
 import com.passly.domain.common.UnavailableItemsException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
+import com.passly.domain.order.OrderStatus
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
@@ -20,6 +19,7 @@ import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
+import java.math.BigDecimal
 import java.time.Clock
 import java.util.*
 
@@ -113,4 +113,77 @@ class ServiceController(
         }
         return tablePage
     }
+
+    @PostMapping("/tables/{tableId}/payments")
+    fun pay(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @ModelAttribute form: PaymentForm,
+        binding: BindingResult,
+        @AuthenticationPrincipal principal: PasslyUserPrincipal,
+        flash: RedirectAttributes,
+    ): String {
+        val tablePage = "redirect:/service/venues/$venueId/tables/$tableId"
+        val orderId = form.orderId
+        val method = form.method
+        val amount = parseAmount(form.amount)
+        if (binding.hasErrors() || orderId == null || method == null) {
+            flash.addFlashAttribute("error", "The payment could not be read. Reload the page and try again.")
+            return tablePage
+        }
+        if (amount == null) {
+            flash.addFlashAttribute("error", "Enter an amount like 12.50")
+            return tablePage
+        }
+        return try {
+            val order = orders.pay(
+                PayOrderCommand(
+                    VenueId(venueId),
+                    OrderId(orderId),
+                    UserId(principal.userId),
+                    method,
+                    amount
+                )
+            )
+            if (order.status == OrderStatus.CLOSED) {
+                flash.addFlashAttribute("message", "Table closed, ${order.paid} paid")
+                "redirect:/service/venues/$venueId"
+            } else {
+                flash.addFlashAttribute("message", "${method.label()} $amount taken, ${order.due} left to pay")
+                tablePage
+            }
+        } catch (e: ValidationException) {
+            flash.addFlashAttribute("error", e.message)
+            tablePage
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+            tablePage
+        }
+    }
+
+    @PostMapping("/tables/{tableId}/close")
+    fun close(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        @AuthenticationPrincipal principal: PasslyUserPrincipal,
+        flash: RedirectAttributes,
+    ): String =
+        try {
+            orders.close(CloseOrderCommand(VenueId(venueId), OrderId(orderId), UserId(principal.userId)))
+            flash.addFlashAttribute("message", "Table closed")
+            "redirect:/service/venues/$venueId"
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+            "redirect:/service/venues/$venueId/tables/$tableId"
+        }
+
+    private fun parseAmount(text: String): Money? =
+        try {
+            Money.of(BigDecimal(text.trim().replace(',', '.')))
+        } catch (e: NumberFormatException) {
+            null
+        } catch (e: ValidationException) {
+            null
+        }
 }

@@ -80,6 +80,54 @@
             </form>
 
             <th:block th:if="${table.order != null}">
+                <section class="card bill" aria-label="Bill">
+                    <div class="basket-header">
+                        <h2>Bill</h2>
+                        <span class="muted" th:if="${table.order.partlyPaid}">Part paid</span>
+                    </div>
+                    <dl class="bill-lines">
+                        <dt>Total</dt>
+                        <dd th:text="${table.order.total}">42.50</dd>
+                        <th:block th:each="tax : ${table.order.taxes}">
+                            <dt class="muted" th:text="|incl. VAT ${tax.rate}|">incl. VAT 10%</dt>
+                            <dd class="muted" th:text="${tax.tax}">3.86</dd>
+                        </th:block>
+                        <th:block th:each="payment : ${table.order.payments}">
+                            <dt th:text="|Paid by ${#strings.toLowerCase(payment.method)}|">Paid by cash</dt>
+                            <dd th:text="|−${payment.amount}|">−20.00</dd>
+                        </th:block>
+                        <dt class="bill-due">To pay</dt>
+                        <dd class="bill-due" th:text="${table.order.due}">22.50</dd>
+                    </dl>
+
+                    <form th:if="${venue.closesOrders and !table.order.settled}" class="payment-form" method="post"
+                          th:action="@{/service/venues/{v}/tables/{t}/payments(v=${venue.id}, t=${table.id})}">
+                        <input type="hidden" name="orderId" th:value="${table.order.id}">
+                        <div class="grid">
+                            <label>
+                                Amount
+                                <input type="text" name="amount" inputmode="decimal" required
+                                       th:value="${table.order.due}">
+                            </label>
+                            <label>
+                                Cash received
+                                <input type="text" name="received" inputmode="decimal" placeholder="Optional">
+                                <small class="muted" id="change-label"></small>
+                            </label>
+                        </div>
+                        <div class="payment-actions">
+                            <button type="submit" name="method" value="CASH">Cash</button>
+                            <button type="submit" name="method" value="CARD">Card</button>
+                        </div>
+                    </form>
+
+                    <form th:if="${venue.closesOrders and table.order.settled}" method="post"
+                          th:action="@{/service/venues/{v}/tables/{t}/close(v=${venue.id}, t=${table.id})}">
+                        <input type="hidden" name="orderId" th:value="${table.order.id}">
+                        <button type="submit" class="secondary outline wide">Close table</button>
+                    </form>
+                </section>
+
                 <section class="card round" th:each="round : ${table.order.rounds}">
                     <h2 th:text="|Round ${round.number}|">Round 1</h2>
                     <ul class="round-lines">
@@ -360,6 +408,25 @@
             if (tabs.length > 0) showSection(tabs[0].dataset.section);
 
             render();
+
+            const paymentForm = document.querySelector('.payment-form');
+            if (paymentForm) {
+                const amountInput = paymentForm.amount;
+                const receivedInput = paymentForm.received;
+                const changeLabel = document.getElementById('change-label');
+                const showChange = () => {
+                    const received = cents((receivedInput.value || '').replace(',', '.'));
+                    const amount = cents((amountInput.value || '').replace(',', '.'));
+                    changeLabel.textContent = received > amount ? 'Change ' + money(received - amount) : '';
+                };
+                receivedInput.addEventListener('input', showChange);
+                amountInput.addEventListener('input', showChange);
+                let paying = false;
+                paymentForm.addEventListener('submit', event => {
+                    if (paying) event.preventDefault();
+                    paying = true;
+                });
+            }
         })();
     </script>
 </main>

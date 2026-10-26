@@ -17,6 +17,7 @@ data class VenueView(
     val staffManageable: Boolean get() = Permission.MANAGE_STAFF in role.permissions
     val tablesManageable: Boolean get() = Permission.MANAGE_TABLES in role.permissions
     val takesOrders: Boolean get() = Permission.TAKE_ORDERS in role.permissions
+    val closesOrders: Boolean get() = Permission.CLOSE_ORDERS in role.permissions
     val preparesOrders: Boolean get() = Permission.PREPARE_ORDERS in role.permissions
     val home: String?
         get() = when {
