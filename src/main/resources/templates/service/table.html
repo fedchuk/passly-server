@@ -2,13 +2,19 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/workspace :: page(|Table ${table.label}|, ${venue}, 'service', ~{::main})}">
 <body>
-<main class="work-main narrow-work">
+<main class="work-main">
     <a class="back-link" th:href="@{/service/venues/{v}(v=${venue.id})}">← All tables</a>
 
     <div class="page-header">
         <div>
             <h1 th:text="|Table ${table.label}|">Table 7</h1>
-            <p class="subtitle" th:text="|${table.area} · ${table.seats} seats|">Main hall · 4 seats</p>
+            <p class="subtitle">
+                <span th:text="|${table.area} · ${table.seats} seats|">Main hall · 4 seats</span>
+                <th:block th:if="${table.order != null}">
+                    <span th:if="${table.order.guests != null}" th:text="| · ${table.order.guests} guests|"> · 2 guests</span>
+                    <span th:text="| · open for ${table.order.openFor}|"> · open for 35 min</span>
+                </th:block>
+            </p>
         </div>
         <div th:if="${table.order != null}" class="table-total">
             <small>Total</small>
@@ -16,34 +22,346 @@
         </div>
     </div>
 
-    <div th:if="${table.order == null}" class="placeholder">
-        <svg th:replace="~{fragments/icons :: icon('tables')}"></svg>
-        <p>This table is free.</p>
+    <p th:if="${message}" class="notice" th:text="${message}">Round 2 sent</p>
+    <p th:if="${error}" class="error" th:text="${error}">Not available now: Ribeye</p>
+
+    <div class="order-entry" id="order-entry"
+         th:attr="data-table-id=${table.id}, data-sent=${sent == true}, data-unavailable=${unavailable}">
+
+        <section class="menu-panel" aria-label="Menu">
+            <p th:if="${sections.isEmpty()}" class="empty">The menu is empty. A manager adds dishes in the back office.</p>
+
+            <nav class="menu-tabs" th:unless="${sections.isEmpty()}" aria-label="Categories">
+                <button type="button" class="menu-tab" th:each="section, state : ${sections}"
+                        th:attr="data-section=${section.id}, aria-pressed=${state.first}"
+                        th:text="${section.name}">Mains</button>
+            </nav>
+
+            <section class="menu-section" th:each="section : ${sections}" th:attr="data-section=${section.id}">
+                <h2 class="menu-section-title" th:text="${section.name}">Mains</h2>
+                <th:block th:each="group : ${section.groups}">
+                    <h3 th:if="${group.title != null}" class="menu-group-title" th:text="${group.title}">Wine › Red</h3>
+                    <div class="menu-grid">
+                        <button type="button" class="menu-item" th:each="item : ${group.items}"
+                                th:disabled="${!item.available}"
+                                th:attr="data-item-id=${item.id}, data-name=${item.name}, data-price=${item.price}, data-groups=${item.modifierGroupIds}">
+                            <strong th:text="${item.name}">Ribeye</strong>
+                            <small th:if="${item.description != null}" class="muted" th:text="${item.description}">300 g, grilled</small>
+                            <span class="menu-item-price" th:text="${item.available} ? ${item.price} : 'Stop list'">26.00</span>
+                        </button>
+                    </div>
+                </th:block>
+            </section>
+        </section>
+
+        <aside class="order-side">
+            <form id="round-form" class="card basket" method="post"
+                  th:action="@{/service/venues/{v}/tables/{t}/rounds(v=${venue.id}, t=${table.id})}">
+                <input type="hidden" name="orderId" th:value="${orderId}">
+                <div class="basket-header">
+                    <h2 th:text="${orderId == null} ? 'New order' : 'Next round'">Next round</h2>
+                    <span class="muted" id="basket-count">Empty</span>
+                </div>
+
+                <label th:if="${orderId == null}" class="guests-field">
+                    Guests
+                    <input type="number" name="guests" min="1" max="50" inputmode="numeric" placeholder="Optional">
+                </label>
+
+                <ul class="basket-lines" id="basket-lines"></ul>
+                <p class="empty basket-empty" id="basket-empty">Tap a dish to add it.</p>
+
+                <div class="basket-footer">
+                    <span>Round total <strong id="basket-total">0.00</strong></span>
+                    <button type="submit" id="send-round" th:text="${orderId == null} ? 'Open table' : 'Send round'"
+                            th:attr="data-needs-lines=${orderId != null}">Send round</button>
+                </div>
+                <div id="round-lines" hidden></div>
+            </form>
+
+            <th:block th:if="${table.order != null}">
+                <section class="card round" th:each="round : ${table.order.rounds}">
+                    <h2 th:text="|Round ${round.number}|">Round 1</h2>
+                    <ul class="round-lines">
+                        <li th:each="line : ${round.lines}">
+                            <span class="line-quantity" th:text="|${line.quantity}×|">2×</span>
+                            <span class="line-name">
+                                <strong th:text="${line.name}">Ribeye</strong>
+                                <small th:if="${line.modifiers != null}" class="muted" th:text="${line.modifiers}">Medium rare</small>
+                                <small th:if="${line.comment != null}" class="line-comment" th:text="${line.comment}">No salt</small>
+                            </span>
+                            <span class="line-total" th:text="${line.total}">52.00</span>
+                        </li>
+                    </ul>
+                </section>
+            </th:block>
+        </aside>
     </div>
 
-    <th:block th:if="${table.order != null}">
-        <p class="muted order-meta">
-            <span th:if="${table.order.guests != null}" th:text="|${table.order.guests} guests · |">2 guests · </span>
-            <span th:text="|open for ${table.order.openFor}|">open for 35 min</span>
-        </p>
+    <div id="modifier-groups" hidden>
+        <fieldset class="modifier-group" th:each="group : ${modifierGroups}"
+                  th:attr="data-group-id=${group.id}, data-min=${group.minSelect}, data-max=${group.maxSelect}, data-name=${group.name}">
+            <legend>
+                <span th:text="${group.name}">Doneness</span>
+                <small class="muted" th:text="${group.hint}">Choose 1</small>
+            </legend>
+            <label class="modifier-option" th:each="option : ${group.options}">
+                <input th:type="${group.single} ? 'radio' : 'checkbox'"
+                       th:attr="data-option-id=${option.id}, data-name=${option.name}, data-delta=${option.priceDelta}">
+                <span th:text="${option.name}">Medium rare</span>
+                <small th:if="${option.priceLabel != null}" class="muted" th:text="${option.priceLabel}">+1.50</small>
+            </label>
+        </fieldset>
+    </div>
 
-        <p th:if="${table.order.rounds.isEmpty()}" class="empty">Nothing ordered yet.</p>
+    <dialog id="item-dialog" class="item-dialog">
+        <form method="dialog" id="item-form">
+            <h2 id="item-dialog-title">Ribeye</h2>
+            <div class="dialog-groups"></div>
+            <div class="grid">
+                <label>
+                    Quantity
+                    <input type="number" name="quantity" min="1" max="99" value="1" inputmode="numeric">
+                </label>
+                <label>
+                    Comment
+                    <input type="text" name="comment" maxlength="200" placeholder="No salt, allergy…">
+                </label>
+            </div>
+            <p class="error" id="item-dialog-error" hidden></p>
+            <div class="dialog-actions">
+                <button type="button" class="secondary outline" id="item-dialog-cancel">Cancel</button>
+                <button type="submit">Add to round</button>
+            </div>
+        </form>
+    </dialog>
 
-        <section class="card round" th:each="round : ${table.order.rounds}">
-            <h2 th:text="|Round ${round.number}|">Round 1</h2>
-            <ul class="round-lines">
-                <li th:each="line : ${round.lines}">
-                    <span class="line-quantity" th:text="|${line.quantity}×|">2×</span>
-                    <span class="line-name">
-                        <strong th:text="${line.name}">Ribeye</strong>
-                        <small th:if="${line.modifiers != null}" class="muted" th:text="${line.modifiers}">Medium rare</small>
-                        <small th:if="${line.comment != null}" class="line-comment" th:text="${line.comment}">No salt</small>
-                    </span>
-                    <span class="line-total" th:text="${line.total}">52.00</span>
-                </li>
-            </ul>
-        </section>
-    </th:block>
+    <script>
+        (() => {
+            const root = document.getElementById('order-entry');
+            const form = document.getElementById('round-form');
+            const list = document.getElementById('basket-lines');
+            const emptyNote = document.getElementById('basket-empty');
+            const totalLabel = document.getElementById('basket-total');
+            const countLabel = document.getElementById('basket-count');
+            const sendButton = document.getElementById('send-round');
+            const hiddenLines = document.getElementById('round-lines');
+            const dialog = document.getElementById('item-dialog');
+            const itemForm = document.getElementById('item-form');
+            const dialogGroups = dialog.querySelector('.dialog-groups');
+            const dialogError = document.getElementById('item-dialog-error');
+            const storageKey = 'passly.basket.' + root.dataset.tableId;
+            const unavailable = new Set((root.dataset.unavailable || '').split(',').filter(Boolean));
+            const groups = new Map([...document.querySelectorAll('#modifier-groups .modifier-group')]
+                .map(group => [group.dataset.groupId, group]));
+
+            const cents = value => Math.round(parseFloat(value) * 100);
+            const money = value => (value / 100).toFixed(2);
+
+            const load = () => {
+                try {
+                    return JSON.parse(sessionStorage.getItem(storageKey)) || [];
+                } catch (e) {
+                    return [];
+                }
+            };
+            const save = () => {
+                try {
+                    sessionStorage.setItem(storageKey, JSON.stringify(basket));
+                } catch (e) {
+                }
+            };
+
+            let basket = root.dataset.sent === 'true' ? [] : load();
+            let current = null;
+            save();
+
+            const addLine = (item, options, quantity, comment) => {
+                const modifierIds = options.map(option => option.id);
+                const key = [item.id, ...[...modifierIds].sort(), comment].join('|');
+                const existing = basket.find(line => line.key === key);
+                if (existing) {
+                    existing.quantity = Math.min(99, existing.quantity + quantity);
+                } else {
+                    basket.push({
+                        key,
+                        menuItemId: item.id,
+                        name: item.name,
+                        unitPrice: item.price + options.reduce((sum, option) => sum + option.delta, 0),
+                        quantity,
+                        modifierIds,
+                        modifierNames: options.map(option => option.name).join(', '),
+                        comment,
+                    });
+                }
+                save();
+                render();
+            };
+
+            const changeQuantity = (index, delta) => {
+                const line = basket[index];
+                line.quantity += delta;
+                if (line.quantity < 1) basket.splice(index, 1);
+                if (line.quantity > 99) line.quantity = 99;
+                save();
+                render();
+            };
+
+            const render = () => {
+                list.replaceChildren(...basket.map((line, index) => {
+                    const row = document.createElement('li');
+                    row.className = unavailable.has(line.menuItemId) ? 'basket-line unavailable' : 'basket-line';
+
+                    const text = document.createElement('span');
+                    text.className = 'line-name';
+                    const name = document.createElement('strong');
+                    name.textContent = line.name;
+                    text.append(name);
+                    if (line.modifierNames) {
+                        const modifiers = document.createElement('small');
+                        modifiers.className = 'muted';
+                        modifiers.textContent = line.modifierNames;
+                        text.append(modifiers);
+                    }
+                    if (line.comment) {
+                        const comment = document.createElement('small');
+                        comment.className = 'line-comment';
+                        comment.textContent = line.comment;
+                        text.append(comment);
+                    }
+
+                    const stepper = document.createElement('span');
+                    stepper.className = 'stepper';
+                    const minus = document.createElement('button');
+                    minus.type = 'button';
+                    minus.className = 'secondary outline';
+                    minus.textContent = '−';
+                    minus.setAttribute('aria-label', 'One less ' + line.name);
+                    minus.addEventListener('click', () => changeQuantity(index, -1));
+                    const quantity = document.createElement('span');
+                    quantity.textContent = line.quantity;
+                    const plus = document.createElement('button');
+                    plus.type = 'button';
+                    plus.className = 'secondary outline';
+                    plus.textContent = '+';
+                    plus.setAttribute('aria-label', 'One more ' + line.name);
+                    plus.addEventListener('click', () => changeQuantity(index, 1));
+                    stepper.append(minus, quantity, plus);
+
+                    const total = document.createElement('span');
+                    total.className = 'line-total';
+                    total.textContent = money(line.unitPrice * line.quantity);
+
+                    row.append(text, stepper, total);
+                    return row;
+                }));
+
+                const count = basket.reduce((sum, line) => sum + line.quantity, 0);
+                emptyNote.hidden = basket.length > 0;
+                countLabel.textContent = count === 0 ? 'Empty' : count === 1 ? '1 item' : count + ' items';
+                totalLabel.textContent = money(basket.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0));
+                sendButton.disabled = sendButton.dataset.needsLines === 'true' && basket.length === 0;
+            };
+
+            const openItem = button => {
+                current = {
+                    id: button.dataset.itemId,
+                    name: button.dataset.name,
+                    price: cents(button.dataset.price),
+                    groupIds: (button.dataset.groups || '').split(',').filter(Boolean),
+                };
+                const itemGroups = current.groupIds.map(id => groups.get(id)).filter(Boolean);
+                if (itemGroups.length === 0) {
+                    addLine(current, [], 1, '');
+                    return;
+                }
+                dialogGroups.replaceChildren(...itemGroups.map(group => {
+                    const copy = group.cloneNode(true);
+                    copy.querySelectorAll('input').forEach(input => {
+                        input.name = 'group-' + group.dataset.groupId;
+                        input.checked = false;
+                    });
+                    return copy;
+                }));
+                document.getElementById('item-dialog-title').textContent = current.name;
+                itemForm.quantity.value = 1;
+                itemForm.comment.value = '';
+                dialogError.hidden = true;
+                dialog.showModal();
+            };
+
+            document.querySelectorAll('.menu-item[data-item-id]').forEach(button =>
+                button.addEventListener('click', () => openItem(button)));
+
+            dialogGroups.addEventListener('change', event => {
+                const group = event.target.closest('.modifier-group');
+                const max = Number(group.dataset.max);
+                const checked = group.querySelectorAll('input:checked');
+                if (event.target.type === 'checkbox' && checked.length > max) event.target.checked = false;
+            });
+
+            itemForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const options = [];
+                for (const group of dialogGroups.querySelectorAll('.modifier-group')) {
+                    const checked = [...group.querySelectorAll('input:checked')];
+                    const min = Number(group.dataset.min);
+                    const max = Number(group.dataset.max);
+                    if (checked.length < min || checked.length > max) {
+                        dialogError.textContent = min === max
+                            ? `Choose ${min} in ${group.dataset.name}`
+                            : `Choose from ${min} to ${max} in ${group.dataset.name}`;
+                        dialogError.hidden = false;
+                        return;
+                    }
+                    checked.forEach(input => options.push({
+                        id: input.dataset.optionId,
+                        name: input.dataset.name,
+                        delta: cents(input.dataset.delta),
+                    }));
+                }
+                const quantity = Math.min(99, Math.max(1, parseInt(itemForm.quantity.value, 10) || 1));
+                addLine(current, options, quantity, itemForm.comment.value.trim());
+                dialog.close();
+            });
+
+            document.getElementById('item-dialog-cancel').addEventListener('click', () => dialog.close());
+
+            form.addEventListener('submit', event => {
+                if (sendButton.dataset.needsLines === 'true' && basket.length === 0) {
+                    event.preventDefault();
+                    return;
+                }
+                const fields = [];
+                basket.forEach((line, index) => {
+                    const field = (name, value) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = `lines[${index}].${name}`;
+                        input.value = value;
+                        fields.push(input);
+                    };
+                    field('menuItemId', line.menuItemId);
+                    field('quantity', line.quantity);
+                    field('comment', line.comment);
+                    line.modifierIds.forEach(id => field('modifierIds', id));
+                });
+                hiddenLines.replaceChildren(...fields);
+                sendButton.disabled = true;
+            });
+
+            const tabs = [...document.querySelectorAll('.menu-tab')];
+            const sections = [...document.querySelectorAll('.menu-section')];
+            const showSection = id => {
+                tabs.forEach(tab => tab.setAttribute('aria-pressed', tab.dataset.section === id));
+                sections.forEach(section => section.hidden = section.dataset.section !== id);
+            };
+            tabs.forEach(tab => tab.addEventListener('click', () => showSection(tab.dataset.section)));
+            if (tabs.length > 0) showSection(tabs[0].dataset.section);
+
+            render();
+        })();
+    </script>
 </main>
 </body>
 </html>

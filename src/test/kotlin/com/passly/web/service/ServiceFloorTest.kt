@@ -1,6 +1,5 @@
 package com.passly.web.service
 
-import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
 import com.passly.application.floor.CreateAreaCommand
 import com.passly.application.floor.CreateTableCommand
@@ -149,10 +148,11 @@ class ServiceFloorTest {
     }
 
     @Test
-    fun `free table page says so`() {
+    fun `free table page offers to open the table`() {
         mockMvc.get("$floor/tables/${eight.id.value}") { with(waiter) }.andExpect {
             status { isOk() }
-            content { string(containsString("This table is free.")) }
+            content { string(containsString("New order")) }
+            content { string(containsString("Open table")) }
         }
     }
 
