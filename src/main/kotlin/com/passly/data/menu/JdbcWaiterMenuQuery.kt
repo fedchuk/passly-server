@@ -17,7 +17,7 @@ class JdbcWaiterMenuQuery(private val jdbc: JdbcClient) : WaiterMenuQuery {
             .orElse(null)
 
     override fun menu(venueId: VenueId): WaiterMenu? {
-        val version = menuVersion(venueId) ?: return null
+        val header = header(venueId) ?: return null
         val items = activeItems(venueId)
         val categories = categoryRows(venueId).filter { it.active }
         val childrenByParent = categories.groupBy { it.parentId }
@@ -27,8 +27,17 @@ class JdbcWaiterMenuQuery(private val jdbc: JdbcClient) : WaiterMenuQuery {
                 WaiterMenuCategory(row.id, row.name, items[row.id].orEmpty(), subtree(row.id))
             }
 
-        return WaiterMenu(venueId.value, version, subtree(null), modifierGroups(venueId))
+        return WaiterMenu(venueId.value, header.menuVersion, header.currency, subtree(null), modifierGroups(venueId))
     }
+
+    private fun header(venueId: VenueId): MenuHeader? =
+        jdbc.sql("select menu_version, currency from venue where id = :venueId")
+            .param("venueId", venueId.value)
+            .query { rs, _ -> MenuHeader(rs.getLong("menu_version"), rs.getString("currency")) }
+            .optional()
+            .orElse(null)
+
+    private data class MenuHeader(val menuVersion: Long, val currency: String)
 
     private fun categoryRows(venueId: VenueId): List<CategoryRow> =
         jdbc.sql("select id, parent_id, name, active from category where venue_id = :venueId order by sort_order")

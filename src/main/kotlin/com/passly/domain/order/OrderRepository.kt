@@ -11,5 +11,6 @@ interface OrderRepository {
     fun existsAtStation(stationId: StationId): Boolean
     fun findOpen(venueId: VenueId): List<Order>
     fun existsAtTable(tableId: DiningTableId): Boolean
+    fun existsInVenue(venueId: VenueId): Boolean
     fun save(order: Order)
 }

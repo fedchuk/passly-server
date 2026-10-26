@@ -26,6 +26,8 @@ interface OrderJpaRepository : JpaRepository<OrderEntity, UUID> {
 
     fun existsByTableId(tableId: UUID): Boolean
 
+    fun existsByVenueId(venueId: UUID): Boolean
+
     @Query("select count(l) > 0 from OrderLineEntity l where l.stationId = :stationId")
     fun existsLineAtStation(@Param("stationId") stationId: UUID): Boolean
 }

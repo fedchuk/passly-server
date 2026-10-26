@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Settings', ${venue}, 'settings', ~{::main})}">
+<body>
+<main class="narrow">
+    <div class="page-header">
+        <div>
+            <h1>Settings</h1>
+            <p class="subtitle">Where the venue works and which currency its prices and bills use.</p>
+        </div>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Settings saved</p>
+
+    <section class="card">
+        <form th:action="@{/admin/venues/{v}/settings(v=${venue.id})}" th:object="${form}" method="post">
+            <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
+
+            <input type="hidden" th:field="*{version}">
+
+            <label>
+                Country
+                <select th:field="*{country}" required
+                        th:attr="aria-invalid=${#fields.hasErrors('country')} ? 'true' : null">
+                    <option th:each="country : ${countries}" th:value="${country.code}" th:text="${country.label}">France</option>
+                </select>
+                <small class="error" th:if="${#fields.hasErrors('country')}" th:errors="*{country}">Unknown country</small>
+            </label>
+
+            <label>
+                Main currency
+                <select th:field="*{currency}" required th:disabled="${currencyLocked}"
+                        th:attr="aria-invalid=${#fields.hasErrors('currency')} ? 'true' : null">
+                    <option th:each="currency : ${currencies}" th:value="${currency.code}" th:text="${currency.label}">EUR · Euro</option>
+                </select>
+                <input type="hidden" th:if="${currencyLocked}" name="currency" th:value="*{currency}">
+                <small class="error" th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}">Unknown currency</small>
+                <small class="muted" th:if="${currencyLocked}">The venue already has orders, so the main currency is fixed: menu prices and bills are in it.</small>
+                <small class="muted" th:unless="${currencyLocked}">Menu prices and bills are in this currency. It can change only until the first order.</small>
+            </label>
+
+            <div class="buttons">
+                <button type="submit">Save</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

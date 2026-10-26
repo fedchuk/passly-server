@@ -65,6 +65,7 @@ class SecurityConfig {
                 authorize("/swagger-ui/**", permitAll)
                 authorize("/admin/venues/{venueId}/staff/**", venues.requires(Permission.MANAGE_STAFF))
                 authorize("/admin/venues/{venueId}/floor/**", venues.requires(Permission.MANAGE_TABLES))
+                authorize("/admin/venues/{venueId}/settings/**", venues.requires(Permission.MANAGE_VENUE))
                 authorize("/admin/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
                 authorize("/service/venues/{venueId}/tables/{tableId}/payments", venues.requires(Permission.CLOSE_ORDERS))
                 authorize("/service/venues/{venueId}/tables/{tableId}/close", venues.requires(Permission.CLOSE_ORDERS))

@@ -8,6 +8,8 @@ data class MenuResponse(
     val venueId: UUID,
     @Schema(description = "Grows with every change of the menu. The same value is sent as the ETag.")
     val menuVersion: Long,
+    @Schema(description = "ISO 4217 code of the venue's main currency. All prices are in it.", example = "EUR")
+    val currency: String,
     @Schema(description = "Active categories only, nested, with their items in display order")
     val categories: List<MenuCategoryResponse>,
     @Schema(description = "Groups referenced by modifierGroupIds of the items")
@@ -51,6 +53,7 @@ data class MenuChangeNotice(
 fun WaiterMenu.toResponse() = MenuResponse(
     venueId = venueId,
     menuVersion = menuVersion,
+    currency = currency,
     categories = categories.map { it.toResponse() },
     modifierGroups = modifierGroups.map { it.toResponse() },
 )

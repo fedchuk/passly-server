@@ -38,6 +38,9 @@
             <a th:if="${venue.staffManageable}" th:href="@{/admin/venues/{v}/staff(v=${venue.id})}"
                th:attr="aria-current=${active == 'staff'} ? 'page' : null">
                 <svg th:replace="~{fragments/icons :: icon('staff')}"></svg>Staff</a>
+            <a th:if="${venue.settingsManageable}" th:href="@{/admin/venues/{v}/settings(v=${venue.id})}"
+               th:attr="aria-current=${active == 'settings'} ? 'page' : null">
+                <svg th:replace="~{fragments/icons :: icon('settings')}"></svg>Settings</a>
         </nav>
 
         <nav class="side-nav" th:if="${venue == null}" aria-label="Main">

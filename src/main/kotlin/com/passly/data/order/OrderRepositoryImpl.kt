@@ -30,6 +30,9 @@ class OrderRepositoryImpl(
     override fun existsAtTable(tableId: DiningTableId): Boolean =
         jpa.existsByTableId(tableId.value)
 
+    override fun existsInVenue(venueId: VenueId): Boolean =
+        jpa.existsByVenueId(venueId.value)
+
     override fun existsAtStation(stationId: StationId): Boolean =
         jpa.existsLineAtStation(stationId.value)
 

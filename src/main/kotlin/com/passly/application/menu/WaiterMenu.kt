@@ -6,6 +6,7 @@ import java.util.*
 data class WaiterMenu(
     val venueId: UUID,
     val menuVersion: Long,
+    val currency: String,
     val categories: List<WaiterMenuCategory>,
     val modifierGroups: List<WaiterMenuModifierGroup>,
 )

@@ -26,6 +26,7 @@ class FakeOrderRepository : OrderRepository {
         stored.values.filter { it.venueId == venueId && it.status == OrderStatus.OPEN }.map(::copyOf)
 
     override fun existsAtTable(tableId: DiningTableId) = stored.values.any { it.tableId == tableId }
+    override fun existsInVenue(venueId: VenueId) = stored.values.any { it.venueId == venueId }
 
     override fun save(order: Order) {
         stored[order.id] = copyOf(order)

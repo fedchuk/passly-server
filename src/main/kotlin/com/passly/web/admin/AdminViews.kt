@@ -19,6 +19,7 @@ data class VenueView(
     val closesOrders: Boolean get() = Permission.CLOSE_ORDERS in role.permissions
     val managesStopList: Boolean get() = Permission.MANAGE_STOP_LIST in role.permissions
     val preparesOrders: Boolean get() = Permission.PREPARE_ORDERS in role.permissions
+    val settingsManageable: Boolean get() = Permission.MANAGE_VENUE in role.permissions
     val home: String?
         get() = when {
             manageable -> "/admin/venues/$id/overview"

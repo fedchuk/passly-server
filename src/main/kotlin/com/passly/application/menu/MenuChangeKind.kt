@@ -5,4 +5,5 @@ enum class MenuChangeKind {
     ITEMS,
     STOP_LIST,
     MODIFIER_GROUPS,
+    CURRENCY,
 }
