@@ -9,6 +9,8 @@ import com.passly.domain.common.*
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
+import com.passly.domain.order.OrderStatus
+import com.passly.domain.order.PaymentMethod
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
@@ -94,6 +96,31 @@ class OrderServiceTest {
 
         assertEquals(setOf(salmon.id.value, removed.value), error.itemIds.toSet())
         assertTrue(orders.stored.getValue(order.id).lines.isEmpty())
+    }
+
+    @Test
+    fun `full payment locks the order, closes it and frees the table`() {
+        val coffee = item("Espresso", "1.80")
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(coffee, 2))))
+
+        service.pay(PayOrderCommand(venue.id, order.id, waiter, PaymentMethod.CASH, Money.of("1.60")))
+        service.pay(PayOrderCommand(venue.id, order.id, waiter, PaymentMethod.CARD, Money.of("2.00")))
+
+        val stored = orders.stored.getValue(order.id)
+        assertEquals(OrderStatus.CLOSED, stored.status)
+        assertEquals(listOf(Money.of("1.60"), Money.of("2.00")), stored.payments.map { it.amount })
+        assertEquals(now, stored.closedAt)
+        assertEquals(2, orders.locks)
+        assertEquals(null, orders.findOpenAtTable(table.id))
+    }
+
+    @Test
+    fun `an order opened by mistake is closed without payment`() {
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter))
+
+        service.close(CloseOrderCommand(venue.id, order.id, waiter))
+
+        assertEquals(OrderStatus.CLOSED, orders.stored.getValue(order.id).status)
     }
 
     @Test

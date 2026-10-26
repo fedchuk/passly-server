@@ -129,6 +129,15 @@ class UserTest {
     }
 
     @Test
+    fun `waiters close tables and the kitchen does not`() {
+        val pablo = user().apply { joinVenue(centro, Role.WAITER) }
+        val anna = user().apply { joinVenue(centro, Role.KITCHEN) }
+
+        assertTrue(pablo.can(Permission.CLOSE_ORDERS, centro))
+        assertFalse(anna.can(Permission.CLOSE_ORDERS, centro))
+    }
+
+    @Test
     fun `only the owner manages the staff`() {
         val anna = user().apply { joinVenue(centro, Role.MANAGER) }
         val owner = user().apply { becomeOwnerOf(tenant) }

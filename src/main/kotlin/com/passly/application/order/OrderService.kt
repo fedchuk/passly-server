@@ -53,12 +53,28 @@ class OrderService(
     }
 
     fun addRound(command: AddRoundCommand): Order {
-        val order = orders.findForUpdate(command.venueId, command.orderId)
-            ?: throw NotFoundException("Order", command.orderId)
+        val order = lockOrder(command.venueId, command.orderId)
         order.addRound(price(command.venueId, command.lines), command.waiterId, clock.instant())
         orders.save(order)
         return order
     }
+
+    fun pay(command: PayOrderCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        order.pay(command.method, command.amount, command.takenBy, clock.instant())
+        orders.save(order)
+        return order
+    }
+
+    fun close(command: CloseOrderCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        order.close(command.closedBy, clock.instant())
+        orders.save(order)
+        return order
+    }
+
+    private fun lockOrder(venueId: VenueId, orderId: OrderId): Order =
+        orders.findForUpdate(venueId, orderId) ?: throw NotFoundException("Order", orderId)
 
     private fun price(venueId: VenueId, requests: List<OrderLineRequest>): List<PricedLine> {
         if (requests.isEmpty()) throw ValidationException("A round needs at least one line", "lines")

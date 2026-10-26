@@ -32,6 +32,7 @@ class FakeOrderRepository : OrderRepository {
     }
 
     private fun copyOf(o: Order) = Order.fromStorage(
-        o.id, o.tenantId, o.venueId, o.tableId, o.status, o.guests, o.openedBy, o.openedAt, o.lines, o.version ?: 0,
+        o.id, o.tenantId, o.venueId, o.tableId, o.status, o.guests, o.openedBy, o.openedAt,
+        o.lines, o.payments, o.closedBy, o.closedAt, o.version ?: 0,
     )
 }

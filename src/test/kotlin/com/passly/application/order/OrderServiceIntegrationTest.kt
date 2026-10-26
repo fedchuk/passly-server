@@ -1,7 +1,5 @@
 package com.passly.application.order
 
-import com.passly.web.api.createStation
-import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.floor.CreateAreaCommand
 import com.passly.application.floor.CreateTableCommand
@@ -12,16 +10,16 @@ import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.common.UnavailableItemsException
 import com.passly.domain.floor.DiningTable
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.MenuItem
-import com.passly.domain.menu.MenuItemDetails
-import com.passly.domain.menu.ModifierDraft
+import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
+import com.passly.domain.order.OrderStatus
+import com.passly.domain.order.PaymentMethod
 import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
+import com.passly.web.api.createStation
 import com.passly.web.api.createVenue
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -158,5 +156,33 @@ class OrderServiceIntegrationTest {
 
         assertFailsWith<ConflictException> { floors.deleteTable(venueId, table.id) }
         assertEquals(listOf("7"), floors.get(venueId).tables.map { it.label })
+    }
+
+    @Test
+    fun `payments survive a round trip and the table can be opened again`() {
+        val coffee = item("Espresso", "1.80")
+        val order = orders.open(OpenOrderCommand(venueId, table.id, waiter, lines = listOf(OrderLineRequest(coffee.id, 3))))
+
+        orders.pay(PayOrderCommand(venueId, order.id, waiter, PaymentMethod.CASH, Money.of("2.00")))
+        orders.pay(PayOrderCommand(venueId, order.id, waiter, PaymentMethod.CARD, Money.of("3.40")))
+
+        val closed = orders.get(venueId, order.id)
+        assertEquals(OrderStatus.CLOSED, closed.status)
+        assertEquals(listOf(PaymentMethod.CASH, PaymentMethod.CARD), closed.payments.map { it.method })
+        assertEquals(Money.of("5.40"), closed.paid)
+        assertEquals(waiter, closed.closedBy)
+        assertTrue(orders.listOpen(venueId).isEmpty())
+
+        val next = orders.open(OpenOrderCommand(venueId, table.id, waiter))
+        assertEquals(listOf(next.id), orders.listOpen(venueId).map { it.id })
+    }
+
+    @Test
+    fun `a closed order without closing details is rejected by the database`() {
+        val order = orders.open(OpenOrderCommand(venueId, table.id, waiter))
+
+        assertFailsWith<DataIntegrityViolationException> {
+            jdbc.sql("update orders set status = 'CLOSED' where id = ?").params(order.id.value).update()
+        }
     }
 }

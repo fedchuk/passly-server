@@ -21,6 +21,9 @@ fun OrderEntity.toDomain() = Order.fromStorage(
     openedBy = UserId(openedBy),
     openedAt = openedAt,
     lines = lines.sortedBy { it.position }.map { it.toDomain() },
+    payments = payments.sortedBy { it.position }.map { it.toDomain() },
+    closedBy = closedBy?.let(::UserId),
+    closedAt = closedAt,
     version = checkNotNull(version) { "Stored order $id has no version" },
 )
 
@@ -33,12 +36,20 @@ fun Order.toNewEntity() = OrderEntity(
     guests = guests,
     openedBy = openedBy.value,
     openedAt = openedAt,
-).also { it.appendNewLines(this) }
+).also {
+    it.closedBy = closedBy?.value
+    it.closedAt = closedAt
+    it.appendNewLines(this)
+    it.appendNewPayments(this)
+}
 
 fun OrderEntity.updateFrom(order: Order) {
     status = order.status
     guests = order.guests
+    closedBy = order.closedBy?.value
+    closedAt = order.closedAt
     appendNewLines(order)
+    appendNewPayments(order)
 }
 
 private fun OrderEntity.appendNewLines(order: Order) {
@@ -89,3 +100,28 @@ private fun OrderLine.toEntity(order: OrderEntity, position: Int) = OrderLineEnt
         OrderLineModifierEmbeddable(it.modifierId.value, it.groupName, it.name, it.priceDelta.amount)
     }.toMutableList()
 }
+
+private fun OrderEntity.appendNewPayments(order: Order) {
+    val stored = payments.map { it.id }.toSet()
+    order.payments.forEachIndexed { position, payment ->
+        if (payment.id.value !in stored) payments += payment.toEntity(this, position)
+    }
+}
+
+private fun OrderPaymentEntity.toDomain() = Payment(
+    id = PaymentId(id),
+    method = method,
+    amount = Money.of(amount),
+    takenBy = UserId(takenBy),
+    takenAt = takenAt,
+)
+
+private fun Payment.toEntity(order: OrderEntity, position: Int) = OrderPaymentEntity(
+    id = id.value,
+    parentOrder = order,
+    position = position,
+    method = method,
+    amount = amount.amount,
+    takenBy = takenBy.value,
+    takenAt = takenAt,
+)

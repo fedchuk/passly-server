@@ -1,8 +1,10 @@
 package com.passly.data.order
 
 import com.passly.data.common.BaseEntity
+import com.passly.domain.order.OrderPaymentEntity
 import com.passly.domain.order.OrderStatus
 import jakarta.persistence.*
+import org.hibernate.annotations.BatchSize
 import java.time.Instant
 import java.util.*
 
@@ -34,7 +36,18 @@ class OrderEntity(
     val openedAt: Instant,
 ) : BaseEntity(id) {
 
+    @Column(name = "closed_by")
+    var closedBy: UUID? = null
+
+    @Column(name = "closed_at")
+    var closedAt: Instant? = null
+
     @OneToMany(mappedBy = "parentOrder", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("position")
     var lines: MutableSet<OrderLineEntity> = linkedSetOf()
+
+    @OneToMany(mappedBy = "parentOrder", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OrderBy("position")
+    @BatchSize(size = 50)
+    var payments: MutableSet<OrderPaymentEntity> = linkedSetOf()
 }
