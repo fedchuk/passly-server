@@ -21,8 +21,7 @@ class MenuPages(
     fun show(principal: PasslyUserPrincipal, venueId: UUID, focusId: CategoryId?, model: Model): String {
         val venue = VenueId(venueId)
         val tree = categories.getTree(venue)
-        val focus = focusId ?: tree.children(null).firstOrNull()?.id
-        val openPath = focus?.let { tree.pathTo(it).map { category -> category.id }.toSet() }.orEmpty()
+        val openPath = focusId?.let { tree.pathTo(it).map { category -> category.id }.toSet() }.orEmpty()
         val venueStations = stations.list(venue)
 
         model.addAttribute("venue", venues.find(principal, venueId))

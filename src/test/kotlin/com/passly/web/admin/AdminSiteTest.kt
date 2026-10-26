@@ -1,16 +1,12 @@
     package com.passly.web.admin
 
     import com.passly.TestcontainersConfiguration
-import com.passly.web.api.createStation
-import com.passly.domain.menu.StationId
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
+import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
-import com.passly.web.api.TestVenue
-import com.passly.web.api.createMember
-import com.passly.web.api.createVenue
-import com.passly.web.api.securedMockMvc
+import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -121,7 +117,7 @@ import kotlin.test.Test
             val wine = categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Wine", stationId = StationId(jdbc.createStation(venue))))
             categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Rioja", parentId = wine.id))
 
-            mockMvc.get("/admin/venues/${venue.venueId}") { with(loggedIn(manager)) }.andExpect {
+            mockMvc.get("/admin/venues/${venue.venueId}/categories/${wine.id.value}/items") { with(loggedIn(manager)) }.andExpect {
                 status { isOk() }
                 content { string(containsString("Wine")) }
                 content { string(containsString("Rioja")) }

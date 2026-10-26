@@ -92,14 +92,22 @@ class MenuPageTest {
     private fun roots(url: String) = open(url)["roots"] as List<MenuNodeView>
 
     @Test
-    fun `first top-level category is open by default`() {
+    fun `all categories are closed when the menu opens`() {
         val roots = roots(page)
 
         assertEquals(listOf("Entrées", "Plats"), roots.map { it.name })
-        assertEquals(listOf(true, false), roots.map { it.open })
+        assertEquals(listOf(false, false), roots.map { it.open })
         assertEquals(listOf(0, 2), roots.map { it.subcategories })
-        assertEquals(listOf("Soupe à l'oignon"), roots[0].dishes.map { it.name })
-        assertTrue(roots[1].children.isEmpty())
+        assertEquals(listOf(1, 0), roots.map { it.items })
+        assertTrue(roots.all { it.children.isEmpty() && it.dishes.isEmpty() })
+    }
+
+    @Test
+    fun `top-level category opens with its dishes`() {
+        val entrees = roots("$page/categories/${starters.id}/items")[0]
+
+        assertTrue(entrees.open)
+        assertEquals(listOf("Soupe à l'oignon"), entrees.dishes.map { it.name })
     }
 
     @Test

@@ -364,9 +364,9 @@ class CategoryAdminTest {
 
     @Test
     fun `menu page offers stations and shows the station of each top-level category`() {
-        create("Wine")
+        val wine = create("Wine")
 
-        mockMvc.get(page) { with(manager) }.andExpect {
+        mockMvc.get("$page/categories/${wine.id.value}/items") { with(manager) }.andExpect {
             status { isOk() }
             content { string(containsString("name=\"stationId\"")) }
             content { string(containsString("Test kitchen")) }
