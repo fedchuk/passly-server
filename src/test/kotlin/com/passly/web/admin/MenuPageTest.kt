@@ -103,7 +103,7 @@ class MenuPageTest {
     }
 
     @Test
-    fun `subcategory opens its root with a breadcrumb and its dishes`() {
+    fun `subcategory stays in the row of its siblings and shows its dishes`() {
         val model = open("$page/categories/${meat.id}/items")
 
         @Suppress("UNCHECKED_CAST")
@@ -112,7 +112,10 @@ class MenuPageTest {
 
         val focus = model["focus"] as MenuFocusView
         assertFalse(focus.root)
-        assertEquals(listOf("Plats", "Viandes"), focus.path.map { it.name })
+        val row = focus.levels.single()
+        assertEquals(mains.id.value, row.parentId)
+        assertEquals(listOf("Viandes" to true, "Poissons" to false), row.cards.map { it.name to it.selected })
+        assertEquals(listOf(mains.id.value, row.cards[1].id), row.cards.map { it.targetId })
         assertEquals(listOf("Entrecôte", "Magret de canard"), focus.items.map { it.name })
         assertEquals(listOf(false, true), focus.items.map { it.available })
         assertEquals("28.00", focus.items.first().price)
@@ -122,8 +125,27 @@ class MenuPageTest {
     fun `root shows its subcategories as cards with dish counts`() {
         val focus = open("$page/categories/${mains.id}/items")["focus"] as MenuFocusView
 
-        assertEquals(listOf("Viandes" to 2, "Poissons" to 0), focus.children.map { it.name to it.items })
+        val row = focus.levels.single()
+        assertEquals(listOf("Viandes" to 2, "Poissons" to 0), row.cards.map { it.name to it.items })
+        assertTrue(row.cards.none { it.selected })
         assertTrue(focus.items.isEmpty())
+    }
+
+    @Test
+    fun `deeper subcategory adds a second row under the first`() {
+        val grill = categories.create(CreateCategoryCommand(venueId, "Grillades", parentId = meat.id))
+
+        val focus = open("$page/categories/${grill.id}/items")["focus"] as MenuFocusView
+
+        assertEquals(listOf(mains.id.value, meat.id.value), focus.levels.map { it.parentId })
+        assertEquals(listOf("Viandes", "Grillades"), focus.levels.map { level -> level.cards.single { it.selected }.name })
+    }
+
+    @Test
+    fun `top-level category without subcategories has no rows`() {
+        val focus = open(page)["focus"] as MenuFocusView
+
+        assertTrue(focus.levels.isEmpty())
     }
 
     @Test

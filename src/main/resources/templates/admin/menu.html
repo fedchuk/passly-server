@@ -84,26 +84,18 @@
             </header>
 
             <div class="menu-root-body" th:if="${root.open and focus != null}">
-                <nav aria-label="breadcrumb" th:if="${focus.path.size() > 1}">
-                    <ul>
-                        <li th:each="step, state : ${focus.path}">
-                            <a th:unless="${state.last}" th:text="${step.name}"
-                               th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${step.id})}">Plats</a>
-                            <span th:if="${state.last}" th:text="${step.name}">Viandes</span>
-                        </li>
-                    </ul>
-                </nav>
-
-                <div class="sub-cards" th:unless="${focus.children.isEmpty()}"
+                <div class="sub-cards" th:each="level : ${focus.levels}"
                      th:data-order-url="@{/admin/venues/{v}/categories/order(v=${venue.id})}"
-                     th:data-parent-id="${focus.id}"
+                     th:data-parent-id="${level.parentId}"
                      data-draggable=".sub-card" data-handle=".sub-handle">
-                    <div class="sub-card" th:each="child : ${focus.children}" th:data-id="${child.id}">
+                    <div class="sub-card" th:each="child : ${level.cards}" th:data-id="${child.id}"
+                         th:classappend="${child.selected} ? 'selected' : ''">
                         <button type="button" class="drag-handle sub-handle" title="Drag to reorder"
                                 th:aria-label="|Move ${child.name}. Use Alt and the arrow keys.|">
                             <svg th:replace="~{fragments/icons :: icon('grip')}"></svg>
                         </button>
-                        <a class="sub-card-link" th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${child.id})}">
+                        <a class="sub-card-link" th:href="@{/admin/venues/{v}/categories/{c}/items(v=${venue.id}, c=${child.targetId})}"
+                           th:attr="aria-current=${child.selected} ? 'true' : null">
                             <span class="menu-tile" th:style="|--hue: ${child.hue}|" th:text="${child.initial}">V</span>
                             <span class="sub-card-text">
                                 <strong th:text="${child.name}" th:classappend="${child.active} ? '' : 'inactive'">Viandes</strong>
@@ -113,13 +105,12 @@
                                           th:text="| · ${child.subcategories} sub|"> · 2 sub</span>
                                 </small>
                             </span>
-                            <svg th:replace="~{fragments/icons :: icon('chevron')}"></svg>
                         </a>
                     </div>
                 </div>
 
                 <details class="add-sub-card">
-                    <summary>+ Add subcategory</summary>
+                    <summary th:text="|+ Add subcategory to ${focus.name}|">+ Add subcategory</summary>
                     <form th:action="@{/admin/venues/{v}/categories(v=${venue.id})}" method="post">
                         <input type="hidden" name="parentId" th:value="${focus.id}">
                         <input name="name" placeholder="Subcategory" required maxlength="120" aria-label="Subcategory name">

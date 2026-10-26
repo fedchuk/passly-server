@@ -21,9 +21,13 @@ data class MenuFocusView(
     val name: String,
     val root: Boolean,
     val active: Boolean,
-    val path: List<CategoryRefView>,
-    val children: List<SubcategoryCardView>,
+    val levels: List<SubcategoryLevelView>,
     val items: List<MenuItemCardView>,
+)
+
+data class SubcategoryLevelView(
+    val parentId: UUID,
+    val cards: List<SubcategoryCardView>,
 )
 
 data class SubcategoryCardView(
@@ -34,6 +38,8 @@ data class SubcategoryCardView(
     val active: Boolean,
     val items: Int,
     val subcategories: Int,
+    val selected: Boolean,
+    val targetId: UUID,
 )
 
 data class MenuItemCardView(
@@ -72,23 +78,33 @@ fun MenuTree.toFocusView(
     stations: List<Station>,
 ): MenuFocusView {
     val focus = this[focusId]
+    val path = pathTo(focusId)
     val names: Map<StationId, String> = stations.associate { it.id to it.name }
     return MenuFocusView(
         id = focus.id.value,
         name = focus.name,
         root = focus.parentId == null,
         active = focus.active,
-        path = pathTo(focusId).map { CategoryRefView(it.id.value, it.name) },
-        children = children(focusId).map { child ->
-            SubcategoryCardView(
-                id = child.id.value,
-                name = child.name,
-                initial = initialOf(child.name),
-                hue = hueOf(child.name),
-                active = child.active,
-                items = itemCounts[child.id] ?: 0,
-                subcategories = children(child.id).size,
-            )
+        levels = path.mapIndexedNotNull { depth, parent ->
+            val selectedId = path.getOrNull(depth + 1)?.id
+            children(parent.id).takeIf { it.isNotEmpty() }?.let { cards ->
+                SubcategoryLevelView(
+                    parentId = parent.id.value,
+                    cards = cards.map { child ->
+                        SubcategoryCardView(
+                            id = child.id.value,
+                            name = child.name,
+                            initial = initialOf(child.name),
+                            hue = hueOf(child.name),
+                            active = child.active,
+                            items = itemCounts[child.id] ?: 0,
+                            subcategories = children(child.id).size,
+                            selected = child.id == selectedId,
+                            targetId = if (child.id == selectedId) parent.id.value else child.id.value,
+                        )
+                    },
+                )
+            }
         },
         items = items.map { item ->
             MenuItemCardView(
