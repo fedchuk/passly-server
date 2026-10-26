@@ -11,72 +11,79 @@ DEFAULT_MENU = {
     "taxRate": "10",
     "modifierGroups": [
         {"name": "Doneness", "minSelect": 1, "maxSelect": 1,
-         "options": [{"name": "Rare"}, {"name": "Medium rare"}, {"name": "Medium"}, {"name": "Well done"}]},
+         "options": [{"name": "Bleu"}, {"name": "Saignant"}, {"name": "À point"}, {"name": "Bien cuit"}]},
         {"name": "Side", "minSelect": 0, "maxSelect": 1,
-         "options": [{"name": "Fries"}, {"name": "Green salad"}, {"name": "Grilled vegetables", "priceDelta": "1.50"}]},
-        {"name": "Burger extras", "minSelect": 0, "maxSelect": 3,
-         "options": [{"name": "Extra cheese", "priceDelta": "1.00"}, {"name": "Bacon", "priceDelta": "1.50"},
-                     {"name": "No onion"}]},
+         "options": [{"name": "Frites"}, {"name": "Salade verte"}, {"name": "Purée maison"},
+                     {"name": "Haricots verts", "priceDelta": "1.50"}]},
+        {"name": "Sauce", "minSelect": 0, "maxSelect": 1,
+         "options": [{"name": "Poivre"}, {"name": "Béarnaise"}, {"name": "Roquefort", "priceDelta": "1.00"}]},
         {"name": "Milk", "minSelect": 0, "maxSelect": 1,
-         "options": [{"name": "Oat milk", "priceDelta": "0.40"}, {"name": "Lactose free", "priceDelta": "0.30"}]},
-        {"name": "Gin", "minSelect": 1, "maxSelect": 1,
-         "options": [{"name": "Beefeater"}, {"name": "Hendrick's", "priceDelta": "3.00"}, {"name": "Tanqueray", "priceDelta": "2.00"}]},
+         "options": [{"name": "Lait d'avoine", "priceDelta": "0.40"}, {"name": "Sans lactose", "priceDelta": "0.30"}]},
     ],
     "categories": [
-        {"name": "Starters", "station": "Kitchen", "items": [
-            {"name": "Patatas bravas", "price": "6.50", "description": "Crispy potatoes, spicy brava sauce, aioli"},
-            {"name": "Ham croquettes", "price": "8.00", "description": "Six croquettes with Iberian ham"},
-            {"name": "Padrón peppers", "price": "7.00"},
-            {"name": "Gazpacho", "price": "6.00", "description": "Cold tomato soup"},
+        {"name": "Entrées", "station": "Kitchen", "items": [
+            {"name": "Soupe à l'oignon", "price": "8.50", "description": "Onion soup with gratinéed bread"},
+            {"name": "Œufs mayonnaise", "price": "6.50"},
+            {"name": "Escargots de Bourgogne", "price": "12.00", "description": "Six snails, garlic and parsley butter"},
+            {"name": "Terrine de campagne", "price": "9.00"},
+            {"name": "Salade de chèvre chaud", "price": "11.00", "description": "Warm goat cheese on toast, walnuts"},
         ]},
-        {"name": "Mains", "station": "Kitchen", "children": [
-            {"name": "Meat", "items": [
-                {"name": "Ribeye", "price": "26.00", "description": "300 g, grilled", "modifierGroups": ["Doneness", "Side"]},
-                {"name": "Bistro burger", "price": "14.50", "modifierGroups": ["Doneness", "Burger extras", "Side"]},
+        {"name": "Plats", "station": "Kitchen", "children": [
+            {"name": "Viandes", "items": [
+                {"name": "Entrecôte", "price": "28.00", "description": "300 g rib steak",
+                 "modifierGroups": ["Doneness", "Side", "Sauce"]},
+                {"name": "Steak tartare", "price": "19.50", "modifierGroups": ["Side"]},
+                {"name": "Confit de canard", "price": "22.00", "description": "Duck leg, garlic potatoes"},
+                {"name": "Bœuf bourguignon", "price": "21.00"},
             ]},
-            {"name": "Fish", "items": [
-                {"name": "Grilled sea bass", "price": "22.00", "modifierGroups": ["Side"]},
-                {"name": "Galician octopus", "price": "19.50", "stopList": True},
+            {"name": "Poissons", "items": [
+                {"name": "Sole meunière", "price": "32.00", "stopList": True},
+                {"name": "Moules marinières", "price": "18.00", "modifierGroups": ["Side"]},
             ]},
-            {"name": "Rice", "items": [
-                {"name": "Paella valenciana", "price": "18.00", "description": "Per person, minimum two"},
-                {"name": "Black rice", "price": "19.00", "description": "Squid ink, aioli"},
+            {"name": "Bistro", "items": [
+                {"name": "Croque-monsieur", "price": "12.00"},
+                {"name": "Croque-madame", "price": "13.50"},
             ]},
         ]},
         {"name": "Desserts", "station": "Kitchen", "items": [
-            {"name": "Crema catalana", "price": "6.00"},
-            {"name": "Basque cheesecake", "price": "6.50"},
-            {"name": "Churros with chocolate", "price": "5.50"},
+            {"name": "Crème brûlée", "price": "8.00"},
+            {"name": "Tarte Tatin", "price": "8.50"},
+            {"name": "Mousse au chocolat", "price": "7.50"},
+            {"name": "Profiteroles", "price": "9.00"},
+            {"name": "Café gourmand", "price": "9.50", "description": "Espresso with three mini desserts"},
         ]},
-        {"name": "Drinks", "station": "Bar", "children": [
-            {"name": "Soft drinks", "items": [
-                {"name": "Still water", "price": "2.50"},
-                {"name": "Cola", "price": "3.00"},
-                {"name": "Fresh orange juice", "price": "4.50"},
+        {"name": "Boissons", "station": "Bar", "children": [
+            {"name": "Softs", "items": [
+                {"name": "Eau minérale 50 cl", "price": "4.00"},
+                {"name": "Diabolo menthe", "price": "4.50"},
+                {"name": "Jus d'orange pressé", "price": "5.50"},
             ]},
-            {"name": "Coffee", "items": [
-                {"name": "Espresso", "price": "1.50"},
-                {"name": "Cortado", "price": "1.70", "modifierGroups": ["Milk"]},
-                {"name": "Café con leche", "price": "2.00", "modifierGroups": ["Milk"]},
+            {"name": "Cafés", "items": [
+                {"name": "Expresso", "price": "2.20"},
+                {"name": "Café crème", "price": "3.80", "modifierGroups": ["Milk"]},
+                {"name": "Thé", "price": "3.50"},
             ]},
-            {"name": "Beer", "taxRate": "21", "items": [
-                {"name": "Draft beer", "price": "3.50"},
-                {"name": "Alcohol free beer", "price": "3.00"},
+            {"name": "Bières", "taxRate": "20", "items": [
+                {"name": "Demi pression", "price": "4.00"},
+                {"name": "Bière sans alcool", "price": "4.50"},
             ]},
-            {"name": "Wine", "taxRate": "21", "children": [
-                {"name": "Red", "items": [
-                    {"name": "Rioja Crianza, glass", "price": "4.50"},
-                    {"name": "Ribera del Duero, glass", "price": "5.00"},
+            {"name": "Vins", "taxRate": "20", "children": [
+                {"name": "Rouge", "items": [
+                    {"name": "Bordeaux, verre", "price": "6.50"},
+                    {"name": "Côtes du Rhône, verre", "price": "5.50"},
                 ]},
-                {"name": "White", "items": [
-                    {"name": "Albariño, glass", "price": "4.80"},
-                    {"name": "Verdejo, glass", "price": "4.00"},
+                {"name": "Blanc", "items": [
+                    {"name": "Chablis, verre", "price": "8.00"},
+                    {"name": "Sancerre, verre", "price": "8.50"},
+                ]},
+                {"name": "Rosé", "items": [
+                    {"name": "Côtes de Provence, verre", "price": "6.00"},
                 ]},
             ]},
-            {"name": "Cocktails", "taxRate": "21", "items": [
-                {"name": "Sangria, jug", "price": "16.00"},
-                {"name": "Aperol spritz", "price": "8.00"},
-                {"name": "Gin and tonic", "price": "9.00", "modifierGroups": ["Gin"]},
+            {"name": "Apéritifs", "taxRate": "20", "items": [
+                {"name": "Kir", "price": "6.00"},
+                {"name": "Pastis", "price": "5.00"},
+                {"name": "Coupe de champagne", "price": "12.00"},
             ]},
         ]},
     ],
@@ -205,6 +212,30 @@ class Seeder:
                 self.api.call("PUT", f"{self.api.venue}/items/{item['id']}/availability", {"available": False})
 
 
+class Wiper:
+    def __init__(self, api):
+        self.api = api
+        self.removed = {"items": 0, "categories": 0, "modifier groups": 0}
+
+    def run(self):
+        for node in self.api.call("GET", f"{self.api.venue}/categories"):
+            self.wipe_category(node)
+        for group in self.api.call("GET", f"{self.api.venue}/modifier-groups"):
+            self.api.call("DELETE", f"{self.api.venue}/modifier-groups/{group['id']}")
+            self.removed["modifier groups"] += 1
+        return self.removed
+
+    def wipe_category(self, node):
+        for child in node.get("children", []):
+            self.wipe_category(child)
+        for item in self.api.call("GET", f"{self.api.venue}/categories/{node['id']}/items"):
+            self.api.call("DELETE", f"{self.api.venue}/items/{item['id']}")
+            self.removed["items"] += 1
+        self.api.call("DELETE", f"{self.api.venue}/categories/{node['id']}")
+        self.removed["categories"] += 1
+        print(f"- category {node['name']}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Fill the menu of a Passly venue through the REST API. "
@@ -214,7 +245,10 @@ def main():
     parser.add_argument("--venue", required=True, help="venue id, the UUID from /admin/venues/<id>/overview")
     parser.add_argument("--email", default=os.environ.get("PASSLY_EMAIL"),
                         help="owner or manager email, or PASSLY_EMAIL")
-    parser.add_argument("--menu", help="JSON file with the menu, the built-in bistro menu if omitted")
+    parser.add_argument("--menu", help="JSON file with the menu, the built-in French bistro menu if omitted")
+    parser.add_argument("--wipe", action="store_true",
+                        help="remove the whole current menu first: archive all items, delete categories and modifier groups")
+    parser.add_argument("--yes", action="store_true", help="do not ask for confirmation before --wipe")
     args = parser.parse_args()
 
     email = args.email or input("Email: ")
@@ -224,9 +258,18 @@ def main():
         with open(args.menu, encoding="utf-8") as file:
             menu = json.load(file)
 
+    if args.wipe and not args.yes:
+        answer = input(f"This removes the whole menu of venue {args.venue} at {args.url}. Type WIPE to continue: ")
+        if answer.strip().upper() != "WIPE":
+            print(f"Nothing changed. Expected WIPE, got {answer!r}.")
+            sys.exit(1)
+
     api = Passly(args.url, args.venue)
     try:
         api.login(email, password)
+        if args.wipe:
+            removed = Wiper(api).run()
+            print("Removed: " + ", ".join(f"{count} {kind}" for kind, count in removed.items()))
         created, skipped = Seeder(api, menu).run()
     except ApiError as e:
         print(f"Error: {e}", file=sys.stderr)
