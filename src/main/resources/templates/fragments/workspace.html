@@ -18,6 +18,9 @@
             <a th:if="${venue.preparesOrders}" class="topbar-link"
                th:href="@{/kitchen/venues/{v}(v=${venue.id})}"
                th:attr="aria-current=${zone == 'kitchen'} ? 'page' : null">Kitchen</a>
+            <a th:if="${venue.managesStopList}" class="topbar-link"
+               th:href="@{/kitchen/venues/{v}/stop-list(v=${venue.id})}"
+               th:attr="aria-current=${zone == 'stop-list'} ? 'page' : null">Stop list</a>
             <a th:if="${venue.manageable}" class="topbar-link"
                th:href="@{/admin/venues/{v}/overview(v=${venue.id})}">Back office</a>
         </nav>

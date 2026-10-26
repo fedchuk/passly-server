@@ -19,7 +19,7 @@
                 <small class="muted" th:text="|in ${overview.categories} categories|">in 8 categories</small>
             </span>
         </a>
-        <a class="stat" th:href="@{/admin/venues/{v}(v=${venue.id})}">
+        <a class="stat" th:href="@{/kitchen/venues/{v}/stop-list(v=${venue.id})}">
             <span class="stat-icon" th:classappend="${overview.stopListed > 0} ? 'tone-warning' : 'tone-success'">
                 <svg th:replace="~{fragments/icons :: icon('stop')}"></svg>
             </span>

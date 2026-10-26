@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/workspace :: page('Stop list', ${venue}, 'stop-list', ~{::main})}">
+<body>
+<main class="work-main narrow-work">
+    <div class="page-header">
+        <div>
+            <h1>Stop list</h1>
+            <p class="subtitle" th:text="${summary}">3 dishes guests cannot order now</p>
+        </div>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">'Sole meunière' is back on the menu</p>
+
+    <section class="card stop-list" aria-label="On the stop list">
+        <h2>Off the menu now</h2>
+        <p th:if="${stopped.isEmpty()}" class="empty">Nothing is on the stop list.</p>
+        <ul class="stop-list-items" th:unless="${stopped.isEmpty()}">
+            <li th:each="item : ${stopped}">
+                <span class="line-name">
+                    <strong th:text="${item.name}">Sole meunière</strong>
+                    <small class="muted" th:text="${item.category}">Plats › Poissons</small>
+                </span>
+                <form method="post" th:action="@{/kitchen/venues/{v}/stop-list/{i}(v=${venue.id}, i=${item.id})}">
+                    <input type="hidden" name="available" value="true">
+                    <button type="submit" class="secondary outline">Back on menu</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+
+    <section class="card stop-list" aria-label="Available dishes">
+        <h2>Put a dish on the stop list</h2>
+        <label>
+            Find a dish
+            <input type="search" id="dish-search" placeholder="Name or category" autocomplete="off">
+        </label>
+        <p th:if="${available.isEmpty()}" class="empty">There are no dishes on the menu.</p>
+        <ul class="stop-list-items" id="available-dishes" th:unless="${available.isEmpty()}">
+            <li th:each="item : ${available}" th:attr="data-search=${#strings.toLowerCase(item.name + ' ' + item.category)}">
+                <span class="line-name">
+                    <strong th:text="${item.name}">Entrecôte</strong>
+                    <small class="muted" th:text="|${item.category} · ${item.price}|">Plats › Viandes · 28.00</small>
+                </span>
+                <form method="post" th:action="@{/kitchen/venues/{v}/stop-list/{i}(v=${venue.id}, i=${item.id})}">
+                    <input type="hidden" name="available" value="false">
+                    <button type="submit" class="outline contrast">Stop</button>
+                </form>
+            </li>
+        </ul>
+        <p class="empty" id="no-match" hidden>No dish matches.</p>
+    </section>
+
+    <script>
+        (() => {
+            const search = document.getElementById('dish-search');
+            const rows = [...document.querySelectorAll('#available-dishes li')];
+            const noMatch = document.getElementById('no-match');
+            search.addEventListener('input', () => {
+                const query = search.value.trim().toLowerCase();
+                let shown = 0;
+                rows.forEach(row => {
+                    const match = row.dataset.search.includes(query);
+                    row.hidden = !match;
+                    if (match) shown++;
+                });
+                noMatch.hidden = shown > 0 || rows.length === 0;
+            });
+        })();
+    </script>
+</main>
+</body>
+</html>

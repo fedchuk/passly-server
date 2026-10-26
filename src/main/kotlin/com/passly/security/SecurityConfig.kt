@@ -69,6 +69,8 @@ class SecurityConfig {
                 authorize("/service/venues/{venueId}/**", venues.requires(Permission.TAKE_ORDERS))
                 authorize("/kitchen/venues/{venueId}/stop-list/**", venues.requires(Permission.MANAGE_STOP_LIST))
                 authorize("/kitchen/venues/{venueId}/**", venues.requires(Permission.PREPARE_ORDERS))
+                authorize("/kitchen/venues/{venueId}/stop-list/**", venues.requires(Permission.MANAGE_STOP_LIST))
+                authorize("/kitchen/venues/{venueId}/**", venues.requires(Permission.PREPARE_ORDERS))
                 authorize("/platform/**", hasRole("PLATFORM_ADMIN"))
                 authorize("/", authenticated)
                 authorize("/admin", authenticated)

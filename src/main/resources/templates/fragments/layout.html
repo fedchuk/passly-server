@@ -66,6 +66,8 @@
                    th:href="@{/service/venues/{v}(v=${venue.id})}">Service</a>
                 <a th:if="${venue.preparesOrders}" class="topbar-link"
                    th:href="@{/kitchen/venues/{v}(v=${venue.id})}">Kitchen</a>
+                <a th:if="${venue.managesStopList}" class="topbar-link"
+                   th:href="@{/kitchen/venues/{v}/stop-list(v=${venue.id})}">Stop list</a>
             </nav>
             <details th:replace="~{fragments/user-menu :: menu(${active})}"></details>
         </header>
