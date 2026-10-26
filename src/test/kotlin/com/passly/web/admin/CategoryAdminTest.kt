@@ -97,7 +97,7 @@ class CategoryAdminTest {
             with(csrf())
             param("name", "Rioja")
             param("parentId", wine.id.toString())
-        }.andExpect { redirectedUrl(page) }
+        }.andExpect { redirectedUrl("$page/categories/${wine.id}/items") }
 
         assertEquals(listOf("Rioja"), names(wine.id))
     }
@@ -147,7 +147,7 @@ class CategoryAdminTest {
             param("version", "0")
             param("_active", "on")
         }.andExpect {
-            redirectedUrl(page)
+            redirectedUrl("$page/categories/${wine.id}/items")
             flash { attribute("message", "Category 'Red wine' saved") }
         }
 

@@ -29,6 +29,9 @@ class MenuItemService(
         return items.loadCategoryItems(venueId, categoryId).items
     }
 
+    @Transactional(readOnly = true)
+    fun countByCategory(venueId: VenueId): Map<CategoryId, Int> = items.countActiveByCategory(venueId)
+
     fun create(command: CreateMenuItemCommand): MenuItem {
         val venue = lockVenue(command.venueId)
         requireCategory(venue.id, command.categoryId)

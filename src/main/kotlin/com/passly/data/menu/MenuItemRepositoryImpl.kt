@@ -37,4 +37,7 @@ class MenuItemRepositoryImpl(
 
     override fun existsWithStation(stationId: StationId): Boolean =
         jpa.existsByStationId(stationId.value)
+
+    override fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int> =
+        jpa.countActiveByCategory(venueId.value).associate { CategoryId(it.categoryId) to it.items.toInt() }
 }

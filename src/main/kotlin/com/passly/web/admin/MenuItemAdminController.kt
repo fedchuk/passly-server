@@ -1,13 +1,6 @@
 package com.passly.web.admin
 
-import com.passly.application.menu.AttachModifierGroupsCommand
-import com.passly.application.menu.CategoryService
-import com.passly.application.menu.CreateMenuItemCommand
-import com.passly.application.menu.MenuItemService
-import com.passly.application.menu.ModifierGroupService
-import com.passly.application.menu.MoveMenuItemCommand
-import com.passly.application.menu.StationService
-import com.passly.application.menu.UpdateMenuItemCommand
+import com.passly.application.menu.*
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.CategoryId
@@ -20,14 +13,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.ModelAttribute
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
-import java.util.UUID
+import java.util.*
 
 @Controller
 @RequestMapping("/admin/venues/{venueId}")
@@ -37,6 +25,7 @@ class MenuItemAdminController(
     private val stations: StationService,
     private val modifierGroups: ModifierGroupService,
     private val venues: AdminVenues,
+    private val menuPages: MenuPages,
 ) {
 
     @GetMapping("/categories/{categoryId}/items")
@@ -45,15 +34,7 @@ class MenuItemAdminController(
         @PathVariable categoryId: UUID,
         @AuthenticationPrincipal principal: PasslyUserPrincipal,
         model: Model,
-    ): String {
-        val venue = VenueId(venueId)
-        val tree = categories.getTree(venue)
-        val category = tree[CategoryId(categoryId)]
-        model.addAttribute("venue", venues.find(principal, venueId))
-        model.addAttribute("category", CategoryRefView(category.id.value, category.name))
-        model.addAttribute("items", items.listInCategory(venue, category.id).toRowViews(tree, stations.list(venue)))
-        return "admin/items"
-    }
+    ): String = menuPages.show(principal, venueId, CategoryId(categoryId), model)
 
     @GetMapping("/categories/{categoryId}/items/new")
     fun newItem(

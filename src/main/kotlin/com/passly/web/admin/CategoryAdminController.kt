@@ -33,11 +33,12 @@ class CategoryAdminController(
         binding: BindingResult,
         flash: RedirectAttributes,
     ): String {
+        val target = form.parentId?.let { categoryPage(venueId, it) } ?: venuePage(venueId)
         if (binding.hasErrors()) {
             flash.addFlashAttribute("error", binding.allErrors.first().defaultMessage)
-            return venuePage(venueId)
+            return target
         }
-        return flash.redirectAfter(venueId) {
+        return flash.redirectAfter(target) {
             val category = categories.create(
                 CreateCategoryCommand(
                     VenueId(venueId),
@@ -85,7 +86,7 @@ class CategoryAdminController(
                     ),
                 )
                 flash.addFlashAttribute("message", "Category '${category.name}' saved")
-                return venuePage(venueId)
+                return categoryPage(venueId, category.id.value)
             } catch (e: ConflictException) {
                 binding.reject("conflict", e.message ?: "Conflict")
             } catch (e: OptimisticLockingFailureException) {
@@ -103,7 +104,7 @@ class CategoryAdminController(
         @PathVariable id: UUID,
         @RequestParam delta: Int,
         flash: RedirectAttributes,
-    ): String = flash.redirectAfter(venueId) {
+    ): String = flash.redirectAfter(parentPage(venueId, id)) {
         if (delta != -1 && delta != 1) throw ValidationException("A category moves one step at a time")
         categories.shift(VenueId(venueId), CategoryId(id), delta)
         null
@@ -114,7 +115,7 @@ class CategoryAdminController(
         @PathVariable venueId: UUID,
         @PathVariable id: UUID,
         flash: RedirectAttributes,
-    ): String = flash.redirectAfter(venueId) {
+    ): String = flash.redirectAfter(parentPage(venueId, id)) {
         val name = categories.getTree(VenueId(venueId))[CategoryId(id)].name
         categories.delete(VenueId(venueId), CategoryId(id))
         "Category '$name' deleted"
@@ -126,7 +127,7 @@ class CategoryAdminController(
         @PathVariable id: UUID,
         @RequestParam(required = false) parentId: UUID?,
         flash: RedirectAttributes,
-    ): String = flash.redirectAfter(venueId) {
+    ): String = flash.redirectAfter(venuePage(venueId)) {
         val category = categories.getTree(VenueId(venueId))[CategoryId(id)]
         val newParentId = parentId?.let(::CategoryId)
         if (category.parentId == newParentId) {
@@ -152,7 +153,7 @@ class CategoryAdminController(
         return "admin/category-edit"
     }
 
-    private fun RedirectAttributes.redirectAfter(venueId: UUID, action: () -> String?): String {
+    private fun RedirectAttributes.redirectAfter(target: String, action: () -> String?): String {
         try {
             action()?.let { addFlashAttribute("message", it) }
         } catch (e: ConflictException) {
@@ -160,8 +161,15 @@ class CategoryAdminController(
         } catch (e: ValidationException) {
             addFlashAttribute("error", e.message)
         }
-        return venuePage(venueId)
+        return target
     }
+
+    private fun parentPage(venueId: UUID, id: UUID): String =
+        categories.getTree(VenueId(venueId))[CategoryId(id)].parentId
+            ?.let { categoryPage(venueId, it.value) }
+            ?: venuePage(venueId)
+
+    private fun categoryPage(venueId: UUID, categoryId: UUID) = "redirect:/admin/venues/$venueId/categories/$categoryId/items"
 
     private fun venuePage(venueId: UUID) = "redirect:/admin/venues/$venueId"
 }

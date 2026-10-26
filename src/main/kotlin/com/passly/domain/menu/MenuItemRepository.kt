@@ -10,4 +10,5 @@ interface MenuItemRepository {
     fun saveAll(items: Collection<MenuItem>)
     fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean
     fun existsWithStation(stationId: StationId): Boolean
+    fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int>
 }

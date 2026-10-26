@@ -91,6 +91,10 @@ class FakeMenuItemRepository : MenuItemRepository {
 
     override fun existsWithModifierGroup(groupId: ModifierGroupId) = stored.values.any { groupId in it.modifierGroupIds }
     override fun existsWithStation(stationId: StationId) = stored.values.any { it.stationId == stationId }
+    override fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int> =
+        stored.values.filter { it.venueId == venueId && !it.archived }
+            .groupingBy { checkNotNull(it.categoryId) }
+            .eachCount()
 
     private fun copyOf(i: MenuItem) = MenuItem.fromStorage(
         i.id, i.tenantId, i.venueId, i.categoryId, i.details, i.sortOrder, i.available, i.archived, i.modifierGroupIds, i.version ?: 0,

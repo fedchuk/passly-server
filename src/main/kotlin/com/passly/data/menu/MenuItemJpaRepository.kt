@@ -23,4 +23,10 @@ interface MenuItemJpaRepository : JpaRepository<MenuItemEntity, UUID> {
 
     @Query("select count(i) > 0 from MenuItemEntity i where :groupId member of i.modifierGroupIds")
     fun existsWithModifierGroup(@Param("groupId") groupId: UUID): Boolean
+
+    @Query(
+        "select i.categoryId as categoryId, count(i) as items from MenuItemEntity i " +
+                "where i.venueId = :venueId and i.archived = false and i.categoryId is not null group by i.categoryId",
+    )
+    fun countActiveByCategory(@Param("venueId") venueId: UUID): List<CategoryItemCount>
 }
