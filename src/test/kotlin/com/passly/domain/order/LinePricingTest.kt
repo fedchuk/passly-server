@@ -1,6 +1,7 @@
 package com.passly.domain.order
 
 import com.passly.domain.common.Money
+import com.passly.domain.common.TaxRate
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.StationId
 import kotlin.test.Test
@@ -14,6 +15,7 @@ class LinePricingTest {
     private val doneness = fixtures.group("Doneness", 1, 1, "Rare" to "0", "Medium" to "0")
     private val side = fixtures.group("Side", 0, 2, "Fries" to "0", "Vegetables" to "1.50", "Salad" to "-0.50")
     private val groups = listOf(doneness, side).associateBy { it.id }
+    private val rate = TaxRate.of("10")
     private val steak = fixtures.item("Ribeye", "26.00").apply { attachModifierGroups(listOf(doneness.id, side.id)) }
 
     private fun option(group: com.passly.domain.menu.ModifierGroup, name: String) = group.modifiers.single { it.name == name }.id
@@ -28,9 +30,10 @@ class LinePricingTest {
             comment = "  no salt ",
         )
 
-        val line = steak.priceLine(request, groups, station)
+        val line = steak.priceLine(request, groups, station, rate)
 
         assertEquals(Money.of("27.50"), line.unitPrice)
+        assertEquals(rate, line.taxRate)
         assertEquals(listOf("Doneness: Rare", "Side: Vegetables"), line.modifiers.map { "${it.groupName}: ${it.name}" })
         assertEquals("no salt", line.comment)
         assertEquals(station, line.stationId)
@@ -40,7 +43,7 @@ class LinePricingTest {
     @Test
     fun `a required group must be chosen`() {
         assertFailsWith<ValidationException> {
-            steak.priceLine(OrderLineRequest(steak.id, 1), groups, null)
+            steak.priceLine(OrderLineRequest(steak.id, 1), groups, null, rate)
         }
     }
 
@@ -49,7 +52,7 @@ class LinePricingTest {
         val milk = fixtures.group("Milk", 0, 1, "Oat" to "0.40")
         val request = OrderLineRequest(steak.id, 1, listOf(option(doneness, "Rare"), option(milk, "Oat")))
 
-        val error = assertFailsWith<ValidationException> { steak.priceLine(request, groups + (milk.id to milk), null) }
+        val error = assertFailsWith<ValidationException> { steak.priceLine(request, groups + (milk.id to milk), null, rate) }
         assertEquals("modifierIds", error.field)
     }
 
@@ -57,14 +60,14 @@ class LinePricingTest {
     fun `quantity and comment are validated`() {
         val rare = option(doneness, "Rare")
 
-        assertFailsWith<ValidationException> { steak.priceLine(OrderLineRequest(steak.id, 0, listOf(rare)), groups, null) }
+        assertFailsWith<ValidationException> { steak.priceLine(OrderLineRequest(steak.id, 0, listOf(rare)), groups, null, rate) }
         assertFailsWith<ValidationException> {
-            steak.priceLine(OrderLineRequest(steak.id, MAX_LINE_QUANTITY + 1, listOf(rare)), groups, null)
+            steak.priceLine(OrderLineRequest(steak.id, MAX_LINE_QUANTITY + 1, listOf(rare)), groups, null, rate)
         }
         assertFailsWith<ValidationException> {
-            steak.priceLine(OrderLineRequest(steak.id, 1, listOf(rare), "x".repeat(MAX_LINE_COMMENT_LENGTH + 1)), groups, null)
+            steak.priceLine(OrderLineRequest(steak.id, 1, listOf(rare), "x".repeat(MAX_LINE_COMMENT_LENGTH + 1)), groups, null, rate)
         }
-        assertNull(steak.priceLine(OrderLineRequest(steak.id, 1, listOf(rare), "   "), groups, null).comment)
+        assertNull(steak.priceLine(OrderLineRequest(steak.id, 1, listOf(rare), "   "), groups, null, rate).comment)
     }
 
     @Test
@@ -74,7 +77,7 @@ class LinePricingTest {
         water.attachModifierGroups(listOf(promo.id))
 
         assertFailsWith<ValidationException> {
-            water.priceLine(OrderLineRequest(water.id, 1, listOf(promo.modifiers.single().id)), mapOf(promo.id to promo), null)
+            water.priceLine(OrderLineRequest(water.id, 1, listOf(promo.modifiers.single().id)), mapOf(promo.id to promo), null, rate)
         }
     }
 }

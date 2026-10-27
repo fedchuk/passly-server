@@ -2,6 +2,7 @@ package com.passly.data.menu
 
 import com.passly.data.common.upsert
 import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.VenueId
 import org.springframework.stereotype.Repository
 
@@ -37,6 +38,9 @@ class MenuItemRepositoryImpl(
 
     override fun existsWithStation(stationId: StationId): Boolean =
         jpa.existsByStationId(stationId.value)
+
+    override fun existsWithTaxRate(taxRateId: VenueTaxRateId): Boolean =
+        jpa.existsByTaxRateId(taxRateId.value)
 
     override fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int> =
         jpa.countActiveByCategory(venueId.value).associate { CategoryId(it.categoryId) to it.items.toInt() }

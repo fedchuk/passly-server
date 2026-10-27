@@ -3,7 +3,6 @@ package com.passly.application.menu
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
@@ -86,7 +85,7 @@ class ModifierGroupServiceTest {
     fun `group used by a menu item cannot be deleted`() {
         val size = create("Size")
         val category = CategoryItems(venue.id, CategoryId.new(), emptyList())
-        val latte = category.add(venue.tenantId, MenuItemDetails("Latte", null, Money.of("3.00"), TaxRate.of("10")))
+        val latte = category.add(venue.tenantId, MenuItemDetails("Latte", null, Money.of("3.00")))
         latte.attachModifierGroups(listOf(size.id))
         items.saveAll(listOf(latte))
 

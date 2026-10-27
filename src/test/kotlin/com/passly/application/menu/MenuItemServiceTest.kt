@@ -5,8 +5,8 @@ import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.CountryCode
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.TenantId
@@ -26,17 +26,18 @@ class MenuItemServiceTest {
     private val items = FakeMenuItemRepository()
     private val modifierGroups = FakeModifierGroupRepository()
     private val menuChanges = FakeMenuChangeRecorder()
+    private val taxRates = FakeTaxRateRepository()
     private val categoryService = CategoryService(
-        venues, categories, stations, items, menuChanges, FakeTaxRateRepository(),
+        venues, categories, stations, items, menuChanges, taxRates,
         FakeVenueSettingsRepository(VenueSettings.fromStorage(venue.id, CountryCode.of("FR"), CurrencyCode.of("EUR"), version = 0)),
     )
-    private val service = MenuItemService(venues, categories, stations, items, modifierGroups, menuChanges)
+    private val service = MenuItemService(venues, categories, stations, items, modifierGroups, menuChanges, taxRates)
 
     private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks", stationId = grill)).id
     private val fish = categoryService.create(CreateCategoryCommand(venue.id, "Fish", stationId = grill)).id
 
     private fun details(name: String, price: String = "20.00", station: StationId? = null) =
-        MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"), station)
+        MenuItemDetails(name, null, Money.of(price), station)
 
     private fun create(category: CategoryId, name: String) =
         service.create(CreateMenuItemCommand(venue.id, category, details(name)))
@@ -185,5 +186,28 @@ class MenuItemServiceTest {
         val group = ModifierGroup.create(venue.tenantId, venue.id, name, 0, 1, listOf(ModifierDraft("Option", Money.of("0"))))
         modifierGroups.save(group)
         return group.id
+    }
+
+    @Test
+    fun `item keeps its own rate and a rate of another venue is not found`() {
+        val alcohol = taxRates.load(venue.id).rates.single { it.name == "Alcohol" }
+
+        val rioja = service.create(CreateMenuItemCommand(venue.id, steaks, details("Rioja").copy(taxRateId = alcohol.id)))
+
+        assertEquals(alcohol.id, items.stored.getValue(rioja.id).taxRateId)
+        assertFailsWith<NotFoundException> {
+            service.create(CreateMenuItemCommand(venue.id, steaks, details("Ghost").copy(taxRateId = VenueTaxRateId.new())))
+        }
+    }
+
+    @Test
+    fun `archived item lets go of its own rate`() {
+        val alcohol = taxRates.load(venue.id).rates.single { it.name == "Alcohol" }
+        val rioja = service.create(CreateMenuItemCommand(venue.id, steaks, details("Rioja").copy(taxRateId = alcohol.id)))
+
+        service.archive(venue.id, rioja.id)
+
+        assertEquals(null, items.stored.getValue(rioja.id).taxRateId)
+        assertFalse(items.existsWithTaxRate(alcohol.id))
     }
 }

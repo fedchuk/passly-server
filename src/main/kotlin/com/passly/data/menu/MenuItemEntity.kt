@@ -1,15 +1,9 @@
 package com.passly.data.menu
 
 import com.passly.data.common.BaseEntity
-import jakarta.persistence.CollectionTable
-import jakarta.persistence.Column
-import jakarta.persistence.ElementCollection
-import jakarta.persistence.Entity
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.OrderColumn
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import java.math.BigDecimal
-import java.util.UUID
+import java.util.*
 
 @Entity
 @Table(name = "menu_item")
@@ -34,11 +28,11 @@ class MenuItemEntity(
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     var price: BigDecimal,
 
-    @Column(name = "tax_rate", nullable = false, precision = 5, scale = 2)
-    var taxRate: BigDecimal,
-
     @Column(name = "station_id")
     var stationId: UUID?,
+
+    @Column(name = "tax_rate_id")
+    var taxRateId: UUID?,
 
     @Column(name = "sort_order", nullable = false)
     var sortOrder: Int,

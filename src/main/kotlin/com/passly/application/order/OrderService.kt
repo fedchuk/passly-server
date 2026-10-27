@@ -2,11 +2,9 @@ package com.passly.application.order
 
 import com.passly.domain.common.*
 import com.passly.domain.floor.FloorPlanRepository
-import com.passly.domain.menu.CategoryRepository
-import com.passly.domain.menu.MenuItemRepository
-import com.passly.domain.menu.ModifierGroupRepository
-import com.passly.domain.menu.stationFor
+import com.passly.domain.menu.*
 import com.passly.domain.order.*
+import com.passly.domain.tax.TaxRateRepository
 import com.passly.domain.venue.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,6 +20,7 @@ class OrderService(
     private val modifierGroups: ModifierGroupRepository,
     private val categories: CategoryRepository,
     private val settings: VenueSettingsRepository,
+    private val taxRates: TaxRateRepository,
     private val clock: Clock,
 ) {
 
@@ -96,9 +95,11 @@ class OrderService(
 
         val groups = modifierGroups.findAll(venueId).associateBy { it.id }
         val tree = categories.loadTree(venueId)
+        val rates = taxRates.load(venueId)
         return requests.map { request ->
             val item = found.getValue(request.menuItemId)
-            item.priceLine(request, groups, tree.stationFor(item))
+            val taxRateId = checkNotNull(tree.taxRateFor(item)) { "Menu item ${item.id} has no tax rate" }
+            item.priceLine(request, groups, tree.stationFor(item), rates[taxRateId].rate)
         }
     }
 

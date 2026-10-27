@@ -1,13 +1,8 @@
 package com.passly.data.menu
 
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
-import com.passly.domain.menu.CategoryId
-import com.passly.domain.menu.MenuItem
-import com.passly.domain.menu.MenuItemDetails
-import com.passly.domain.menu.MenuItemId
-import com.passly.domain.menu.ModifierGroupId
-import com.passly.domain.menu.StationId
+import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 
@@ -20,8 +15,8 @@ fun MenuItemEntity.toDomain() = MenuItem.fromStorage(
         name = name,
         description = description,
         price = Money.of(price),
-        taxRate = TaxRate.of(taxRate),
         stationId = stationId?.let(::StationId),
+        taxRateId = taxRateId?.let(::VenueTaxRateId),
     ),
     sortOrder = sortOrder,
     available = available,
@@ -38,8 +33,8 @@ fun MenuItem.toNewEntity() = MenuItemEntity(
     name = name,
     description = description,
     price = price.amount,
-    taxRate = taxRate.percent,
     stationId = stationId?.value,
+    taxRateId = taxRateId?.value,
     sortOrder = sortOrder,
     available = available,
     archived = archived,
@@ -50,8 +45,8 @@ fun MenuItemEntity.updateFrom(item: MenuItem) {
     name = item.name
     description = item.description
     price = item.price.amount
-    taxRate = item.taxRate.percent
     stationId = item.stationId?.value
+    taxRateId = item.taxRateId?.value
     sortOrder = item.sortOrder
     available = item.available
     archived = item.archived

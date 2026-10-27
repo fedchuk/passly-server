@@ -68,12 +68,12 @@ class StationServiceTest {
         val pastry = station("Pastry")
         val drinks = categories.loadTree(venue.id).add(venue.tenantId, "Drinks", stationId = bar.id, taxRateId = VenueTaxRateId.new()).also { categories.saveAll(listOf(it)) }
         val wine = items.loadCategoryItems(venue.id, drinks.id)
-            .add(venue.tenantId, MenuItemDetails("Rioja", null, Money.of("4.50"), TaxRate.of("21"), bar.id))
+            .add(venue.tenantId, MenuItemDetails("Rioja", null, Money.of("4.50"), bar.id))
             .also { items.saveAll(listOf(it)) }
         val floor = FloorPlan(venue.id, emptyList(), emptyList())
         val table = floor.addTable(venue.tenantId, floor.addArea(venue.tenantId, "Hall").id, "1", 2)
         val order = Order.open(table, null, UserId.new(), Instant.parse("2026-10-24T12:00:00Z"))
-        order.addRound(listOf(wine.priceLine(OrderLineRequest(wine.id, 1), emptyMap(), pastry.id)), UserId.new(), order.openedAt)
+        order.addRound(listOf(wine.priceLine(OrderLineRequest(wine.id, 1), emptyMap(), pastry.id, TaxRate.of("21"))), UserId.new(), order.openedAt)
         orders.save(order)
 
         assertFailsWith<ConflictException> { service.delete(venue.id, bar.id) }

@@ -1,5 +1,6 @@
 package com.passly.domain.menu
 
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.VenueId
 
 interface MenuItemRepository {
@@ -10,5 +11,6 @@ interface MenuItemRepository {
     fun saveAll(items: Collection<MenuItem>)
     fun existsWithModifierGroup(groupId: ModifierGroupId): Boolean
     fun existsWithStation(stationId: StationId): Boolean
+    fun existsWithTaxRate(taxRateId: VenueTaxRateId): Boolean
     fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int>
 }

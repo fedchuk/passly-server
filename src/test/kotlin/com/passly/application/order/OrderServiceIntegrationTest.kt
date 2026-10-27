@@ -7,7 +7,6 @@ import com.passly.application.floor.FloorPlanService
 import com.passly.application.menu.*
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.common.UnavailableItemsException
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
@@ -76,7 +75,7 @@ class OrderServiceIntegrationTest {
         CreateMenuItemCommand(
             venueId,
             CategoryId(mainsUuid),
-            MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+            MenuItemDetails(name, null, Money.of(price))
         ),
     )
 

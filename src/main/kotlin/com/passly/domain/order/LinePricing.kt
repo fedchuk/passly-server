@@ -1,5 +1,6 @@
 package com.passly.domain.order
 
+import com.passly.domain.common.TaxRate
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.ModifierGroup
@@ -13,6 +14,7 @@ fun MenuItem.priceLine(
     request: OrderLineRequest,
     groups: Map<ModifierGroupId, ModifierGroup>,
     stationId: StationId?,
+    taxRate: TaxRate,
 ): PricedLine {
     require(request.menuItemId == id) { "Request for ${request.menuItemId} priced with item $id" }
     if (request.quantity !in 1..MAX_LINE_QUANTITY) {

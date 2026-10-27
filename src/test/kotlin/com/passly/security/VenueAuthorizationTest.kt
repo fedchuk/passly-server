@@ -77,7 +77,7 @@ class VenueAuthorizationTest {
         val rioja = createdId(
             manager,
             "/api/v1/venues/${venue.venueId}/categories/$wine/items",
-            """{"name": "Rioja", "price": "4.50", "taxRate": "10"}""",
+            """{"name": "Rioja", "price": "4.50"}""",
         )
         val item = "/api/v1/venues/${venue.venueId}/items/$rioja"
 

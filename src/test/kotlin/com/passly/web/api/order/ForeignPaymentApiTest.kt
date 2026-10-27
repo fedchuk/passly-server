@@ -14,7 +14,6 @@ import com.passly.application.venue.AcceptCurrencyCommand
 import com.passly.application.venue.UpdateVenueSettingsCommand
 import com.passly.application.venue.VenueSettingsService
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
@@ -91,7 +90,7 @@ class ForeignPaymentApiTest {
             CreateMenuItemCommand(
                 venueId,
                 mains.id,
-                MenuItemDetails("Rösti", null, Money.of("22.50"), TaxRate.of("8.1"))
+                MenuItemDetails("Rösti", null, Money.of("22.50"))
             ),
         )
         order = orders.open(

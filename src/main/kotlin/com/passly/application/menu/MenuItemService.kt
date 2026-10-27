@@ -3,6 +3,8 @@ package com.passly.application.menu
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.*
+import com.passly.domain.tax.TaxRateRepository
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
 import com.passly.domain.venue.VenueRepository
@@ -18,6 +20,7 @@ class MenuItemService(
     private val items: MenuItemRepository,
     private val modifierGroups: ModifierGroupRepository,
     private val menuChanges: MenuChangeRecorder,
+    private val taxRates: TaxRateRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -36,6 +39,7 @@ class MenuItemService(
         val venue = lockVenue(command.venueId)
         requireCategory(venue.id, command.categoryId)
         command.details.stationId?.let { requireStationInVenue(it, venue.id) }
+        command.details.taxRateId?.let { requireTaxRateInVenue(it, venue.id) }
 
         val item = items.loadCategoryItems(venue.id, command.categoryId).add(venue.tenantId, command.details)
 
@@ -46,6 +50,7 @@ class MenuItemService(
 
     fun update(command: UpdateMenuItemCommand): MenuItem {
         command.details.stationId?.let { requireStationInVenue(it, command.venueId) }
+        command.details.taxRateId?.let { requireTaxRateInVenue(it, command.venueId) }
 
         val item = requireItem(command.venueId, command.itemId)
         if (command.expectedVersion != null && command.expectedVersion != item.version) {
@@ -135,6 +140,10 @@ class MenuItemService(
 
     private fun lockVenue(id: VenueId): Venue =
         venues.findByIdAndLock(id) ?: throw NotFoundException("Venue", id)
+
+    private fun requireTaxRateInVenue(taxRateId: VenueTaxRateId, venueId: VenueId) {
+        taxRates.load(venueId)[taxRateId]
+    }
 
     private fun requireStationInVenue(stationId: StationId, venueId: VenueId) {
         if (!stations.existsInVenue(stationId, venueId)) throw NotFoundException("Station", stationId)

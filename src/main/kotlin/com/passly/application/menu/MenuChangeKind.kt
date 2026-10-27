@@ -6,4 +6,5 @@ enum class MenuChangeKind {
     STOP_LIST,
     MODIFIER_GROUPS,
     CURRENCY,
+    TAX_RATES,
 }

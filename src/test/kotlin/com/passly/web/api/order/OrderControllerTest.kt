@@ -6,7 +6,6 @@ import com.passly.application.floor.CreateTableCommand
 import com.passly.application.floor.FloorPlanService
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
@@ -71,7 +70,7 @@ class OrderControllerTest {
         CreateMenuItemCommand(
             venueId,
             CategoryId(mainsUuid),
-            MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+            MenuItemDetails(name, null, Money.of(price))
         ),
     )
 

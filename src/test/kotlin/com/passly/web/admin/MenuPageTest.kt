@@ -6,7 +6,6 @@ import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.menu.CreateMenuItemCommand
 import com.passly.application.menu.MenuItemService
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.Category
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
@@ -81,7 +80,7 @@ class MenuPageTest {
             CreateMenuItemCommand(
                 venueId,
                 category.id,
-                MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+                MenuItemDetails(name, null, Money.of(price))
             )
         )
 

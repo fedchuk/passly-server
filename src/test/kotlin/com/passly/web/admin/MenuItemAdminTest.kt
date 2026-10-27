@@ -3,7 +3,6 @@ package com.passly.web.admin
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
 import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
@@ -77,7 +76,7 @@ class MenuItemAdminTest {
         items.create(
             CreateMenuItemCommand(
                 venueId, wine,
-                MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+                MenuItemDetails(name, null, Money.of(price))
             )
         )
 
@@ -111,7 +110,6 @@ class MenuItemAdminTest {
             with(csrf())
             param("name", "Rioja")
             param("price", "4,50")
-            param("taxRate", "10")
         }.andExpect {
             redirectedUrl(wineItems)
             flash { attribute("message", "'Rioja' added") }
@@ -128,7 +126,6 @@ class MenuItemAdminTest {
             with(csrf())
             param("name", "Rioja")
             param("price", "4.555")
-            param("taxRate", "10")
         }.andExpect {
             status { isOk() }
             view { name("admin/item-form") }
@@ -151,7 +148,6 @@ class MenuItemAdminTest {
             with(csrf())
             param("name", "Rioja")
             param("price", "4.50")
-            param("taxRate", "10")
             param("stationId", bar.toString())
             param("modifierGroupIds", size.id.toString())
         }.andExpect { redirectedUrl(wineItems) }
@@ -183,7 +179,6 @@ class MenuItemAdminTest {
             with(csrf())
             param("name", "Rioja")
             param("price", "4.50")
-            param("taxRate", "10")
             param("version", "0")
             param("modifierGroupIds", size.id.toString())
         }
@@ -194,7 +189,6 @@ class MenuItemAdminTest {
             param("name", "Rioja Reserva")
             param("description", "Tempranillo, 3 years")
             param("price", "6")
-            param("taxRate", "10")
             param("version", items.get(venueId, rioja.id).version.toString())
             param("_modifierGroupIds", "on")
         }.andExpect {
@@ -218,7 +212,6 @@ class MenuItemAdminTest {
             with(csrf())
             param("name", "Rioja Reserva")
             param("price", "6")
-            param("taxRate", "10")
             param("version", "9")
         }.andExpect {
             status { isOk() }

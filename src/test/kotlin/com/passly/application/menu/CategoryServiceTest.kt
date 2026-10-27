@@ -111,7 +111,7 @@ class CategoryServiceTest {
         val steaks = root("Steaks")
         val ribeye = items.loadCategoryItems(venue.id, steaks.id).add(
             venue.tenantId,
-            MenuItemDetails("Ribeye", null, Money.of("26.00"), TaxRate.of("10")),
+            MenuItemDetails("Ribeye", null, Money.of("26.00")),
         )
         items.saveAll(listOf(ribeye))
 

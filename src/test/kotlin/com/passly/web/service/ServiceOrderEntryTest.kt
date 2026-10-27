@@ -9,7 +9,6 @@ import com.passly.application.order.FloorStatusQuery
 import com.passly.application.order.OpenOrderCommand
 import com.passly.application.order.OrderService
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.Order
@@ -101,10 +100,10 @@ class ServiceOrderEntryTest {
             CreateMenuItemCommand(
                 venueId,
                 mains.id,
-                MenuItemDetails("Ribeye", null, Money.of("26.00"), TaxRate.of("10"))
+                MenuItemDetails("Ribeye", null, Money.of("26.00"))
             )
         )
-        water = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Water", null, Money.of("2.50"), TaxRate.of("10"))))
+        water = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Water", null, Money.of("2.50"))))
         doneness = modifierGroups.create(
             CreateModifierGroupCommand(
                 venueId,

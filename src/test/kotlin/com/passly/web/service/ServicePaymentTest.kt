@@ -11,8 +11,8 @@ import com.passly.application.menu.MenuItemService
 import com.passly.application.order.FloorStatusQuery
 import com.passly.application.order.OpenOrderCommand
 import com.passly.application.order.OrderService
+import com.passly.application.tax.TaxRateService
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
@@ -65,6 +65,9 @@ class ServicePaymentTest {
     lateinit var items: MenuItemService
 
     @Autowired
+    lateinit var taxRates: TaxRateService
+
+    @Autowired
     lateinit var orders: OrderService
 
     @Autowired
@@ -78,6 +81,7 @@ class ServicePaymentTest {
     lateinit var order: Order
 
     private val venueId get() = VenueId(venue.venueId)
+    private fun alcohol() = taxRates.list(venueId).single { it.name == "Alcohol" }.id
     private val floor get() = "/service/venues/${venue.venueId}"
     private val tablePage get() = "$floor/tables/${table.id.value}"
 
@@ -101,10 +105,10 @@ class ServicePaymentTest {
             CreateMenuItemCommand(
                 venueId,
                 mains.id,
-                MenuItemDetails("Entrecôte", null, Money.of("28.00"), TaxRate.of("10"))
+                MenuItemDetails("Entrecôte", null, Money.of("28.00"))
             )
         )
-        val wine = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Bordeaux, verre", null, Money.of("6.50"), TaxRate.of("20"))))
+        val wine = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Bordeaux, verre", null, Money.of("6.50"), taxRateId = alcohol())))
         order = orders.open(
             OpenOrderCommand(
                 venueId,

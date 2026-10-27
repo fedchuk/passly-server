@@ -37,10 +37,12 @@
                 <small class="error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}">Enter a price like 4.50</small>
             </label>
             <label>
-                VAT, %
-                <input th:field="*{taxRate}" inputmode="decimal" placeholder="10" required
-                       th:attr="aria-invalid=${#fields.hasErrors('taxRate')} ? 'true' : null">
-                <small class="error" th:if="${#fields.hasErrors('taxRate')}" th:errors="*{taxRate}">Enter a rate like 10</small>
+                Tax rate
+                <select th:field="*{taxRateId}">
+                    <option value=""
+                            th:text="${inheritedTaxRate != null} ? 'Same as the category (' + ${inheritedTaxRate} + ')' : 'Same as the category'">Same as the category (Food and soft drinks · 10%)</option>
+                    <option th:each="taxRate : ${taxRates}" th:value="${taxRate.id}" th:text="${taxRate.name}">Alcohol · 20%</option>
+                </select>
             </label>
         </div>
 

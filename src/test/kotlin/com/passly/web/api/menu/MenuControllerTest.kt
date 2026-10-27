@@ -5,7 +5,6 @@ import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
@@ -72,7 +71,7 @@ class MenuControllerTest {
             CreateMenuItemCommand(
                 venueId,
                 categoryId,
-                MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+                MenuItemDetails(name, null, Money.of(price))
             )
         )
 

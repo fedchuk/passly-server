@@ -1,10 +1,13 @@
 package com.passly.web.admin
 
 import com.passly.application.menu.*
+import com.passly.application.tax.TaxRateService
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
+import com.passly.domain.menu.Category
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItemId
+import com.passly.domain.menu.MenuTree
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
@@ -25,6 +28,7 @@ class MenuItemAdminController(
     private val categories: CategoryService,
     private val stations: StationService,
     private val modifierGroups: ModifierGroupService,
+    private val taxRates: TaxRateService,
     private val venues: AdminVenues,
     private val menuPages: MenuPages,
 ) {
@@ -171,10 +175,11 @@ class MenuItemAdminController(
     }
 
     private fun newPage(venueId: UUID, categoryId: UUID, principal: PasslyUserPrincipal, model: Model): String {
-        val category = categories.getTree(VenueId(venueId))[CategoryId(categoryId)]
+        val tree = categories.getTree(VenueId(venueId))
+        val category = tree[CategoryId(categoryId)]
         model.addAttribute("formTitle", "New item in ${category.name}")
         model.addAttribute("formAction", "/admin/venues/$venueId/categories/$categoryId/items")
-        return formPage(venueId, category.id.value, category.name, principal, model)
+        return formPage(venueId, tree, category, principal, model)
     }
 
     private fun editPage(venueId: UUID, id: UUID, principal: PasslyUserPrincipal, model: Model): String {
@@ -187,20 +192,24 @@ class MenuItemAdminController(
         model.addAttribute("moveAction", "/admin/venues/$venueId/items/$id/move")
         model.addAttribute("categoryOptions", tree.categoryOptions())
         model.addAttribute("currentCategoryId", category.id.value)
-        return formPage(venueId, category.id.value, category.name, principal, model)
+        return formPage(venueId, tree, category, principal, model)
     }
 
     private fun formPage(
         venueId: UUID,
-        categoryId: UUID,
-        categoryName: String,
+        tree: MenuTree,
+        category: Category,
         principal: PasslyUserPrincipal,
         model: Model,
     ): String {
         val venue = VenueId(venueId)
+        val venueTaxRates = taxRates.list(venue)
+        val inheritedTaxRate = tree.effectiveTaxRate(category.id)
         model.addAttribute("venue", venues.find(principal, venueId))
-        model.addAttribute("category", CategoryRefView(categoryId, categoryName))
+        model.addAttribute("category", CategoryRefView(category.id.value, category.name))
         model.addAttribute("stations", stations.list(venue).map { it.toOption() })
+        model.addAttribute("taxRates", venueTaxRates.map { it.toOption() })
+        model.addAttribute("inheritedTaxRate", venueTaxRates.firstOrNull { it.id == inheritedTaxRate }?.optionLabel)
         model.addAttribute("modifierGroups", modifierGroups.list(venue).map { it.toOption() })
         return "admin/item-form"
     }

@@ -5,13 +5,14 @@ import com.passly.application.floor.CreateTablesCommand
 import com.passly.application.floor.FloorPlanService
 import com.passly.application.floor.UpdateTableCommand
 import com.passly.application.menu.*
+import com.passly.application.tax.TaxRateService
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
 import com.passly.application.venue.OnboardingService
 import com.passly.application.venue.RegisterBusinessCommand
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
 import com.passly.domain.user.Role
@@ -37,6 +38,7 @@ class DemoDataRunner(
     private val floors: FloorPlanService,
     private val staff: StaffService,
     private val stations: StationService,
+    private val taxRates: TaxRateService,
     @Value("\${passly.demo.password:}") private val configuredPassword: String,
 ) : ApplicationRunner {
 
@@ -61,8 +63,9 @@ class DemoDataRunner(
         val defaultStations = stations.list(venueId).associate { it.name to it.id }
         val kitchen = defaultStations.getValue("Kitchen")
         val bar = defaultStations.getValue("Bar")
+        val alcohol = taxRates.list(venueId).single { it.name == ALCOHOL_TAX }.id
 
-        createMenu(venueId, kitchen, bar, createModifierGroups(venueId))
+        createMenu(venueId, kitchen, bar, alcohol, createModifierGroups(venueId))
         createFloor(venueId)
         hireStaff(venueId, password)
 
@@ -78,7 +81,7 @@ class DemoDataRunner(
         beerSize = group(venueId, "Beer size", 1, 1, "Caña" to "0", "Tercio" to "0.80", "Pinta" to "1.80"),
     )
 
-    private fun createMenu(venueId: VenueId, kitchen: StationId, bar: StationId, groups: DemoModifierGroups) {
+    private fun createMenu(venueId: VenueId, kitchen: StationId, bar: StationId, alcohol: VenueTaxRateId, groups: DemoModifierGroups) {
         val food = category(venueId, "Food", station = kitchen)
 
         val starters = category(venueId, "Starters", food)
@@ -123,19 +126,19 @@ class DemoDataRunner(
         item(venueId, soft, "Fresh orange juice", "3.50")
         item(venueId, soft, "Still water 0.5 l", "2.00")
 
-        val beer = category(venueId, "Beer", drinks)
-        item(venueId, beer, "Estrella Damm", "2.50", ALCOHOL_TAX, groups = listOf(groups.beerSize))
-        item(venueId, beer, "Alhambra Reserva 1925", "3.80", ALCOHOL_TAX)
+        val beer = category(venueId, "Beer", drinks, taxRate = alcohol)
+        item(venueId, beer, "Estrella Damm", "2.50", groups = listOf(groups.beerSize))
+        item(venueId, beer, "Alhambra Reserva 1925", "3.80")
 
-        val wine = category(venueId, "Wine", drinks)
-        item(venueId, wine, "Rioja Crianza, glass", "4.50", ALCOHOL_TAX)
-        item(venueId, wine, "Albariño, glass", "4.80", ALCOHOL_TAX)
-        item(venueId, wine, "Cava brut, glass", "4.50", ALCOHOL_TAX)
+        val wine = category(venueId, "Wine", drinks, taxRate = alcohol)
+        item(venueId, wine, "Rioja Crianza, glass", "4.50")
+        item(venueId, wine, "Albariño, glass", "4.80")
+        item(venueId, wine, "Cava brut, glass", "4.50")
 
-        val cocktails = category(venueId, "Cocktails", drinks)
-        item(venueId, cocktails, "Agua de Valencia", "8.00", ALCOHOL_TAX, description = "Cava, orange juice, gin and vodka")
-        item(venueId, cocktails, "Aperol spritz", "8.00", ALCOHOL_TAX)
-        item(venueId, cocktails, "Mojito", "8.50", ALCOHOL_TAX)
+        val cocktails = category(venueId, "Cocktails", drinks, taxRate = alcohol)
+        item(venueId, cocktails, "Agua de Valencia", "8.00", description = "Cava, orange juice, gin and vodka")
+        item(venueId, cocktails, "Aperol spritz", "8.00")
+        item(venueId, cocktails, "Mojito", "8.50")
 
         val seasonal = category(venueId, "Autumn specials", station = kitchen)
         item(venueId, seasonal, "Pumpkin soup", "7.50")
@@ -192,18 +195,18 @@ class DemoDataRunner(
         name: String,
         parentId: CategoryId? = null,
         station: StationId? = null,
-    ): CategoryId = categories.create(CreateCategoryCommand(venueId, name, parentId, station)).id
+        taxRate: VenueTaxRateId? = null,
+    ): CategoryId = categories.create(CreateCategoryCommand(venueId, name, parentId, station, taxRate)).id
 
     private fun item(
         venueId: VenueId,
         categoryId: CategoryId,
         name: String,
         price: String,
-        taxRate: String = FOOD_TAX,
         description: String? = null,
         groups: List<ModifierGroupId> = emptyList(),
     ): MenuItemId {
-        val details = MenuItemDetails(name, description, Money.of(price), TaxRate.of(taxRate))
+        val details = MenuItemDetails(name, description, Money.of(price))
         val created = items.create(CreateMenuItemCommand(venueId, categoryId, details))
         if (groups.isNotEmpty()) items.attachModifierGroups(AttachModifierGroupsCommand(venueId, created.id, groups))
         return created.id
@@ -231,7 +234,6 @@ class DemoDataRunner(
         const val DOMAIN = "demo.passly"
         val OWNER_EMAIL: Email = Email.of("owner@$DOMAIN")
 
-        private const val FOOD_TAX = "10"
-        private const val ALCOHOL_TAX = "21"
+        private const val ALCOHOL_TAX = "Alcohol"
     }
 }

@@ -1,8 +1,8 @@
 package com.passly.domain.menu
 
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.common.ValidationException
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 
@@ -30,10 +30,10 @@ class MenuItem private constructor(
     var price: Money = details.price
         private set
 
-    var taxRate: TaxRate = details.taxRate
+    var stationId: StationId? = details.stationId
         private set
 
-    var stationId: StationId? = details.stationId
+    var taxRateId: VenueTaxRateId? = details.taxRateId
         private set
 
     var sortOrder: Int = sortOrder
@@ -50,7 +50,7 @@ class MenuItem private constructor(
 
     val isNew: Boolean get() = version == null
 
-    val details: MenuItemDetails get() = MenuItemDetails(name, description, price, taxRate, stationId)
+    val details: MenuItemDetails get() = MenuItemDetails(name, description, price, stationId, taxRateId)
 
     fun update(details: MenuItemDetails) {
         requireActive()
@@ -58,8 +58,8 @@ class MenuItem private constructor(
         name = valid.name
         description = valid.description
         price = valid.price
-        taxRate = valid.taxRate
         stationId = valid.stationId
+        taxRateId = valid.taxRateId
     }
 
     fun attachModifierGroups(groupIds: List<ModifierGroupId>) {
@@ -89,6 +89,7 @@ class MenuItem private constructor(
         categoryId = null
         sortOrder = 0
         stationId = null
+        taxRateId = null
         modifierGroupIds = emptyList()
     }
 

@@ -20,7 +20,7 @@ class OrderTest {
     private val cake = fixtures.item("Cheesecake", "7.50")
 
     private fun priced(item: com.passly.domain.menu.MenuItem, quantity: Int = 1) =
-        item.priceLine(OrderLineRequest(item.id, quantity), emptyMap(), null)
+        item.priceLine(OrderLineRequest(item.id, quantity), emptyMap(), null, fixtures.taxRateOf(item))
 
     @Test
     fun `a new order is open and empty`() {

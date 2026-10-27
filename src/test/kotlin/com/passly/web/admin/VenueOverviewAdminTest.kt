@@ -9,7 +9,6 @@ import com.passly.application.menu.MenuItemService
 import com.passly.application.venue.VenueOverview
 import com.passly.application.venue.VenueOverviewQuery
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.user.Role
@@ -75,7 +74,7 @@ class VenueOverviewAdminTest {
                 CreateMenuItemCommand(
                     venueId,
                     category.id,
-                    MenuItemDetails(it, null, Money.of("5.00"), TaxRate.of("10"))
+                    MenuItemDetails(it, null, Money.of("5.00"))
                 )
             )
         }

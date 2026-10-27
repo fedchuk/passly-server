@@ -29,7 +29,7 @@ class OrderPaymentTest {
     private fun eur(amount: String) = Tender(Money.of(amount), CurrencyCode.of("EUR"), ExchangeRate.of("0.95"))
 
     private fun priced(item: MenuItem, quantity: Int = 1) =
-        item.priceLine(OrderLineRequest(item.id, quantity), emptyMap(), null)
+        item.priceLine(OrderLineRequest(item.id, quantity), emptyMap(), null, fixtures.taxRateOf(item))
 
     private fun orderWith(vararg lines: PricedLine) =
         Order.open(fixtures.table(), 2, waiter, now).apply { addRound(lines.toList(), waiter, now) }

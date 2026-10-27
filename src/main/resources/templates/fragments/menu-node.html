@@ -64,6 +64,7 @@
                     <small class="muted" th:if="${item.description != null}" th:text="${item.description}">300 g rib steak</small>
                     <small class="muted dish-meta">
                         <span th:if="${item.station != null}" th:text="${item.station}">Kitchen</span>
+                        <span th:if="${item.taxRate != null}" th:text="| · ${item.taxRate}|"> · Alcohol · 20%</span>
                         <span th:if="${item.modifierGroups > 0}"
                               th:text="${item.modifierGroups == 1} ? ' · 1 modifier group' : | · ${item.modifierGroups} modifier groups|"> · 2 modifier groups</span>
                     </small>

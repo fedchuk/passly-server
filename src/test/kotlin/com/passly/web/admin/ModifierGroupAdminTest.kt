@@ -5,7 +5,6 @@ import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.menu.ModifierGroup
@@ -212,7 +211,7 @@ class ModifierGroupAdminTest {
         val doneness = createDoneness()
         val steaks = categories.create(CreateCategoryCommand(venueId, "Steaks", stationId = StationId(jdbc.createStation(venue)))).id
         val ribeye = items.create(
-            CreateMenuItemCommand(venueId, steaks, MenuItemDetails("Ribeye", null, Money.of("24"), TaxRate.of("10"))),
+            CreateMenuItemCommand(venueId, steaks, MenuItemDetails("Ribeye", null, Money.of("24"))),
         )
         items.attachModifierGroups(AttachModifierGroupsCommand(venueId, ribeye.id, listOf(doneness.id)))
 

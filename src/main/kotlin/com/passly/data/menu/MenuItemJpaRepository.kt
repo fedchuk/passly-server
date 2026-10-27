@@ -21,6 +21,8 @@ interface MenuItemJpaRepository : JpaRepository<MenuItemEntity, UUID> {
 
     fun existsByStationId(stationId: UUID): Boolean
 
+    fun existsByTaxRateId(taxRateId: UUID): Boolean
+
     @Query("select count(i) > 0 from MenuItemEntity i where :groupId member of i.modifierGroupIds")
     fun existsWithModifierGroup(@Param("groupId") groupId: UUID): Boolean
 

@@ -30,6 +30,7 @@ data class MenuItemCardView(
     val description: String?,
     val price: String,
     val station: String?,
+    val taxRate: String?,
     val available: Boolean,
     val modifierGroups: Int,
 )
@@ -52,6 +53,7 @@ fun MenuTree.toNodeViews(
         description = item.description,
         price = item.price.toString(),
         station = stationFor(item)?.let { names[it] },
+        taxRate = item.taxRateId?.let { rateLabels[it] },
         available = item.available,
         modifierGroups = item.modifierGroupIds.size,
     )

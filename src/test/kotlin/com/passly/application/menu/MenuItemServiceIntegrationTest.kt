@@ -1,11 +1,11 @@
 package com.passly.application.menu
 
+import com.passly.application.tax.TaxRateService
 import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.ModifierDraft
@@ -37,6 +37,9 @@ class MenuItemServiceIntegrationTest {
     @Autowired
     lateinit var modifierGroupService: ModifierGroupService
 
+    @Autowired
+    lateinit var taxRates: TaxRateService
+
     private val venueId = VenueId(UUID.randomUUID())
     private val stationUuid = UUID.randomUUID()
 
@@ -56,13 +59,16 @@ class MenuItemServiceIntegrationTest {
     fun `item survives a round trip through the database`() {
         val wine = category("Wine")
         val rioja = service.create(CreateMenuItemCommand(venueId, wine, details("Rioja", "4.5")))
+        val alcohol = taxRates.list(venueId).single { it.name == "Alcohol" }
 
-        service.update(UpdateMenuItemCommand(venueId, rioja.id, details("Rioja Crianza", "4.80"), expectedVersion = 0))
+        service.update(
+            UpdateMenuItemCommand(venueId, rioja.id, details("Rioja Crianza", "4.80").copy(taxRateId = alcohol.id), expectedVersion = 0),
+        )
 
         val stored = service.get(venueId, rioja.id)
         assertEquals("Rioja Crianza", stored.name)
         assertEquals(Money.of("4.80"), stored.price)
-        assertEquals(TaxRate.of("10"), stored.taxRate)
+        assertEquals(alcohol.id, stored.taxRateId)
         assertEquals(1L, stored.version)
     }
 
@@ -131,7 +137,7 @@ class MenuItemServiceIntegrationTest {
         categoryService.create(CreateCategoryCommand(venueId, name, stationId = StationId(stationUuid))).id
 
     private fun details(name: String, price: String = "10.00") =
-        MenuItemDetails(name, null, Money.of(price), TaxRate.of("10"))
+        MenuItemDetails(name, null, Money.of(price))
 
     private fun create(category: CategoryId, name: String) =
         service.create(CreateMenuItemCommand(venueId, category, details(name)))

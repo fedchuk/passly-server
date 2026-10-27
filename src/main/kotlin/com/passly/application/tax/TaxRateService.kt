@@ -1,8 +1,11 @@
 package com.passly.application.tax
 
+import com.passly.application.menu.MenuChangeKind
+import com.passly.application.menu.MenuChangeRecorder
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.CategoryRepository
+import com.passly.domain.menu.MenuItemRepository
 import com.passly.domain.tax.TaxRatePreset
 import com.passly.domain.tax.TaxRateRepository
 import com.passly.domain.tax.VenueTaxRate
@@ -21,6 +24,8 @@ class TaxRateService(
     private val settings: VenueSettingsRepository,
     private val taxRates: TaxRateRepository,
     private val categories: CategoryRepository,
+    private val items: MenuItemRepository,
+    private val menuChanges: MenuChangeRecorder,
 ) {
 
     @Transactional(readOnly = true)
@@ -58,8 +63,10 @@ class TaxRateService(
         if (command.expectedVersion != null && command.expectedVersion != current.version) {
             throw ConflictException("Tax rate '${current.name}' was changed by someone else. Reload and try again.")
         }
+        val rateChanged = current.rate != command.rate
         val taxRate = list.change(command.taxRateId, command.name, command.rate)
         taxRates.saveAll(listOf(taxRate))
+        if (rateChanged) menuChanges.recordChange(command.venueId, MenuChangeKind.TAX_RATES)
         return taxRate
     }
 
@@ -69,6 +76,9 @@ class TaxRateService(
         val taxRate = list[taxRateId]
         if (categories.loadTree(venueId).categories.any { it.taxRateId == taxRateId }) {
             throw ConflictException("Tax rate '${taxRate.name}' is used by categories. Choose another rate for them first.")
+        }
+        if (items.existsWithTaxRate(taxRateId)) {
+            throw ConflictException("Tax rate '${taxRate.name}' is used by dishes. Choose another rate for them first.")
         }
         val renumbered = list.remove(taxRateId)
         taxRates.delete(taxRate)

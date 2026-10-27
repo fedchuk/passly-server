@@ -2,7 +2,6 @@ package com.passly.domain.menu
 
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
-import com.passly.domain.common.TaxRate
 import com.passly.domain.common.ValidationException
 import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
@@ -21,7 +20,7 @@ class CategoryItemsTest {
     private val steaks = CategoryItems(venue, CategoryId.new(), emptyList())
 
     private fun details(name: String, price: String = "10.00") =
-        MenuItemDetails(name, description = null, price = Money.of(price), taxRate = TaxRate.of("10"))
+        MenuItemDetails(name, description = null, price = Money.of(price))
 
     private fun names(items: CategoryItems) = items.items.map { it.name }
 

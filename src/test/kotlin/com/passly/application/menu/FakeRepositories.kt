@@ -1,6 +1,7 @@
 package com.passly.application.menu
 
 import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
@@ -91,6 +92,7 @@ class FakeMenuItemRepository : MenuItemRepository {
 
     override fun existsWithModifierGroup(groupId: ModifierGroupId) = stored.values.any { groupId in it.modifierGroupIds }
     override fun existsWithStation(stationId: StationId) = stored.values.any { it.stationId == stationId }
+    override fun existsWithTaxRate(taxRateId: VenueTaxRateId) = stored.values.any { it.taxRateId == taxRateId }
     override fun countActiveByCategory(venueId: VenueId): Map<CategoryId, Int> =
         stored.values.filter { it.venueId == venueId && !it.archived }
             .groupingBy { checkNotNull(it.categoryId) }

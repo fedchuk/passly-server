@@ -51,7 +51,8 @@ class MenuItemControllerTest {
             status { isOk() }
             jsonPath("$[0].name") { value("Rioja") }
             jsonPath("$[0].price") { value("4.50") }
-            jsonPath("$[0].taxRate") { value("10.00") }
+            jsonPath("$[0].taxRateId") { doesNotExist() }
+            jsonPath("$[0].effectiveTaxRateId") { exists() }
             jsonPath("$[1].name") { value("Albariño") }
             jsonPath("$[1].price") { value("5.00") }
         }
@@ -63,7 +64,7 @@ class MenuItemControllerTest {
 
         mockMvc.post("$venue/categories/$wine/items") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"name": "Rioja", "price": "4.555", "taxRate": "10"}"""
+            content = """{"name": "Rioja", "price": "4.555"}"""
         }.andExpect {
             status { isBadRequest() }
             jsonPath("$.errors.price") { exists() }
@@ -88,7 +89,7 @@ class MenuItemControllerTest {
     fun `update with a stale version is a conflict`() {
         val wine = createCategory("Wine")
         val rioja = createItem(wine, "Rioja")
-        val body = { version: Int -> """{"name": "Rioja Crianza", "price": "4.80", "taxRate": "10", "version": $version}""" }
+        val body = { version: Int -> """{"name": "Rioja Crianza", "price": "4.80", "version": $version}""" }
 
         mockMvc.put("$venue/items/$rioja") {
             contentType = MediaType.APPLICATION_JSON
@@ -183,7 +184,7 @@ class MenuItemControllerTest {
     private fun createItem(category: String, name: String, price: String = "10.00"): String =
         mockMvc.post("$venue/categories/$category/items") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"name": "$name", "price": "$price", "taxRate": "10"}"""
+            content = """{"name": "$name", "price": "$price"}"""
         }.andExpect {
             status { isCreated() }
         }.andReturn().response.getHeader("Location")!!.substringAfterLast('/')

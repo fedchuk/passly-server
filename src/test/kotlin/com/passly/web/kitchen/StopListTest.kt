@@ -6,7 +6,6 @@ import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.menu.CreateMenuItemCommand
 import com.passly.application.menu.MenuItemService
 import com.passly.domain.common.Money
-import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
@@ -73,10 +72,10 @@ class StopListTest {
             CreateMenuItemCommand(
                 venueId,
                 fish.id,
-                MenuItemDetails("Sole meunière", null, Money.of("32.00"), TaxRate.of("10"))
+                MenuItemDetails("Sole meunière", null, Money.of("32.00"))
             )
         )
-        steak = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Entrecôte", null, Money.of("28.00"), TaxRate.of("10"))))
+        steak = items.create(CreateMenuItemCommand(venueId, mains.id, MenuItemDetails("Entrecôte", null, Money.of("28.00"))))
         items.changeAvailability(venueId, sole.id, false)
     }
 

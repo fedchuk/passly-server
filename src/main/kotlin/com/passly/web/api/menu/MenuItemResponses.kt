@@ -3,8 +3,9 @@ package com.passly.web.api.menu
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.stationFor
+import com.passly.domain.menu.taxRateFor
 import io.swagger.v3.oas.annotations.media.Schema
-import java.util.UUID
+import java.util.*
 
 data class MenuItemResponse(
     val id: UUID,
@@ -13,10 +14,11 @@ data class MenuItemResponse(
     val description: String?,
     @Schema(example = "4.50")
     val price: String,
-    @Schema(example = "10.00")
-    val taxRate: String,
     val stationId: UUID?,
     val effectiveStationId: UUID?,
+    @Schema(description = "Own VAT rate of the item, empty when it uses the rate of the category")
+    val taxRateId: UUID?,
+    val effectiveTaxRateId: UUID?,
     val sortOrder: Int,
     val available: Boolean,
     val modifierGroupIds: List<UUID>,
@@ -29,9 +31,10 @@ fun MenuItem.toResponse(tree: MenuTree) = MenuItemResponse(
     name = name,
     description = description,
     price = price.amount.toPlainString(),
-    taxRate = taxRate.percent.toPlainString(),
     stationId = stationId?.value,
     effectiveStationId = tree.stationFor(this)?.value,
+    taxRateId = taxRateId?.value,
+    effectiveTaxRateId = tree.taxRateFor(this)?.value,
     sortOrder = sortOrder,
     available = available,
     modifierGroupIds = modifierGroupIds.map { it.value },

@@ -6,9 +6,9 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from decimal import Decimal, InvalidOperation
 
 DEFAULT_MENU = {
-    "taxRate": "10",
     "modifierGroups": [
         {"name": "Doneness", "minSelect": 1, "maxSelect": 1,
          "options": [{"name": "Bleu"}, {"name": "Saignant"}, {"name": "À point"}, {"name": "Bien cuit"}]},
@@ -63,11 +63,11 @@ DEFAULT_MENU = {
                 {"name": "Café crème", "price": "3.80", "modifierGroups": ["Milk"]},
                 {"name": "Thé", "price": "3.50"},
             ]},
-            {"name": "Bières", "taxRate": "20", "items": [
+            {"name": "Bières", "taxRate": "Alcohol", "items": [
                 {"name": "Demi pression", "price": "4.00"},
                 {"name": "Bière sans alcool", "price": "4.50"},
             ]},
-            {"name": "Vins", "taxRate": "20", "children": [
+            {"name": "Vins", "taxRate": "Alcohol", "children": [
                 {"name": "Rouge", "items": [
                     {"name": "Bordeaux, verre", "price": "6.50"},
                     {"name": "Côtes du Rhône, verre", "price": "5.50"},
@@ -80,7 +80,7 @@ DEFAULT_MENU = {
                     {"name": "Côtes de Provence, verre", "price": "6.00"},
                 ]},
             ]},
-            {"name": "Apéritifs", "taxRate": "20", "items": [
+            {"name": "Apéritifs", "taxRate": "Alcohol", "items": [
                 {"name": "Kir", "price": "6.00"},
                 {"name": "Pastis", "price": "5.00"},
                 {"name": "Coupe de champagne", "price": "12.00"},
@@ -136,11 +136,27 @@ class Seeder:
 
     def run(self):
         stations = {s["name"].lower(): s["id"] for s in self.api.call("GET", f"{self.api.venue}/stations")}
+        self.tax_rates = self.api.call("GET", f"{self.api.venue}/tax-rates")
         groups = self.seed_modifier_groups()
         tree = self.api.call("GET", f"{self.api.venue}/categories")
         for spec in self.menu["categories"]:
-            self.seed_category(spec, None, tree, stations, groups, self.menu.get("taxRate", "10"))
+            self.seed_category(spec, None, tree, stations, groups)
         return self.created, self.skipped
+
+    def tax_rate_id(self, value, title):
+        if value is None:
+            return None
+        text = str(value).strip()
+        try:
+            percent = Decimal(text.removesuffix("%").replace(",", "."))
+        except InvalidOperation:
+            percent = None
+        for rate in self.tax_rates:
+            if rate["name"].lower() == text.lower() or (percent is not None and Decimal(rate["rate"]) == percent):
+                return rate["id"]
+        known = ", ".join(f"{r['name']} {r['rate']}%" for r in self.tax_rates) or "none"
+        raise ApiError(f"Tax rate '{text}' for '{title}' not found. Available: {known}. "
+                       f"Add it on the Settings page first.")
 
     def seed_modifier_groups(self):
         existing = {g["name"].lower(): g["id"] for g in self.api.call("GET", f"{self.api.venue}/modifier-groups")}
@@ -160,7 +176,7 @@ class Seeder:
             print(f"+ modifier group {spec['name']}")
         return existing
 
-    def seed_category(self, spec, parent_id, siblings, stations, groups, tax_rate, path=""):
+    def seed_category(self, spec, parent_id, siblings, stations, groups, path=""):
         title = f"{path}{spec['name']}"
         station_id = None
         if spec.get("station"):
@@ -170,7 +186,8 @@ class Seeder:
                                f"Add it on the Stations page first.")
         node = next((c for c in siblings if c["name"].lower() == spec["name"].lower()), None)
         if node is None:
-            body = {"name": spec["name"], "parentId": parent_id, "stationId": station_id}
+            body = {"name": spec["name"], "parentId": parent_id, "stationId": station_id,
+                    "taxRateId": self.tax_rate_id(spec.get("taxRate"), title)}
             created = self.api.call("POST", f"{self.api.venue}/categories", body)
             node = {"id": created["id"], "name": created["name"], "children": []}
             self.created["categories"] += 1
@@ -178,13 +195,12 @@ class Seeder:
         else:
             self.skipped["categories"] += 1
 
-        tax_rate = spec.get("taxRate", tax_rate)
         if spec.get("items"):
-            self.seed_items(node["id"], spec["items"], groups, tax_rate, title)
+            self.seed_items(node["id"], spec["items"], groups, title)
         for child in spec.get("children", []):
-            self.seed_category(child, node["id"], node.get("children", []), stations, groups, tax_rate, f"{title} › ")
+            self.seed_category(child, node["id"], node.get("children", []), stations, groups, f"{title} › ")
 
-    def seed_items(self, category_id, specs, groups, tax_rate, title):
+    def seed_items(self, category_id, specs, groups, title):
         url = f"{self.api.venue}/categories/{category_id}/items"
         existing = {i["name"].lower() for i in self.api.call("GET", url)}
         for spec in specs:
@@ -195,7 +211,7 @@ class Seeder:
                 "name": spec["name"],
                 "description": spec.get("description"),
                 "price": spec["price"],
-                "taxRate": spec.get("taxRate", tax_rate),
+                "taxRateId": self.tax_rate_id(spec.get("taxRate"), f"{title} › {spec['name']}"),
             }
             item = self.api.call("POST", url, body)
             self.created["items"] += 1

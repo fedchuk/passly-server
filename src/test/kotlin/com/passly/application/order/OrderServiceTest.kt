@@ -5,6 +5,7 @@ import com.passly.application.menu.FakeCategoryRepository
 import com.passly.application.menu.FakeMenuItemRepository
 import com.passly.application.menu.FakeModifierGroupRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.*
 import com.passly.domain.floor.DiningTable
@@ -41,8 +42,13 @@ class OrderServiceTest {
         VenueSettings.fromStorage(venue.id, CountryCode.of("CH"), CurrencyCode.of("CHF"), version = 0)
             .apply { acceptCurrency(CurrencyCode.of("EUR"), ExchangeRate.of("0.95"), now) },
     )
+    private val taxRates = FakeTaxRateRepository()
+    private val food = taxRates.load(venue.id).add(venue.tenantId, "Food", TaxRate.of("10"))
+        .also { taxRates.saveAll(listOf(it)) }
+    private val alcohol = taxRates.load(venue.id).add(venue.tenantId, "Alcohol", TaxRate.of("20"))
+        .also { taxRates.saveAll(listOf(it)) }
     private val service = OrderService(
-        venues, floors, orders, items, groups, categories, settings, Clock.fixed(now, ZoneOffset.UTC),
+        venues, floors, orders, items, groups, categories, settings, taxRates, Clock.fixed(now, ZoneOffset.UTC),
     )
 
     private val table: DiningTable = floors.load(venue.id).let { plan ->
@@ -53,12 +59,12 @@ class OrderServiceTest {
         table
     }
 
-    private val mains = categories.loadTree(venue.id).add(venue.tenantId, "Mains", stationId = kitchen, taxRateId = VenueTaxRateId.new())
+    private val mains = categories.loadTree(venue.id).add(venue.tenantId, "Mains", stationId = kitchen, taxRateId = food.id)
         .also { categories.saveAll(listOf(it)) }
 
-    private fun item(name: String, price: String): MenuItem =
+    private fun item(name: String, price: String, taxRateId: VenueTaxRateId? = null): MenuItem =
         items.loadCategoryItems(venue.id, mains.id)
-            .add(venue.tenantId, MenuItemDetails(name, null, Money.of(price), TaxRate.of("10")))
+            .add(venue.tenantId, MenuItemDetails(name, null, Money.of(price), taxRateId = taxRateId))
             .also { items.saveAll(listOf(it)) }
 
     private fun line(item: MenuItem, quantity: Int = 1) = OrderLineRequest(item.id, quantity)
@@ -204,5 +210,15 @@ class OrderServiceTest {
 
         assertFailsWith<NotFoundException> { service.open(OpenOrderCommand(other.id, table.id, waiter)) }
         assertFailsWith<NotFoundException> { service.get(other.id, order.id) }
+    }
+
+    @Test
+    fun `lines keep the rate of the category or the own rate of the item`() {
+        val burger = item("Burger", "14.00")
+        val beer = item("Beer", "5.00", taxRateId = alcohol.id)
+
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, guests = 2, lines = listOf(line(burger), line(beer))))
+
+        assertEquals(listOf(TaxRate.of("10"), TaxRate.of("20")), orders.stored.getValue(order.id).lines.map { it.taxRate })
     }
 }
