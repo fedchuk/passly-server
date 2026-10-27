@@ -2,6 +2,7 @@ package com.passly.application.tax
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
+import com.passly.domain.menu.CategoryRepository
 import com.passly.domain.tax.TaxRatePreset
 import com.passly.domain.tax.TaxRateRepository
 import com.passly.domain.tax.VenueTaxRate
@@ -19,6 +20,7 @@ class TaxRateService(
     private val venues: VenueRepository,
     private val settings: VenueSettingsRepository,
     private val taxRates: TaxRateRepository,
+    private val categories: CategoryRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -65,6 +67,9 @@ class TaxRateService(
         lockVenue(venueId)
         val list = taxRates.load(venueId)
         val taxRate = list[taxRateId]
+        if (categories.loadTree(venueId).categories.any { it.taxRateId == taxRateId }) {
+            throw ConflictException("Tax rate '${taxRate.name}' is used by categories. Choose another rate for them first.")
+        }
         val renumbered = list.remove(taxRateId)
         taxRates.delete(taxRate)
         taxRates.saveAll(renumbered)

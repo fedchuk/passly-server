@@ -3,6 +3,7 @@ package com.passly.domain.menu
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 
@@ -45,10 +46,28 @@ class MenuTree(
         return null
     }
 
-    fun add(tenantId: TenantId, name: String, parentId: CategoryId? = null, stationId: StationId? = null): Category {
+    fun effectiveTaxRate(id: CategoryId): VenueTaxRateId? {
+        var current: Category? = get(id)
+        while (current != null) {
+            current.taxRateId?.let { return it }
+            current = current.parentId?.let { byId[it] }
+        }
+        return null
+    }
+
+    fun add(
+        tenantId: TenantId,
+        name: String,
+        parentId: CategoryId? = null,
+        stationId: StationId? = null,
+        taxRateId: VenueTaxRateId? = null,
+    ): Category {
         parentId?.let { get(it) }
         if (parentId == null && stationId == null) {
             throw ValidationException("Choose a station for a top-level category", "stationId")
+        }
+        if (parentId == null && taxRateId == null) {
+            throw ValidationException("Choose a tax rate for a top-level category", "taxRateId")
         }
         val siblings = children(parentId)
         val category = Category.new(
@@ -58,6 +77,7 @@ class MenuTree(
             name = name,
             sortOrder = (siblings.maxOfOrNull { it.sortOrder } ?: -1) + 1,
             stationId = stationId,
+            taxRateId = taxRateId,
         )
         byId[category.id] = category
         return category
@@ -77,6 +97,9 @@ class MenuTree(
         }
 
         val oldParentId = category.parentId
+        if (newParentId == null && oldParentId != null && category.taxRateId == null) {
+            category.taxRateId = effectiveTaxRate(oldParentId)
+        }
         val newSiblings = children(newParentId).filter { it.id != id }.toMutableList()
         val index = (position ?: newSiblings.size).coerceIn(0, newSiblings.size)
         newSiblings.add(index, category)

@@ -35,7 +35,7 @@ class FakeCategoryRepository : CategoryRepository {
     }
 
     private fun copyOf(c: Category) = Category.fromStorage(
-        c.id, c.tenantId, c.venueId, c.parentId, c.name, c.sortOrder, c.stationId, c.active, c.version ?: 0,
+        c.id, c.tenantId, c.venueId, c.parentId, c.name, c.sortOrder, c.stationId, c.active, c.version ?: 0, c.taxRateId,
     )
 }
 

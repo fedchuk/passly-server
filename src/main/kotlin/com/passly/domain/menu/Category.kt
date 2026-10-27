@@ -1,6 +1,7 @@
 package com.passly.domain.menu
 
 import com.passly.domain.common.ValidationException
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 
@@ -12,6 +13,7 @@ class Category private constructor(
     name: String,
     sortOrder: Int,
     stationId: StationId?,
+    taxRateId: VenueTaxRateId?,
     active: Boolean,
     val version: Long?,
 ) {
@@ -27,6 +29,9 @@ class Category private constructor(
     var stationId: StationId? = stationId
         private set
 
+    var taxRateId: VenueTaxRateId? = taxRateId
+        internal set
+
     var active: Boolean = active
         private set
 
@@ -41,6 +46,13 @@ class Category private constructor(
             throw ValidationException("A top-level category needs a station", "stationId")
         }
         stationId = station
+    }
+
+    fun assignTaxRate(taxRate: VenueTaxRateId?) {
+        if (parentId == null && taxRate == null) {
+            throw ValidationException("A top-level category needs a tax rate", "taxRateId")
+        }
+        taxRateId = taxRate
     }
 
     fun activate() {
@@ -67,6 +79,7 @@ class Category private constructor(
             name: String,
             sortOrder: Int,
             stationId: StationId?,
+            taxRateId: VenueTaxRateId?,
         ) = Category(
             id = CategoryId.new(),
             tenantId = tenantId,
@@ -75,6 +88,7 @@ class Category private constructor(
             name = validName(name),
             sortOrder = sortOrder,
             stationId = stationId,
+            taxRateId = taxRateId,
             active = true,
             version = null,
         )
@@ -89,7 +103,8 @@ class Category private constructor(
             stationId: StationId?,
             active: Boolean,
             version: Long,
-        ) = Category(id, tenantId, venueId, parentId, name, sortOrder, stationId, active, version)
+            taxRateId: VenueTaxRateId? = null,
+        ) = Category(id, tenantId, venueId, parentId, name, sortOrder, stationId, taxRateId, active, version)
 
         private fun validName(name: String): String {
             val trimmed = name.trim()

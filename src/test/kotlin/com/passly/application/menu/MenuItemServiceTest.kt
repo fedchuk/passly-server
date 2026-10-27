@@ -1,13 +1,18 @@
 package com.passly.application.menu
 
+import com.passly.application.tax.FakeTaxRateRepository
+import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
 import com.passly.domain.menu.*
+import com.passly.domain.venue.CountryCode
+import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
+import com.passly.domain.venue.VenueSettings
 import kotlin.test.*
 
 class MenuItemServiceTest {
@@ -21,7 +26,10 @@ class MenuItemServiceTest {
     private val items = FakeMenuItemRepository()
     private val modifierGroups = FakeModifierGroupRepository()
     private val menuChanges = FakeMenuChangeRecorder()
-    private val categoryService = CategoryService(venues, categories, stations, items, menuChanges)
+    private val categoryService = CategoryService(
+        venues, categories, stations, items, menuChanges, FakeTaxRateRepository(),
+        FakeVenueSettingsRepository(VenueSettings.fromStorage(venue.id, CountryCode.of("FR"), CurrencyCode.of("EUR"), version = 0)),
+    )
     private val service = MenuItemService(venues, categories, stations, items, modifierGroups, menuChanges)
 
     private val steaks = categoryService.create(CreateCategoryCommand(venue.id, "Steaks", stationId = grill)).id

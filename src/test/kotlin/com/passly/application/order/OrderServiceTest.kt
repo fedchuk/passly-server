@@ -13,6 +13,7 @@ import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.OrderStatus
 import com.passly.domain.order.PaymentMethod
 import com.passly.domain.order.Tender
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.*
 import java.time.Clock
@@ -52,7 +53,7 @@ class OrderServiceTest {
         table
     }
 
-    private val mains = categories.loadTree(venue.id).add(venue.tenantId, "Mains", stationId = kitchen)
+    private val mains = categories.loadTree(venue.id).add(venue.tenantId, "Mains", stationId = kitchen, taxRateId = VenueTaxRateId.new())
         .also { categories.saveAll(listOf(it)) }
 
     private fun item(name: String, price: String): MenuItem =

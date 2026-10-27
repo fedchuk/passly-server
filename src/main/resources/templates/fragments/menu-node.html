@@ -20,6 +20,7 @@
                     <span class="pill" th:if="${node.items > 0}"
                           th:text="${node.items == 1} ? '1 dish' : |${node.items} dishes|">5 dishes</span>
                     <span class="badge" th:if="${node.station != null}" th:text="${node.station}">Kitchen</span>
+                    <span class="badge tax-badge" th:if="${node.taxRate != null}" th:text="${node.taxRate}">Alcohol · 20%</span>
                     <span class="badge muted-badge" th:unless="${node.active}">Hidden</span>
                 </span>
             </span>

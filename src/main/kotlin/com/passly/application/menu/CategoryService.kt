@@ -2,10 +2,12 @@ package com.passly.application.menu
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
+import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.*
-import com.passly.domain.venue.Venue
-import com.passly.domain.venue.VenueId
-import com.passly.domain.venue.VenueRepository
+import com.passly.domain.tax.TaxRatePreset
+import com.passly.domain.tax.TaxRateRepository
+import com.passly.domain.tax.VenueTaxRateId
+import com.passly.domain.venue.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -17,6 +19,8 @@ class CategoryService(
     private val stations: StationRepository,
     private val items: MenuItemRepository,
     private val menuChanges: MenuChangeRecorder,
+    private val taxRates: TaxRateRepository,
+    private val settings: VenueSettingsRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -29,8 +33,11 @@ class CategoryService(
         val venue = lockVenue(command.venueId)
         command.stationId?.let { requireStationInVenue(it, venue.id) }
 
+        command.taxRateId?.let { requireTaxRateInVenue(it, venue.id) }
+        val taxRateId = command.taxRateId ?: if (command.parentId == null) defaultTaxRate(venue) else null
+
         val category = categories.loadTree(venue.id)
-            .add(venue.tenantId, command.name, command.parentId, command.stationId)
+            .add(venue.tenantId, command.name, command.parentId, command.stationId, taxRateId)
 
         categories.saveAll(listOf(category))
         menuChanges.recordChange(venue.id, MenuChangeKind.CATEGORIES)
@@ -40,6 +47,7 @@ class CategoryService(
     fun update(command: UpdateCategoryCommand): Category {
         requireVenue(command.venueId)
         command.stationId?.let { requireStationInVenue(it, command.venueId) }
+        command.taxRateId?.let { requireTaxRateInVenue(it, command.venueId) }
 
         val category = categories.loadTree(command.venueId)[command.categoryId]
         if (command.expectedVersion != null && command.expectedVersion != category.version) {
@@ -49,6 +57,7 @@ class CategoryService(
         category.apply {
             rename(command.name)
             assignStation(command.stationId)
+            assignTaxRate(command.taxRateId ?: taxRateId.takeIf { parentId == null })
             if (command.active) activate() else deactivate()
         }
 
@@ -98,6 +107,20 @@ class CategoryService(
 
     private fun lockVenue(id: VenueId): Venue =
         venues.findByIdAndLock(id) ?: throw NotFoundException("Venue", id)
+
+    private fun requireTaxRateInVenue(taxRateId: VenueTaxRateId, venueId: VenueId) {
+        taxRates.load(venueId)[taxRateId]
+    }
+
+    private fun defaultTaxRate(venue: Venue): VenueTaxRateId {
+        val list = taxRates.load(venue.id)
+        if (list.rates.isEmpty()) {
+            val country = settings.find(venue.id)?.country ?: CountryCode.FRANCE
+            taxRates.saveAll(list.addMissing(venue.tenantId, TaxRatePreset.forCountry(country)))
+        }
+        return list.rates.firstOrNull()?.id
+            ?: throw ValidationException("Add a tax rate in the venue settings first", "taxRateId")
+    }
 
     private fun requireStationInVenue(stationId: StationId, venueId: VenueId) {
         if (!stations.existsInVenue(stationId, venueId)) throw NotFoundException("Station", stationId)

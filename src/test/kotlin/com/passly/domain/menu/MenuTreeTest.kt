@@ -3,6 +3,7 @@ package com.passly.domain.menu
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 import kotlin.test.*
@@ -11,11 +12,12 @@ class MenuTreeTest {
 
     private val tenant = TenantId.new()
     private val kitchen = StationId.new()
+    private val food10 = VenueTaxRateId.new()
     private val tree = MenuTree(VenueId.new(), emptyList())
 
     private fun namesUnder(parent: Category?) = tree.children(parent?.id).map { it.name }
 
-    private fun root(name: String, station: StationId = kitchen) = tree.add(tenant, name, stationId = station)
+    private fun root(name: String, station: StationId = kitchen) = tree.add(tenant, name, stationId = station, taxRateId = food10)
 
     @Test
     fun `new categories are appended after their siblings`() {
@@ -70,7 +72,11 @@ class MenuTreeTest {
     fun `tree can be nested to any depth`() {
         var parent: Category? = null
         repeat(50) { level ->
-            parent = tree.add(tenant, "Level $level", parentId = parent?.id, stationId = if (parent == null) kitchen else null)
+            parent = tree.add(
+                tenant, "Level $level", parentId = parent?.id,
+                stationId = if (parent == null) kitchen else null,
+                taxRateId = if (parent == null) food10 else null,
+            )
         }
 
         val root = tree.children(null).single()
@@ -179,5 +185,32 @@ class MenuTreeTest {
         assertEquals(listOf("Food", "Desserts"), namesUnder(null))
         assertEquals(setOf(desserts), changed)
         assertTrue(drinks.id !in tree)
+    }
+
+    @Test
+    fun `a top-level category needs a tax rate and a subcategory inherits it`() {
+        val error = assertFailsWith<ValidationException> { tree.add(tenant, "Food", stationId = kitchen) }
+        assertEquals("taxRateId", error.field)
+
+        val food = root("Food")
+        val wine = tree.add(tenant, "Wine", parentId = food.id)
+        val reds = tree.add(tenant, "Reds", parentId = wine.id)
+        assertNull(wine.taxRateId)
+        assertEquals(food10, tree.effectiveTaxRate(reds.id))
+
+        val alcohol = VenueTaxRateId.new()
+        wine.assignTaxRate(alcohol)
+        assertEquals(alcohol, tree.effectiveTaxRate(reds.id))
+        assertFailsWith<ValidationException> { food.assignTaxRate(null) }
+    }
+
+    @Test
+    fun `subcategory moved to the top level keeps the rate it had`() {
+        val food = root("Food")
+        val wine = tree.add(tenant, "Wine", parentId = food.id, stationId = StationId.new())
+
+        tree.move(wine.id, null)
+
+        assertEquals(food10, wine.taxRateId)
     }
 }

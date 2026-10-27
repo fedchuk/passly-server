@@ -13,6 +13,10 @@ data class TaxRateRowView(
     val version: Long?,
 )
 
+val VenueTaxRate.optionLabel: String get() = "$name · $percentLabel"
+
+fun VenueTaxRate.toOption() = OptionView(id.value, optionLabel)
+
 fun VenueTaxRate.toRowView() = TaxRateRowView(id.value, name, rate.percent.stripTrailingZeros().toPlainString(), version)
 
 fun List<TaxRatePreset>.toPresetLabel(): String =

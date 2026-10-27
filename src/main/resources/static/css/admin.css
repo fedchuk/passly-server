@@ -2419,3 +2419,8 @@ form.tax-rate-form button {
     gap: 0.6rem;
     margin-top: 1rem;
 }
+
+.tax-badge {
+    background: var(--surface-muted);
+    color: var(--text);
+}

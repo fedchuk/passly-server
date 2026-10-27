@@ -1,9 +1,11 @@
 package com.passly.application.tax
 
+import com.passly.application.menu.FakeCategoryRepository
 import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.TaxRate
+import com.passly.domain.menu.StationId
 import com.passly.domain.venue.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,7 +20,8 @@ class TaxRateServiceTest {
         VenueSettings.fromStorage(venue.id, CountryCode.of("CH"), CurrencyCode.of("CHF"), version = 0),
     )
     private val taxRates = FakeTaxRateRepository()
-    private val service = TaxRateService(venues, settings, taxRates)
+    private val categories = FakeCategoryRepository()
+    private val service = TaxRateService(venues, settings, taxRates, categories)
 
     @Test
     fun `rate is added under a lock of the venue`() {
@@ -59,5 +62,14 @@ class TaxRateServiceTest {
         service.delete(venue.id, standard.id)
 
         assertTrue(service.list(venue.id).isEmpty())
+    }
+
+    @Test
+    fun `rate used by a category is kept`() {
+        val standard = service.create(CreateTaxRateCommand(venue.id, "Standard", TaxRate.of("8.1")))
+        categories.saveAll(listOf(categories.loadTree(venue.id).add(venue.tenantId, "Food", stationId = StationId.new(), taxRateId = standard.id)))
+
+        assertFailsWith<ConflictException> { service.delete(venue.id, standard.id) }
+        assertEquals(1, service.list(venue.id).size)
     }
 }

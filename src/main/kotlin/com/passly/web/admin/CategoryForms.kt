@@ -12,6 +12,7 @@ class NewCategoryForm {
 
     var parentId: UUID? = null
     var stationId: UUID? = null
+    var taxRateId: UUID? = null
 }
 
 class EditCategoryForm {
@@ -23,6 +24,8 @@ class EditCategoryForm {
 
     var stationId: UUID? = null
 
+    var taxRateId: UUID? = null
+
     var version: Long? = null
 
     companion object {
@@ -30,6 +33,7 @@ class EditCategoryForm {
             name = category.name
             active = category.active
             stationId = category.stationId?.value
+            taxRateId = category.taxRateId?.value
             version = category.version
         }
     }

@@ -11,6 +11,7 @@ import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.priceLine
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
@@ -55,7 +56,7 @@ class StationServiceTest {
     @Test
     fun `a station used by a category is not deleted`() {
         val kitchen = station("Kitchen")
-        categories.saveAll(listOf(categories.loadTree(venue.id).add(venue.tenantId, "Food", stationId = kitchen.id)))
+        categories.saveAll(listOf(categories.loadTree(venue.id).add(venue.tenantId, "Food", stationId = kitchen.id, taxRateId = VenueTaxRateId.new())))
 
         assertFailsWith<ConflictException> { service.delete(venue.id, kitchen.id) }
         assertTrue(kitchen.id in stations.stored)
@@ -65,7 +66,7 @@ class StationServiceTest {
     fun `a station used by a menu item or an order line is not deleted`() {
         val bar = station("Bar")
         val pastry = station("Pastry")
-        val drinks = categories.loadTree(venue.id).add(venue.tenantId, "Drinks", stationId = bar.id).also { categories.saveAll(listOf(it)) }
+        val drinks = categories.loadTree(venue.id).add(venue.tenantId, "Drinks", stationId = bar.id, taxRateId = VenueTaxRateId.new()).also { categories.saveAll(listOf(it)) }
         val wine = items.loadCategoryItems(venue.id, drinks.id)
             .add(venue.tenantId, MenuItemDetails("Rioja", null, Money.of("4.50"), TaxRate.of("21"), bar.id))
             .also { items.saveAll(listOf(it)) }

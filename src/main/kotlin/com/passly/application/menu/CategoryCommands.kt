@@ -2,6 +2,7 @@ package com.passly.application.menu
 
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.StationId
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.VenueId
 
 data class CreateCategoryCommand(
@@ -9,6 +10,7 @@ data class CreateCategoryCommand(
     val name: String,
     val parentId: CategoryId? = null,
     val stationId: StationId? = null,
+    val taxRateId: VenueTaxRateId? = null,
 )
 
 data class UpdateCategoryCommand(
@@ -18,6 +20,7 @@ data class UpdateCategoryCommand(
     val stationId: StationId?,
     val active: Boolean,
     val expectedVersion: Long? = null,
+    val taxRateId: VenueTaxRateId? = null,
 )
 
 data class MoveCategoryCommand(

@@ -1,11 +1,13 @@
 package com.passly.web.admin
 
 import com.passly.application.menu.*
+import com.passly.application.tax.TaxRateService
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuTree
 import com.passly.domain.menu.StationId
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
@@ -24,6 +26,7 @@ import java.util.*
 class CategoryAdminController(
     private val categories: CategoryService,
     private val stations: StationService,
+    private val taxRates: TaxRateService,
     private val venues: AdminVenues,
 ) {
 
@@ -46,6 +49,7 @@ class CategoryAdminController(
                     form.name,
                     form.parentId?.let(::CategoryId),
                     form.stationId?.let(::StationId),
+                    form.taxRateId?.let(::VenueTaxRateId),
                 ),
             )
             flash.addFlashAttribute("message", "Category '${category.name}' added")
@@ -91,6 +95,7 @@ class CategoryAdminController(
                         stationId = form.stationId?.let(::StationId),
                         active = form.active,
                         expectedVersion = form.version,
+                        taxRateId = form.taxRateId?.let(::VenueTaxRateId),
                     ),
                 )
                 flash.addFlashAttribute("message", "Category '${category.name}' saved")
@@ -158,6 +163,10 @@ class CategoryAdminController(
         model.addAttribute("stations", venueStations.map { it.toOption() })
         model.addAttribute("topLevel", category.parentId == null)
         model.addAttribute("inheritedStation", venueStations.firstOrNull { it.id == inherited }?.name)
+        val venueTaxRates = taxRates.list(VenueId(venueId))
+        val inheritedTaxRate = category.parentId?.let { tree.effectiveTaxRate(it) }
+        model.addAttribute("taxRates", venueTaxRates.map { it.toOption() })
+        model.addAttribute("inheritedTaxRate", venueTaxRates.firstOrNull { it.id == inheritedTaxRate }?.optionLabel)
         model.addAttribute("categoryId", id)
         model.addAttribute("parentOptions", tree.parentOptionsFor(categoryId))
         model.addAttribute("currentParentId", tree[categoryId].parentId?.value)

@@ -1,6 +1,8 @@
 package com.passly.web.admin
 
 import com.passly.domain.menu.*
+import com.passly.domain.tax.VenueTaxRate
+import com.passly.domain.tax.VenueTaxRateId
 import java.util.*
 import kotlin.math.absoluteValue
 
@@ -11,6 +13,7 @@ data class MenuNodeView(
     val initial: String,
     val hue: Int,
     val station: String?,
+    val taxRate: String?,
     val active: Boolean,
     val subcategories: Int,
     val items: Int,
@@ -35,9 +38,11 @@ fun MenuTree.toNodeViews(
     openPath: Set<CategoryId>,
     itemCounts: Map<CategoryId, Int>,
     stations: List<Station>,
+    taxRates: List<VenueTaxRate>,
     itemsOf: (CategoryId) -> List<MenuItem>,
 ): List<MenuNodeView> {
     val names: Map<StationId, String> = stations.associate { it.id to it.name }
+    val rateLabels: Map<VenueTaxRateId, String> = taxRates.associate { it.id to it.optionLabel }
 
     fun dishCard(item: MenuItem) = MenuItemCardView(
         id = item.id.value,
@@ -60,6 +65,7 @@ fun MenuTree.toNodeViews(
             initial = initialOf(category.name),
             hue = hueOf(category.name),
             station = category.stationId?.let { names[it] },
+            taxRate = category.taxRateId?.let { rateLabels[it] },
             active = category.active,
             subcategories = children(category.id).size,
             items = itemCounts[category.id] ?: 0,

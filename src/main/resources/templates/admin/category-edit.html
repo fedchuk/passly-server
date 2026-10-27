@@ -34,6 +34,16 @@
         </label>
 
         <label>
+            Tax rate
+            <select th:field="*{taxRateId}" th:required="${topLevel}">
+                <option th:unless="${topLevel}" value=""
+                        th:text="${inheritedTaxRate != null} ? 'Same as the parent (' + ${inheritedTaxRate} + ')' : 'Same as the parent'">Same as the parent (Food and soft drinks · 10%)</option>
+                <option th:each="taxRate : ${taxRates}" th:value="${taxRate.id}" th:text="${taxRate.name}">Alcohol · 20%</option>
+            </select>
+            <small class="muted">VAT included in the prices. Dishes and subcategories use it unless they choose another rate.</small>
+        </label>
+
+        <label>
             <input type="checkbox" th:field="*{active}">
             Active (shown in the waiter app)
         </label>

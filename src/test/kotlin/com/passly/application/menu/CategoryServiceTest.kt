@@ -1,11 +1,17 @@
 package com.passly.application.menu
 
+import com.passly.application.tax.FakeTaxRateRepository
+import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.*
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
+import com.passly.domain.tax.VenueTaxRateId
+import com.passly.domain.venue.CountryCode
+import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
+import com.passly.domain.venue.VenueSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -21,7 +27,11 @@ class CategoryServiceTest {
     private val stations = FakeStationRepository(mapOf(kitchen to venue.id))
     private val items = FakeMenuItemRepository()
     private val menuChanges = FakeMenuChangeRecorder()
-    private val service = CategoryService(venues, categories, stations, items, menuChanges)
+    private val taxRates = FakeTaxRateRepository()
+    private val settings = FakeVenueSettingsRepository(
+        VenueSettings.fromStorage(venue.id, CountryCode.of("FR"), CurrencyCode.of("EUR"), version = 0),
+    )
+    private val service = CategoryService(venues, categories, stations, items, menuChanges, taxRates, settings)
 
     private fun root(name: String) = service.create(CreateCategoryCommand(venue.id, name, stationId = kitchen))
 
@@ -118,5 +128,45 @@ class CategoryServiceTest {
             service.update(UpdateCategoryCommand(venue.id, food.id, "Food", null, true))
         }
         assertEquals(kitchen, categories.stored.getValue(food.id).stationId)
+    }
+
+    @Test
+    fun `top-level category without a rate gets the first rate of the venue`() {
+        val food = root("Food")
+
+        val rates = taxRates.load(venue.id).rates
+        assertEquals("Food and soft drinks", rates.first().name)
+        assertEquals(rates.first().id, categories.stored.getValue(food.id).taxRateId)
+    }
+
+    @Test
+    fun `subcategory inherits the rate and can choose its own`() {
+        val drinks = root("Drinks")
+        val alcohol = taxRates.load(venue.id).rates.single { it.name == "Alcohol" }
+        val wine = service.create(CreateCategoryCommand(venue.id, "Wine", drinks.id, taxRateId = alcohol.id))
+        val juice = service.create(CreateCategoryCommand(venue.id, "Juice", drinks.id))
+
+        val tree = service.getTree(venue.id)
+        assertEquals(alcohol.id, tree.effectiveTaxRate(wine.id))
+        assertEquals(drinks.taxRateId, tree.effectiveTaxRate(juice.id))
+
+        service.update(UpdateCategoryCommand(venue.id, wine.id, "Wine", null, true))
+        assertEquals(null, categories.stored.getValue(wine.id).taxRateId)
+    }
+
+    @Test
+    fun `top-level category keeps its rate when the update does not name one`() {
+        val food = root("Food")
+
+        service.update(UpdateCategoryCommand(venue.id, food.id, "Food", kitchen, true))
+
+        assertEquals(food.taxRateId, categories.stored.getValue(food.id).taxRateId)
+    }
+
+    @Test
+    fun `a rate from another venue is treated as not found`() {
+        assertFailsWith<NotFoundException> {
+            service.create(CreateCategoryCommand(venue.id, "Food", stationId = kitchen, taxRateId = VenueTaxRateId.new()))
+        }
     }
 }

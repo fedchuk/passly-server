@@ -4,6 +4,7 @@ import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
 import com.passly.domain.common.ValidationException
+import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -115,7 +116,7 @@ class CategoryItemsTest {
         val kitchen = StationId.new()
         val grill = StationId.new()
         val tree = MenuTree(venue, emptyList())
-        val food = tree.add(tenant, "Food", stationId = kitchen)
+        val food = tree.add(tenant, "Food", stationId = kitchen, taxRateId = VenueTaxRateId.new())
         val mains = tree.add(tenant, "Mains", parentId = food.id)
         val mainsItems = CategoryItems(venue, mains.id, emptyList())
 

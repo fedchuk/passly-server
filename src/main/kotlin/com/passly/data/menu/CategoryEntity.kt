@@ -29,6 +29,9 @@ class CategoryEntity(
     @Column(name = "station_id")
     var stationId: UUID?,
 
+    @Column(name = "tax_rate_id")
+    var taxRateId: UUID?,
+
     @Column(name = "active", nullable = false)
     var active: Boolean,
 ) : BaseEntity(id)
