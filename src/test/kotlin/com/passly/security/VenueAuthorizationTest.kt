@@ -1,7 +1,6 @@
 package com.passly.security
 
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
 import com.passly.web.api.*
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,7 +39,7 @@ class VenueAuthorizationTest {
         stationUuid = jdbc.createStation(venue)
     }
 
-    private fun member(role: Role, at: TestVenue = venue) = jdbc.createMember(at, role)
+    private fun member(role: StaffRole, at: TestVenue = venue) = jdbc.createMember(at, role)
 
     private fun createCategory(userId: UUID) = mockMvc.post(categories) {
         with(asUser(userId))
@@ -63,7 +62,7 @@ class VenueAuthorizationTest {
 
     @Test
     fun `waiter reads the menu but cannot change it`() {
-        val waiter = member(Role.WAITER)
+        val waiter = member(StaffRole.WAITER)
 
         mockMvc.get(categories) { with(asUser(waiter)) }.andExpect { status { isOk() } }
         createCategory(waiter).andExpect { status { isForbidden() } }
@@ -71,8 +70,8 @@ class VenueAuthorizationTest {
 
     @Test
     fun `kitchen manages the stop list but cannot edit dishes`() {
-        val manager = member(Role.MANAGER)
-        val kitchen = member(Role.KITCHEN)
+        val manager = member(StaffRole.MANAGER)
+        val kitchen = member(StaffRole.KITCHEN)
         val wine = createdId(manager, categories, """{"name": "Wine", "stationId": "$stationUuid"}""")
         val rioja = createdId(
             manager,
@@ -96,14 +95,14 @@ class VenueAuthorizationTest {
 
     @Test
     fun `owner manages every venue of the business`() {
-        val owner = member(Role.OWNER)
+        val owner = member(StaffRole.OWNER)
 
         createCategory(owner).andExpect { status { isCreated() } }
     }
 
     @Test
     fun `nobody from another business gets in`() {
-        val competitorOwner = member(Role.OWNER, at = jdbc.createVenue())
+        val competitorOwner = member(StaffRole.OWNER, at = jdbc.createVenue())
 
         mockMvc.get(categories) { with(asUser(competitorOwner)) }.andExpect { status { isForbidden() } }
     }
@@ -115,9 +114,9 @@ class VenueAuthorizationTest {
 
     @Test
     fun `only the owner sees the staff`() {
-        val waiter = member(Role.WAITER)
-        val manager = member(Role.MANAGER)
-        val owner = member(Role.OWNER)
+        val waiter = member(StaffRole.WAITER)
+        val manager = member(StaffRole.MANAGER)
+        val owner = member(StaffRole.OWNER)
         val staff = "/api/v1/venues/${venue.venueId}/staff"
 
         mockMvc.get(staff) { with(asUser(waiter)) }.andExpect { status { isForbidden() } }

@@ -1,7 +1,7 @@
 package com.passly.web.api.menu
 
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createStation
 import com.passly.web.api.createVenue
@@ -38,7 +38,7 @@ class MenuItemControllerTest {
         val venue = jdbc.createVenue()
         venueId = venue.venueId
         stationId = jdbc.createStation(venue)
-        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
+        mockMvc = context.mockMvcAs(jdbc.createMember(venue, StaffRole.MANAGER))
     }
 
     @Test

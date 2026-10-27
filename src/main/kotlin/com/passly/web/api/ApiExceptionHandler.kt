@@ -26,6 +26,7 @@ class ApiExceptionHandler : ResponseEntityExceptionHandler() {
             is ConflictException -> HttpStatus.CONFLICT
             is ValidationException -> HttpStatus.BAD_REQUEST
             is UnauthorizedException -> HttpStatus.UNAUTHORIZED
+            is ForbiddenException -> HttpStatus.FORBIDDEN
             is UnavailableItemsException -> HttpStatus.CONFLICT
         }
         return forStatusAndDetail(status, e.message).apply {

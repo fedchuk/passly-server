@@ -2,6 +2,7 @@ package com.passly.application.venue
 
 import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.role.FakeRoleRepository
 import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
@@ -9,7 +10,7 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
+import com.passly.web.api.StaffRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -22,7 +23,8 @@ class OnboardingServiceTest {
     private val users = FakeUserRepository()
     private val stations = FakeStationRepository()
     private val taxRates = FakeTaxRateRepository()
-    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations, taxRates)
+    private val roles = FakeRoleRepository()
+    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations, taxRates, roles)
 
     private fun register(email: String = "max@bistro.es", business: String = "Bistro Group", venue: String = "Centro") =
         service.registerBusiness(
@@ -38,7 +40,7 @@ class OnboardingServiceTest {
         assertEquals("Centro", venue.name)
         assertEquals(business.tenantId, venue.tenantId)
         val owner = users.stored.getValue(business.ownerId)
-        assertEquals(Role.OWNER, owner.roleIn(venue))
+        assertTrue(owner.owns(venue.tenantId))
         assertEquals("hashed:password-1", owner.passwordHash)
     }
 
@@ -73,5 +75,12 @@ class OnboardingServiceTest {
         val rates = taxRates.load(business.venueId).rates
         assertEquals(listOf("Food and soft drinks", "Alcohol", "Reduced"), rates.map { it.name })
         assertEquals(listOf("10%", "20%", "5.5%"), rates.map { it.percentLabel })
+    }
+
+    @Test
+    fun `new venue starts with manager, waiter and kitchen roles`() {
+        val business = register()
+
+        assertEquals(listOf("Manager", "Waiter", "Kitchen"), roles.load(business.venueId).roles.map { it.name })
     }
 }

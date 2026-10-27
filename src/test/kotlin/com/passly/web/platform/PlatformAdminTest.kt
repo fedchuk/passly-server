@@ -6,7 +6,7 @@ import com.passly.application.platform.PlatformAdminService
 import com.passly.application.platform.RegisterPlatformAdminCommand
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.securedMockMvc
@@ -116,7 +116,7 @@ class PlatformAdminTest {
     @Test
     fun `venue owner cannot open the platform`() {
         val venue = jdbc.createVenue()
-        val ownerId = jdbc.createMember(venue, Role.OWNER)
+        val ownerId = jdbc.createMember(venue, StaffRole.OWNER)
 
         mockMvc.get("/platform") {
             with(user(userDetailsService.loadUserByUsername("$ownerId@test.passly")))

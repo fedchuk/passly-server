@@ -18,7 +18,6 @@ import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CountryCode
 import com.passly.domain.venue.CurrencyCode
@@ -75,7 +74,7 @@ class ForeignPaymentApiTest {
         venue = jdbc.createVenue()
         settings.update(UpdateVenueSettingsCommand(venueId, CountryCode.of("CH"), CurrencyCode.of("CHF")))
         settings.acceptCurrency(AcceptCurrencyCommand(venueId, CurrencyCode.of("EUR"), ExchangeRate.of("0.95")))
-        val waiterUuid = jdbc.createMember(venue, Role.WAITER)
+        val waiterUuid = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = context.mockMvcAs(waiterUuid)
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         val table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))

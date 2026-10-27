@@ -3,10 +3,10 @@ package com.passly.web.api.menu
 import com.passly.TestcontainersConfiguration
 import com.passly.application.venue.UpdateVenueSettingsCommand
 import com.passly.application.venue.VenueSettingsService
-import com.passly.domain.user.Role
 import com.passly.domain.venue.CountryCode
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.mockMvcAs
@@ -44,7 +44,7 @@ class MenuCurrencyTest {
     fun setUp() {
         val venue = jdbc.createVenue()
         venueUuid = venue.venueId
-        waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
     }
 
     @Test

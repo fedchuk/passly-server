@@ -1,73 +1,82 @@
 package com.passly.application.access
 
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.role.FakeRoleRepository
 import com.passly.application.user.FakeUserRepository
-import com.passly.domain.user.*
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueAccess
+import com.passly.domain.user.Email
+import com.passly.domain.user.Permission
+import com.passly.domain.user.User
+import com.passly.domain.user.UserId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class AccessServiceTest {
 
     private val tenant = TenantId.new()
     private val centro = Venue(VenueId.new(), tenant, "Centro")
+    private val playa = Venue(VenueId.new(), tenant, "Playa")
     private val competitor = Venue(VenueId.new(), TenantId.new(), "Competitor")
 
     private val users = FakeUserRepository()
-    private val playa = Venue(VenueId.new(), tenant, "Playa")
-    private val service = AccessService(users, FakeVenueRepository(centro, playa, competitor))
+    private val roles = FakeRoleRepository()
+    private val presets = roles.presetsOf(centro)
+    private val service = AccessService(users, FakeVenueRepository(centro, playa, competitor), roles)
 
-    private fun member(role: Role, venue: Venue = centro) =
-        User.create(Email.of("${role.name.lowercase()}@bistro.es"), role.name, "hash")
-            .apply { if (role == Role.OWNER) becomeOwnerOf(venue.tenantId) else joinVenue(venue, role) }
+    private fun member(preset: RolePreset) =
+        User.create(Email.of("${preset.name.lowercase()}@bistro.es"), preset.roleName, "hash")
+            .apply { joinVenue(centro, presets.getValue(preset)) }
+            .also(users::save)
+
+    private fun owner() =
+        User.create(Email.of("owner@bistro.es"), "Owner", "hash")
+            .apply { becomeOwnerOf(tenant) }
             .also(users::save)
 
     @Test
-    fun `waiter can only look at the menu`() {
-        val waiter = member(Role.WAITER)
+    fun `waiter sees the menu and takes orders but does not edit the menu`() {
+        val waiter = member(RolePreset.WAITER)
 
         assertTrue(service.isAllowed(waiter.id, centro.id, Permission.VIEW_MENU))
+        assertTrue(service.isAllowed(waiter.id, centro.id, Permission.TAKE_ORDERS))
         assertFalse(service.isAllowed(waiter.id, centro.id, Permission.EDIT_MENU))
         assertFalse(service.isAllowed(waiter.id, centro.id, Permission.MANAGE_STOP_LIST))
     }
 
     @Test
-    fun `kitchen can put dishes on the stop list but not edit them`() {
-        val kitchen = member(Role.KITCHEN)
+    fun `new permission of a role works at once`() {
+        val waiter = member(RolePreset.WAITER)
+        val list = roles.load(centro.id)
+        roles.saveAll(listOf(list.grant(presets.getValue(RolePreset.WAITER), setOf(Permission.MANAGE_STOP_LIST))))
 
-        assertTrue(service.isAllowed(kitchen.id, centro.id, Permission.MANAGE_STOP_LIST))
-        assertFalse(service.isAllowed(kitchen.id, centro.id, Permission.EDIT_MENU))
+        assertTrue(service.isAllowed(waiter.id, centro.id, Permission.MANAGE_STOP_LIST))
+        assertFalse(service.isAllowed(waiter.id, centro.id, Permission.TAKE_ORDERS))
     }
 
     @Test
-    fun `owner can do everything in their venue`() {
-        val owner = member(Role.OWNER)
+    fun `owner can do everything in their venues and only owners manage roles`() {
+        val owner = owner()
+        val manager = member(RolePreset.MANAGER)
 
         Permission.entries.forEach { assertTrue(service.isAllowed(owner.id, centro.id, it)) }
-    }
-
-    @Test
-    fun `manager can do everything except hiring and dismissing`() {
-        val manager = member(Role.MANAGER)
-
-        (Permission.entries - Permission.MANAGE_STAFF).forEach { assertTrue(service.isAllowed(manager.id, centro.id, it)) }
+        assertFalse(service.isAllowed(manager.id, centro.id, Permission.MANAGE_ROLES))
         assertFalse(service.isAllowed(manager.id, centro.id, Permission.MANAGE_STAFF))
     }
 
     @Test
     fun `nobody gets into another business`() {
-        val owner = member(Role.OWNER)
+        val owner = owner()
 
         assertFalse(service.isAllowed(owner.id, competitor.id, Permission.VIEW_MENU))
+        assertNull(service.accessTo(owner.id, competitor.id))
     }
 
     @Test
     fun `unknown user or venue is denied`() {
-        val manager = member(Role.MANAGER)
+        val manager = member(RolePreset.MANAGER)
 
         assertFalse(service.isAllowed(UserId.new(), centro.id, Permission.VIEW_MENU))
         assertFalse(service.isAllowed(manager.id, VenueId.new(), Permission.VIEW_MENU))
@@ -75,19 +84,21 @@ class AccessServiceTest {
 
     @Test
     fun `owner sees every venue of the business sorted by name`() {
-        val owner = member(Role.OWNER)
+        val owner = owner()
 
         val venues = service.venuesOf(owner.id)
 
         assertEquals(listOf("Centro", "Playa"), venues.map { it.name })
-        assertTrue(venues.all { it.role == Role.OWNER })
+        assertTrue(venues.all { it.access == VenueAccess.OWNER })
     }
 
     @Test
-    fun `staff member sees only the venues they work at`() {
-        val waiter = member(Role.WAITER)
+    fun `staff member sees only the venues they work at with the name of the role`() {
+        val waiter = member(RolePreset.WAITER)
 
-        assertEquals(listOf(AccessibleVenue(centro.id, "Centro", Role.WAITER)), service.venuesOf(waiter.id))
+        val venues = service.venuesOf(waiter.id)
+
+        assertEquals(listOf("Centro" to "Waiter"), venues.map { it.name to it.access.roleName })
     }
 
     @Test

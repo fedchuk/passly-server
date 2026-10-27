@@ -13,7 +13,6 @@ import com.passly.domain.menu.Category
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.tax.VenueTaxRate
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -72,7 +71,7 @@ class MenuItemTaxRateTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, Role.MANAGER)}@test.passly"))
+        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, StaffRole.MANAGER)}@test.passly"))
         drinks = categories.create(
             CreateCategoryCommand(
                 venueId,
@@ -139,7 +138,7 @@ class MenuItemTaxRateTest {
     fun `waiter menu gives every dish the rate it is sold with`() {
         dish(wine, "Rioja")
         dish(wine, "Alcohol-free red", food)
-        val waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        val waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
 
         waiter.get("/api/v1/venues/${venue.venueId}/menu").andExpect {
             status { isOk() }
@@ -151,7 +150,7 @@ class MenuItemTaxRateTest {
     @Test
     fun `new percent of a rate reaches the waiter menu`() {
         dish(wine, "Rioja")
-        val waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        val waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
         val etag = waiter.get("/api/v1/venues/${venue.venueId}/menu").andReturn().response.getHeader("ETag")!!
 
         taxRates.change(ChangeTaxRateCommand(venueId, alcohol.id, "Alcohol", TaxRate.of("21")))
@@ -164,7 +163,7 @@ class MenuItemTaxRateTest {
 
     @Test
     fun `api stores the own rate of a dish and reports the effective one`() {
-        val owner = context.mockMvcAs(jdbc.createMember(venue, Role.OWNER))
+        val owner = context.mockMvcAs(jdbc.createMember(venue, StaffRole.OWNER))
         val items = "/api/v1/venues/${venue.venueId}/categories/${wine.id}/items"
 
         owner.post(items) {

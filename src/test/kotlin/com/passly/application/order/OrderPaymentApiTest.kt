@@ -15,7 +15,6 @@ import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
@@ -70,7 +69,7 @@ class OrderPaymentApiTest {
     @BeforeEach
     fun setUp() {
         venue = jdbc.createVenue()
-        waiterUuid = jdbc.createMember(venue, Role.WAITER)
+        waiterUuid = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = context.mockMvcAs(waiterUuid)
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         tableUuid = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4)).id.value
@@ -183,7 +182,7 @@ class OrderPaymentApiTest {
 
     @Test
     fun `kitchen cannot take payments`() {
-        val cook = context.mockMvcAs(jdbc.createMember(venue, Role.KITCHEN))
+        val cook = context.mockMvcAs(jdbc.createMember(venue, StaffRole.KITCHEN))
 
         pay(UUID.randomUUID().toString(), "CASH", "1.00", cook).andExpect { status { isForbidden() } }
     }

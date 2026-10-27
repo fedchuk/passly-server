@@ -1,98 +1,85 @@
 package com.passly.application.venue
 
-import com.passly.application.floor.FakeFloorPlanRepository
-import com.passly.application.menu.FakeMenuChangeRecorder
+import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
-import com.passly.application.menu.MenuChangeKind
-import com.passly.application.order.FakeOrderRepository
+import com.passly.application.role.FakeRoleRepository
+import com.passly.application.tax.FakeTaxRateRepository
+import com.passly.application.user.FakePasswordHasher
+import com.passly.application.user.FakeUserRepository
 import com.passly.domain.common.ConflictException
-import com.passly.domain.order.Order
-import com.passly.domain.user.UserId
-import com.passly.domain.venue.*
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
-import kotlin.test.*
+import com.passly.domain.common.ValidationException
+import com.passly.domain.user.Email
+import com.passly.domain.user.RawPassword
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class VenueSettingsServiceTest {
 
-    private val venue = Venue(VenueId.new(), TenantId.new(), "Bistro")
-    private val venues = FakeVenueRepository(venue)
-    private val settings = FakeVenueSettingsRepository(
-        VenueSettings.fromStorage(venue.id, CountryCode.of("FR"), CurrencyCode.of("EUR"), version = 3),
-    )
-    private val orders = FakeOrderRepository()
-    private val menuChanges = FakeMenuChangeRecorder()
-    private val now = Instant.parse("2026-10-26T20:00:00Z")
-    private val service = VenueSettingsService(venues, settings, orders, menuChanges, Clock.fixed(now, ZoneOffset.UTC))
+    private val tenants = FakeTenantRepository()
+    private val venues = FakeVenueRepository()
+    private val users = FakeUserRepository()
+    private val stations = FakeStationRepository()
+    private val taxRates = FakeTaxRateRepository()
+    private val roles = FakeRoleRepository()
+    private val service = OnboardingService(tenants, venues, users, FakePasswordHasher(), stations, taxRates, roles)
 
-    private fun update(country: String, currency: String, version: Long? = null) = service.update(
-        UpdateVenueSettingsCommand(venue.id, CountryCode.of(country), CurrencyCode.of(currency), version),
-    )
+    private fun register(email: String = "max@bistro.es", business: String = "Bistro Group", venue: String = "Centro") =
+        service.registerBusiness(
+            RegisterBusinessCommand(business, venue, Email.of(email), "Max", RawPassword.of("password-1")),
+        )
 
-    private fun openAnOrder() {
-        val floors = FakeFloorPlanRepository()
-        val plan = floors.load(venue.id)
-        val hall = plan.addArea(venue.tenantId, "Hall")
-        val table = plan.addTable(venue.tenantId, hall.id, "7", 4)
-        orders.save(Order.open(table, guests = 2, openedBy = UserId.new(), openedAt = Instant.parse("2026-10-26T19:00:00Z")))
+    @Test
+    fun `new business gets a venue and an owner`() {
+        val business = register()
+
+        assertEquals("Bistro Group", tenants.stored.getValue(business.tenantId).name)
+        val venue = venues.findById(business.venueId)!!
+        assertEquals("Centro", venue.name)
+        assertEquals(business.tenantId, venue.tenantId)
+        val owner = users.stored.getValue(business.ownerId)
+        assertTrue(owner.owns(venue.tenantId))
+        assertEquals("hashed:password-1", owner.passwordHash)
     }
 
     @Test
-    fun `country and currency are saved and the menu learns the new currency`() {
-        val saved = update("CH", "CHF", version = 3)
+    fun `owner email must be free`() {
+        register()
 
-        assertEquals("CH", saved.country.value)
-        assertEquals("CHF", saved.currency.value)
-        assertEquals(4, saved.version)
-        assertEquals(listOf(venue.id to MenuChangeKind.CURRENCY), menuChanges.recorded)
-        assertEquals(1, venues.locks)
+        assertFailsWith<ConflictException> { register(business = "Another group") }
+        assertEquals(1, tenants.stored.size)
     }
 
     @Test
-    fun `country alone does not touch the menu`() {
-        update("BE", "EUR")
+    fun `names are validated before anything is saved`() {
+        assertFailsWith<ValidationException> { register(business = "  ") }
+        assertFailsWith<ValidationException> { register(venue = "") }
 
-        assertEquals("BE", service.get(venue.id).country.value)
-        assertTrue(menuChanges.recorded.isEmpty())
+        assertTrue(tenants.stored.isEmpty())
+        assertTrue(users.stored.isEmpty())
     }
 
     @Test
-    fun `currency is fixed once the venue has an order`() {
-        openAnOrder()
+    fun `new venue gets a kitchen and a bar to route orders`() {
+        val business = register()
 
-        assertTrue(service.currencyLocked(venue.id))
-        assertFailsWith<ConflictException> { update("CH", "CHF") }
-        assertEquals("EUR", service.get(venue.id).currency.value)
+        assertEquals(listOf("Kitchen", "Bar"), stations.findAllInVenue(business.venueId).map { it.name })
     }
 
     @Test
-    fun `stale form is refused`() {
-        assertFailsWith<ConflictException> { update("CH", "CHF", version = 2) }
-        assertFalse(service.currencyLocked(venue.id))
+    fun `new venue starts with the usual french tax rates`() {
+        val business = register()
+
+        val rates = taxRates.load(business.venueId).rates
+        assertEquals(listOf("Food and soft drinks", "Alcohol", "Reduced"), rates.map { it.name })
+        assertEquals(listOf("10%", "20%", "5.5%"), rates.map { it.percentLabel })
     }
 
     @Test
-    fun `accepted currency is stored with the time of its rate`() {
-        update("CH", "CHF")
+    fun `new venue starts with manager, waiter and kitchen roles`() {
+        val business = register()
 
-        service.acceptCurrency(AcceptCurrencyCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.95")))
-
-        val accepted = service.get(venue.id).accepted(CurrencyCode.of("EUR"))
-        assertEquals(ExchangeRate.of("0.95"), accepted.rate)
-        assertEquals(now, accepted.rateSetAt)
-        assertEquals(1, menuChanges.recorded.size)
-    }
-
-    @Test
-    fun `rate changes and the currency can be removed`() {
-        update("CH", "CHF")
-        service.acceptCurrency(AcceptCurrencyCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.95")))
-
-        service.changeRate(ChangeRateCommand(venue.id, CurrencyCode.of("EUR"), ExchangeRate.of("0.93")))
-        assertEquals(ExchangeRate.of("0.93"), service.get(venue.id).accepted(CurrencyCode.of("EUR")).rate)
-
-        service.stopAccepting(venue.id, CurrencyCode.of("EUR"))
-        assertTrue(service.get(venue.id).acceptedCurrencies.isEmpty())
+        assertEquals(listOf("Manager", "Waiter", "Kitchen"), roles.load(business.venueId).roles.map { it.name })
     }
 }

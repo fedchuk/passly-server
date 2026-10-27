@@ -16,7 +16,6 @@ import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.OrderLineRequest
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
@@ -74,7 +73,7 @@ class ServiceFloorTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        waiterId = jdbc.createMember(venue, Role.WAITER)
+        waiterId = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = user(userDetailsService.loadUserByUsername("$waiterId@test.passly"))
         val terrace = floors.createArea(CreateAreaCommand(venueId, "Terrace"))
         seven = floors.createTable(CreateTableCommand(venueId, terrace.id, "7", 4))

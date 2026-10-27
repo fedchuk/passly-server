@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Roles', ${venue}, 'roles', ~{::main})}">
+<body>
+<main>
+    <div class="page-header">
+        <div>
+            <h1>Roles</h1>
+            <p class="subtitle">Tick what each role may do in this venue. Owners of the business can do everything.</p>
+        </div>
+        <details class="add-category">
+            <summary role="button">+ Add role</summary>
+            <form class="add-category-form" th:action="@{/admin/venues/{v}/roles(v=${venue.id})}" method="post">
+                <label>
+                    Name
+                    <input name="name" placeholder="Bartender" required maxlength="60">
+                </label>
+                <label>
+                    Start from
+                    <select name="copyOf">
+                        <option value="">Nothing ticked</option>
+                        <option th:each="role : ${roles}" th:value="${role.id}" th:text="|Same as ${role.name}|">Same as Waiter</option>
+                    </select>
+                </label>
+                <button type="submit" class="wide">Add role</button>
+            </form>
+        </details>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Permissions saved</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
+    <form id="role-permissions" th:action="@{/admin/venues/{v}/roles/permissions(v=${venue.id})}" method="post">
+        <input type="hidden" name="roles" th:each="role : ${roles}" th:value="|${role.id}:${role.version}|">
+    </form>
+
+    <div class="card role-matrix-card">
+        <div class="overflow-auto">
+            <table class="role-matrix">
+                <thead>
+                <tr>
+                    <th scope="col">Permission</th>
+                    <th scope="col" class="role-column">
+                        <span class="role-name">Owner</span>
+                        <small>Everything</small>
+                    </th>
+                    <th scope="col" class="role-column" th:each="role : ${roles}">
+                        <span class="role-name" th:text="${role.name}">Waiter</span>
+                        <small th:text="${role.membersLabel}">2 people</small>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="permission : ${permissions}">
+                    <th scope="row">
+                        <span class="permission-name" th:text="${permission.label}">Take orders</span>
+                        <small class="muted" th:text="${permission.hint}">Open tables and send rounds</small>
+                    </th>
+                    <td class="role-cell">
+                        <input type="checkbox" checked disabled th:attr="aria-label=|Owner: ${permission.label}|">
+                    </td>
+                    <td class="role-cell" th:each="role : ${roles}">
+                        <input type="checkbox" form="role-permissions" name="grants"
+                               th:value="|${role.id}:${permission.name}|"
+                               th:checked="${role.permissions.contains(permission.name)}"
+                               th:attr="aria-label=|${role.name}: ${permission.label}|">
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td class="role-cell" th:each="role : ${roles}">
+                        <details class="role-rename">
+                            <summary title="Rename role">Rename</summary>
+                            <form th:action="@{/admin/venues/{v}/roles/{r}/rename(v=${venue.id}, r=${role.id})}" method="post">
+                                <input name="name" th:value="${role.name}" required maxlength="60" aria-label="Role name">
+                                <button type="submit">Save</button>
+                            </form>
+                        </details>
+                        <form th:action="@{/admin/venues/{v}/roles/{r}/delete(v=${venue.id}, r=${role.id})}" method="post"
+                              onsubmit="return confirm('Delete this role?')">
+                            <button type="submit" class="outline contrast icon-button" title="Delete role" aria-label="Delete role">✕</button>
+                        </form>
+                    </td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="role-matrix-footer">
+        <p class="muted">Everyone sees the menu. Only owners manage roles. Changes apply at once, without logging out.</p>
+        <button type="submit" form="role-permissions" th:disabled="${roles.isEmpty()}">Save permissions</button>
+    </div>
+</main>
+</body>
+</html>

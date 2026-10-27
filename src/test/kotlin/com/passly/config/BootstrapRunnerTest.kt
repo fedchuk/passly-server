@@ -2,6 +2,7 @@ package com.passly.config
 
 import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.role.FakeRoleRepository
 import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.user.FakePasswordHasher
 import com.passly.application.user.FakeUserRepository
@@ -23,6 +24,7 @@ class BootstrapRunnerTest {
         FakePasswordHasher(),
         FakeStationRepository(),
         FakeTaxRateRepository(),
+        FakeRoleRepository(),
     )
 
     private fun runner(email: String) = BootstrapRunner(

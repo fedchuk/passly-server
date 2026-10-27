@@ -18,7 +18,6 @@ import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.ExchangeRate
@@ -83,7 +82,7 @@ class ServiceForeignPaymentTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        val waiterId = jdbc.createMember(venue, Role.WAITER)
+        val waiterId = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = user(userDetailsService.loadUserByUsername("$waiterId@test.passly"))
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))

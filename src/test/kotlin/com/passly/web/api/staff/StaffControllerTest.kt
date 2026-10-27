@@ -1,10 +1,8 @@
 package com.passly.web.api.staff
 
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
-import com.passly.web.api.createMember
-import com.passly.web.api.createVenue
-import com.passly.web.api.mockMvcAs
+import com.passly.domain.role.RolePreset
+import com.passly.web.api.*
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -28,22 +26,23 @@ class StaffControllerTest {
 
     lateinit var mockMvc: MockMvc
     lateinit var managerMockMvc: MockMvc
+    lateinit var venue: TestVenue
 
-    private lateinit var venueId: UUID
-    private val base get() = "/api/v1/venues/$venueId/staff"
+    private val base get() = "/api/v1/venues/${venue.venueId}/staff"
     private val email = "lucia-${UUID.randomUUID().toString().take(8)}@bistro.es"
 
     @BeforeEach
     fun createVenueWithOwner() {
-        val venue = jdbc.createVenue()
-        venueId = venue.venueId
-        managerMockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
-        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.OWNER))
+        venue = jdbc.createVenue()
+        managerMockMvc = context.mockMvcAs(jdbc.createMember(venue, StaffRole.MANAGER))
+        mockMvc = context.mockMvcAs(jdbc.createMember(venue, StaffRole.OWNER))
     }
 
-    private fun hire(role: String = "WAITER") = mockMvc.post(base) {
+    private fun role(preset: RolePreset) = jdbc.roleId(venue, preset)
+
+    private fun hire(roleId: UUID = role(RolePreset.WAITER), client: MockMvc = mockMvc) = client.post(base) {
         contentType = MediaType.APPLICATION_JSON
-        content = """{"email": "$email", "displayName": "Lucia", "password": "password-1", "role": "$role"}"""
+        content = """{"email": "$email", "displayName": "Lucia", "password": "password-1", "roleId": "$roleId"}"""
     }
 
     private fun hiredId(): String =
@@ -55,12 +54,13 @@ class StaffControllerTest {
         hire().andExpect {
             status { isCreated() }
             header { exists("Location") }
-            jsonPath("$.role") { value("WAITER") }
+            jsonPath("$.roleId") { value(role(RolePreset.WAITER).toString()) }
+            jsonPath("$.roleName") { value("Waiter") }
         }
 
         mockMvc.get(base).andExpect {
             status { isOk() }
-            jsonPath("$[?(@.displayName == 'Lucia')].role") { value("WAITER") }
+            jsonPath("$[?(@.displayName == 'Lucia')].roleName") { value("Waiter") }
         }
     }
 
@@ -75,11 +75,10 @@ class StaffControllerTest {
     }
 
     @Test
-    fun `owner cannot be hired for one venue`() {
-        hire("OWNER").andExpect {
-            status { isBadRequest() }
-            jsonPath("$.detail") { exists() }
-        }
+    fun `role of another venue is not found`() {
+        val other = jdbc.createVenue()
+
+        hire(jdbc.roleId(other, RolePreset.WAITER)).andExpect { status { isNotFound() } }
     }
 
     @Test
@@ -95,10 +94,10 @@ class StaffControllerTest {
 
         mockMvc.put("$base/$lucia/role") {
             contentType = MediaType.APPLICATION_JSON
-            content = """{"role": "KITCHEN"}"""
+            content = """{"roleId": "${role(RolePreset.KITCHEN)}"}"""
         }.andExpect {
             status { isOk() }
-            jsonPath("$.role") { value("KITCHEN") }
+            jsonPath("$.roleName") { value("Kitchen") }
         }
 
         mockMvc.delete("$base/$lucia").andExpect { status { isNoContent() } }
@@ -109,10 +108,18 @@ class StaffControllerTest {
     fun `manager cannot see or hire the staff`() {
         managerMockMvc.get(base).andExpect { status { isForbidden() } }
 
-        managerMockMvc.post(base) {
-            contentType = MediaType.APPLICATION_JSON
-            content = """{"email": "$email", "displayName": "Lucia", "password": "password-1", "role": "WAITER"}"""
-        }.andExpect { status { isForbidden() } }
+        hire(client = managerMockMvc).andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `nobody gives a role that allows more than their own`() {
+        jdbc.sql("insert into venue_role_permission (role_id, permission) values (?, 'MANAGE_STAFF')")
+            .params(role(RolePreset.WAITER))
+            .update()
+        val headWaiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
+
+        hire(role(RolePreset.MANAGER), headWaiter).andExpect { status { isForbidden() } }
+        hire(role(RolePreset.WAITER), headWaiter).andExpect { status { isCreated() } }
     }
 }
 

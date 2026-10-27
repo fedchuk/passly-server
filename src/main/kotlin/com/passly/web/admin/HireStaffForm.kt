@@ -1,8 +1,9 @@
 package com.passly.web.admin
 
-import com.passly.domain.user.Role
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import java.util.*
 
 class HireStaffForm {
     @NotBlank(message = "Email must not be blank")
@@ -16,7 +17,8 @@ class HireStaffForm {
     @NotBlank(message = "Password must not be blank")
     var password: String = ""
 
-    var role: Role = Role.WAITER
+    @NotNull(message = "Choose a role")
+    var roleId: UUID? = null
 
-    override fun toString() = "HireStaffForm(email=$email, displayName=$displayName, password=***, role=$role)"
+    override fun toString() = "HireStaffForm(email=$email, displayName=$displayName, password=***, roleId=$roleId)"
 }

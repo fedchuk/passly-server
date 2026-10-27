@@ -1,8 +1,8 @@
 package com.passly.web
 
+import com.passly.web.api.StaffRole
 import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -49,18 +49,18 @@ class WorkspaceTest {
 
     private fun loggedIn(userId: UUID) = user(userDetailsService.loadUserByUsername("$userId@test.passly"))
 
-    private fun member(role: Role, at: TestVenue = venue) = loggedIn(jdbc.createMember(at, role))
+    private fun member(role: StaffRole, at: TestVenue = venue) = loggedIn(jdbc.createMember(at, role))
 
     @Test
     fun `venue card leads every role to its workspace`() {
-        mockMvc.get("/admin") { with(member(Role.MANAGER)) }.andExpect { content { string(containsString(backOffice)) } }
-        mockMvc.get("/admin") { with(member(Role.WAITER)) }.andExpect { content { string(containsString(service)) } }
-        mockMvc.get("/admin") { with(member(Role.KITCHEN)) }.andExpect { content { string(containsString(kitchen)) } }
+        mockMvc.get("/admin") { with(member(StaffRole.MANAGER)) }.andExpect { content { string(containsString(backOffice)) } }
+        mockMvc.get("/admin") { with(member(StaffRole.WAITER)) }.andExpect { content { string(containsString(service)) } }
+        mockMvc.get("/admin") { with(member(StaffRole.KITCHEN)) }.andExpect { content { string(containsString(kitchen)) } }
     }
 
     @Test
     fun `waiter works on the floor only`() {
-        val waiter = member(Role.WAITER)
+        val waiter = member(StaffRole.WAITER)
 
         mockMvc.get(service) { with(waiter) }.andExpect {
             status { isOk() }
@@ -73,7 +73,7 @@ class WorkspaceTest {
 
     @Test
     fun `kitchen works on the board only`() {
-        val cook = member(Role.KITCHEN)
+        val cook = member(StaffRole.KITCHEN)
 
         mockMvc.get(kitchen) { with(cook) }.andExpect {
             status { isOk() }
@@ -85,7 +85,7 @@ class WorkspaceTest {
 
     @Test
     fun `manager moves between the back office and both workspaces`() {
-        val manager = member(Role.MANAGER)
+        val manager = member(StaffRole.MANAGER)
 
         mockMvc.get(backOffice) { with(manager) }.andExpect {
             content { string(containsString(service)) }
@@ -100,7 +100,7 @@ class WorkspaceTest {
 
     @Test
     fun `staff of another venue cannot open the workspace`() {
-        val stranger = member(Role.WAITER, at = jdbc.createVenue())
+        val stranger = member(StaffRole.WAITER, at = jdbc.createVenue())
 
         mockMvc.get(service) { with(stranger) }.andExpect { status { isForbidden() } }
     }

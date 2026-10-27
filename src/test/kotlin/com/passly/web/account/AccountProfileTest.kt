@@ -1,8 +1,8 @@
 package com.passly.web.account
 
+import com.passly.web.api.StaffRole
 import org.springframework.security.core.context.SecurityContext
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.user.UserRepository
 import com.passly.security.PasslyUserPrincipal
@@ -51,7 +51,7 @@ class AccountProfileTest {
     @BeforeEach
     fun setUp() {
         mockMvc = context.securedMockMvc()
-        managerId = jdbc.createMember(jdbc.createVenue(), Role.MANAGER)
+        managerId = jdbc.createMember(jdbc.createVenue(), StaffRole.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
     }
 

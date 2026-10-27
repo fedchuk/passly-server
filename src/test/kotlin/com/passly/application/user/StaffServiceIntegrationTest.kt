@@ -2,19 +2,23 @@ package com.passly.application.user
 
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.common.ConflictException
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.user.Email
 import com.passly.domain.user.PasswordHasher
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserRepository
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.TestVenue
+import com.passly.web.api.createVenue
+import com.passly.web.api.roleId
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.simple.JdbcClient
-import java.util.UUID
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,43 +40,42 @@ class StaffServiceIntegrationTest {
     @Autowired
     lateinit var jdbc: JdbcClient
 
-    private val venueId = VenueId(UUID.randomUUID())
+    lateinit var venue: TestVenue
+    private val venueId get() = VenueId(venue.venueId)
     private val unique = UUID.randomUUID().toString().take(8)
 
     @BeforeEach
     fun createVenue() {
-        val tenantId = UUID.randomUUID()
-        jdbc.sql("insert into tenant (id, name) values (?, ?)").params(tenantId, "Test tenant").update()
-        jdbc.sql("insert into venue (id, tenant_id, name) values (?, ?, ?)")
-            .params(venueId.value, tenantId, "Test venue")
-            .update()
+        venue = jdbc.createVenue()
     }
 
     private fun email(name: String) = Email.of("$name-$unique@bistro.es")
 
-    private fun hire(name: String, role: Role = Role.WAITER) =
-        service.hire(HireStaffCommand(venueId, email(name), name, RawPassword.of("password-1"), role))
+    private fun role(preset: RolePreset) = VenueRoleId(jdbc.roleId(venue, preset))
+
+    private fun hire(name: String, preset: RolePreset = RolePreset.WAITER) =
+        service.hire(HireStaffCommand(venueId, email(name), name, RawPassword.of("password-1"), role(preset)))
 
     @Test
     fun `hired staff member survives a round trip with a real password hash`() {
-        val anna = hire("Anna", Role.MANAGER)
+        val anna = hire("Anna", RolePreset.MANAGER)
 
-        val stored = users.findById(anna.id)!!
+        val stored = users.findById(anna.userId)!!
 
         assertEquals(anna.email, stored.email)
         assertTrue(stored.passwordHash.startsWith("{"))
         assertTrue(passwordHasher.matches("password-1", stored.passwordHash))
-        assertEquals(listOf(Role.MANAGER), service.list(venueId).map { it.role })
+        assertEquals(listOf("Manager"), service.list(venueId).map { it.roleName })
     }
 
     @Test
     fun `changing a role is persisted and bumps the version`() {
         val anna = hire("Anna")
 
-        service.changeRole(ChangeStaffRoleCommand(venueId, anna.id, Role.KITCHEN))
+        service.changeRole(ChangeStaffRoleCommand(venueId, anna.userId, role(RolePreset.KITCHEN)))
 
-        val stored = users.findById(anna.id)!!
-        assertEquals(listOf(Role.KITCHEN), stored.memberships.map { it.role })
+        val stored = users.findById(anna.userId)!!
+        assertEquals(listOf(role(RolePreset.KITCHEN)), stored.memberships.map { it.roleId })
         assertEquals(1L, stored.version)
     }
 

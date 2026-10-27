@@ -5,7 +5,6 @@ import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.StationId
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -57,7 +56,7 @@ class CategoryAdminTest {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
         kitchenUuid = jdbc.createStation(venue)
-        val managerId = jdbc.createMember(venue, Role.MANAGER)
+        val managerId = jdbc.createMember(venue, StaffRole.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
     }
 

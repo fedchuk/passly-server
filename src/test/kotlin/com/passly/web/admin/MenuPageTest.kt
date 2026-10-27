@@ -10,7 +10,6 @@ import com.passly.domain.menu.Category
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -72,7 +71,7 @@ class MenuPageTest {
         steak = dish(meat, "Entrecôte", "28.00")
         dish(meat, "Magret de canard", "24.00")
         items.changeAvailability(venueId, steak.id, false)
-        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, Role.MANAGER)}@test.passly"))
+        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, StaffRole.MANAGER)}@test.passly"))
     }
 
     private fun dish(category: Category, name: String, price: String) =
@@ -179,7 +178,7 @@ class MenuPageTest {
     @Test
     fun `empty menu has nothing to open`() {
         val empty = jdbc.createVenue()
-        val owner = user(userDetailsService.loadUserByUsername("${jdbc.createMember(empty, Role.MANAGER)}@test.passly"))
+        val owner = user(userDetailsService.loadUserByUsername("${jdbc.createMember(empty, StaffRole.MANAGER)}@test.passly"))
 
         val model = mockMvc.get("/admin/venues/${empty.venueId}") { with(owner) }
             .andExpect { status { isOk() } }.andReturn().modelAndView!!.model

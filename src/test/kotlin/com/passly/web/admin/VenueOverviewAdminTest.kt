@@ -11,7 +11,6 @@ import com.passly.application.venue.VenueOverviewQuery
 import com.passly.domain.common.Money
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -62,7 +61,7 @@ class VenueOverviewAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        managerId = jdbc.createMember(venue, Role.MANAGER)
+        managerId = jdbc.createMember(venue, StaffRole.MANAGER)
     }
 
     private fun loggedIn(userId: UUID) = user(userDetailsService.loadUserByUsername("$userId@test.passly"))
@@ -86,10 +85,10 @@ class VenueOverviewAdminTest {
         addItem("Beer", "Estrella")
         val rioja = items.listInCategory(venueId, categories.getTree(venueId).categories.single { it.name == "Wine" }.id).first()
         items.changeAvailability(venueId, rioja.id, false)
-        jdbc.createMember(venue, Role.WAITER)
+        jdbc.createMember(venue, StaffRole.WAITER)
 
         val other = jdbc.createVenue()
-        jdbc.createMember(other, Role.WAITER)
+        jdbc.createMember(other, StaffRole.WAITER)
 
         assertEquals(
             VenueOverview(categories = 2, items = 3, stopListed = 1, modifierGroups = 0, staff = 2),
@@ -110,7 +109,7 @@ class VenueOverviewAdminTest {
 
     @Test
     fun `owner sees the link to the staff`() {
-        val ownerId = jdbc.createMember(venue, Role.OWNER)
+        val ownerId = jdbc.createMember(venue, StaffRole.OWNER)
 
         mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(loggedIn(ownerId)) }.andExpect {
             status { isOk() }
@@ -120,7 +119,7 @@ class VenueOverviewAdminTest {
 
     @Test
     fun `waiter cannot open the overview`() {
-        val waiterId = jdbc.createMember(venue, Role.WAITER)
+        val waiterId = jdbc.createMember(venue, StaffRole.WAITER)
 
         mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(loggedIn(waiterId)) }.andExpect {
             status { isForbidden() }

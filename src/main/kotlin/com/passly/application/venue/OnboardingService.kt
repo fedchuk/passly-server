@@ -3,6 +3,8 @@ package com.passly.application.venue
 import com.passly.domain.common.ConflictException
 import com.passly.domain.menu.StationList
 import com.passly.domain.menu.StationRepository
+import com.passly.domain.role.RoleList
+import com.passly.domain.role.RoleRepository
 import com.passly.domain.tax.TaxRateList
 import com.passly.domain.tax.TaxRatePreset
 import com.passly.domain.tax.TaxRateRepository
@@ -22,6 +24,7 @@ class OnboardingService(
     private val passwordHasher: PasswordHasher,
     private val stations: StationRepository,
     private val taxRates: TaxRateRepository,
+    private val roles: RoleRepository,
 ) {
 
     fun registerBusiness(command: RegisterBusinessCommand): RegisteredBusiness {
@@ -40,10 +43,13 @@ class OnboardingService(
         val defaultTaxRates = TaxRateList(venue.id, emptyList())
             .addMissing(tenant.id, TaxRatePreset.forCountry(CountryCode.FRANCE))
 
+        val defaultRoles = RoleList(venue.id, emptyList()).addPresets(tenant.id)
+
         tenants.save(tenant)
         venues.save(venue)
         stations.saveAll(defaultStations)
         taxRates.saveAll(defaultTaxRates)
+        roles.saveAll(defaultRoles)
         users.save(owner)
         return RegisteredBusiness(tenant.id, venue.id, owner.id)
     }

@@ -1,5 +1,6 @@
 package com.passly.web.admin
 
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createStation
 import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
@@ -8,7 +9,6 @@ import com.passly.domain.common.Money
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.ModifierDraft
 import com.passly.domain.menu.ModifierGroup
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
@@ -65,7 +65,7 @@ class ModifierGroupAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        val managerId = jdbc.createMember(venue, Role.MANAGER)
+        val managerId = jdbc.createMember(venue, StaffRole.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
     }
 

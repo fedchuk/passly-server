@@ -1,23 +1,24 @@
 package com.passly.web.admin
 
 import com.passly.application.user.StaffMember
-import com.passly.domain.user.Role
 import java.util.*
 
 data class StaffRowView(
     val userId: UUID,
     val name: String,
     val email: String,
-    val role: Role,
+    val roleId: UUID,
+    val roleName: String,
     val you: Boolean,
+    val changeable: Boolean,
 )
 
-val ASSIGNABLE_ROLES = listOf(Role.MANAGER, Role.WAITER, Role.KITCHEN)
-
-fun StaffMember.toRowView(currentUserId: UUID) = StaffRowView(
+fun StaffMember.toRowView(currentUserId: UUID, assignableRoleIds: Set<UUID>) = StaffRowView(
     userId = userId.value,
     name = displayName,
     email = email.value,
-    role = role,
+    roleId = roleId.value,
+    roleName = roleName,
     you = userId.value == currentUserId,
+    changeable = userId.value != currentUserId && roleId.value in assignableRoleIds,
 )

@@ -2424,3 +2424,89 @@ form.tax-rate-form button {
     background: var(--surface-muted);
     color: var(--text);
 }
+
+
+.role-matrix-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.role-matrix th[scope="row"] {
+    background: none;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.role-matrix th[scope="row"] small {
+    display: block;
+    font-weight: 400;
+}
+
+.role-matrix .role-column,
+.role-matrix .role-cell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.role-matrix .role-column small {
+    display: block;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.role-matrix .role-name {
+    color: var(--text);
+}
+
+.role-matrix .role-cell input[type="checkbox"] {
+    margin: 0;
+}
+
+.role-matrix tfoot td {
+    border-bottom: none;
+    vertical-align: top;
+}
+
+.role-matrix tfoot form {
+    margin: 0;
+}
+
+.role-rename {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+}
+
+.role-rename form {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+}
+
+.role-rename input {
+    width: 8rem;
+    margin: 0;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.role-rename button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.role-matrix-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.role-matrix-footer p {
+    margin: 0;
+}

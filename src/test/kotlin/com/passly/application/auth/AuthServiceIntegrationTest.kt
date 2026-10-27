@@ -4,10 +4,13 @@ import com.passly.TestcontainersConfiguration
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
 import com.passly.domain.common.UnauthorizedException
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.TestVenue
+import com.passly.web.api.roleId
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -39,7 +42,7 @@ class AuthServiceIntegrationTest {
         val venueId = UUID.randomUUID()
         jdbc.sql("insert into tenant (id, name) values (?, ?)").params(tenantId, "Test tenant").update()
         jdbc.sql("insert into venue (id, tenant_id, name) values (?, ?, ?)").params(venueId, tenantId, "Test venue").update()
-        staff.hire(HireStaffCommand(VenueId(venueId), email, "Anna", RawPassword.of("password-1"), Role.WAITER))
+        staff.hire(HireStaffCommand(VenueId(venueId), email, "Anna", RawPassword.of("password-1"), VenueRoleId(jdbc.roleId(TestVenue(tenantId, venueId), RolePreset.WAITER))))
     }
 
     @Test

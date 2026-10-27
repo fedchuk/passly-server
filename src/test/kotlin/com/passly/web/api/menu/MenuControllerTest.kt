@@ -1,5 +1,6 @@
 package com.passly.web.api.menu
 
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createStation
 import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
@@ -9,7 +10,6 @@ import com.passly.domain.menu.CategoryId
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.ModifierDraft
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -60,7 +60,7 @@ class MenuControllerTest {
         val venue = jdbc.createVenue()
         venueUuid = venue.venueId
         stationUuid = jdbc.createStation(venue)
-        waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
     }
 
     private fun category(name: String, parentId: CategoryId? = null) =

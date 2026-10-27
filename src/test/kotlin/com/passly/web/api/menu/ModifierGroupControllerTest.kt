@@ -2,7 +2,7 @@ package com.passly.web.api.menu
 
 import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.mockMvcAs
@@ -36,7 +36,7 @@ class ModifierGroupControllerTest {
     fun createVenueWithManager() {
         val venue = jdbc.createVenue()
         venueId = venue.venueId
-        mockMvc = context.mockMvcAs(jdbc.createMember(venue, Role.MANAGER))
+        mockMvc = context.mockMvcAs(jdbc.createMember(venue, StaffRole.MANAGER))
     }
 
     @Test

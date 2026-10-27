@@ -1,7 +1,7 @@
 package com.passly.web.api.menu
 
 import com.passly.TestcontainersConfiguration
-import com.passly.domain.user.Role
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createStation
 import com.passly.web.api.createVenue
@@ -28,7 +28,7 @@ class StationControllerTest {
     fun `waiter sees the stations of the venue`() {
         val venue = jdbc.createVenue()
         val kitchen = jdbc.createStation(venue, "Kitchen")
-        val waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        val waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
 
         waiter.get("/api/v1/venues/${venue.venueId}/stations").andExpect {
             status { isOk() }
@@ -40,7 +40,7 @@ class StationControllerTest {
     @Test
     fun `staff of another venue cannot see the stations`() {
         val venue = jdbc.createVenue()
-        val stranger = context.mockMvcAs(jdbc.createMember(jdbc.createVenue(), Role.MANAGER))
+        val stranger = context.mockMvcAs(jdbc.createMember(jdbc.createVenue(), StaffRole.MANAGER))
 
         stranger.get("/api/v1/venues/${venue.venueId}/stations").andExpect { status { isForbidden() } }
     }

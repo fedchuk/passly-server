@@ -8,11 +8,11 @@ import com.passly.application.order.OpenOrderCommand
 import com.passly.application.order.OrderService
 import com.passly.application.venue.AcceptCurrencyCommand
 import com.passly.application.venue.VenueSettingsService
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.ExchangeRate
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -70,12 +70,12 @@ class VenueSettingsAdminTest {
         venue = jdbc.createVenue()
     }
 
-    private fun member(role: Role): RequestPostProcessor =
+    private fun member(role: StaffRole): RequestPostProcessor =
         user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, role)}@test.passly"))
 
     private fun save(country: String, currency: String, version: Long? = settings.get(venueId).version) =
         mockMvc.post(page) {
-            with(member(Role.MANAGER))
+            with(member(StaffRole.MANAGER))
             with(csrf())
             param("country", country)
             param("currency", currency)
@@ -87,7 +87,7 @@ class VenueSettingsAdminTest {
 
     @Test
     fun `new venue works in France with euros`() {
-        val attributes = mockMvc.get(page) { with(member(Role.OWNER)) }.andExpect {
+        val attributes = mockMvc.get(page) { with(member(StaffRole.OWNER)) }.andExpect {
             status { isOk() }
             view { name("admin/settings") }
             model { attribute("currencyLocked", false) }
@@ -115,9 +115,9 @@ class VenueSettingsAdminTest {
     fun `main currency is fixed after the first order`() {
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         val table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))
-        orders.open(OpenOrderCommand(venueId, table.id, UserId(jdbc.createMember(venue, Role.WAITER))))
+        orders.open(OpenOrderCommand(venueId, table.id, UserId(jdbc.createMember(venue, StaffRole.WAITER))))
 
-        mockMvc.get(page) { with(member(Role.MANAGER)) }.andExpect {
+        mockMvc.get(page) { with(member(StaffRole.MANAGER)) }.andExpect {
             model { attribute("currencyLocked", true) }
             content { string(containsString("the main currency is fixed")) }
         }
@@ -149,12 +149,12 @@ class VenueSettingsAdminTest {
 
     @Test
     fun `waiter cannot open the settings`() {
-        mockMvc.get(page) { with(member(Role.WAITER)) }.andExpect { status { isForbidden() } }
+        mockMvc.get(page) { with(member(StaffRole.WAITER)) }.andExpect { status { isForbidden() } }
     }
 
     @Test
     fun `settings link is in the sidebar for the manager`() {
-        mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(member(Role.MANAGER)) }.andExpect {
+        mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(member(StaffRole.MANAGER)) }.andExpect {
             content { string(containsString("/admin/venues/${venue.venueId}/settings")) }
         }
     }
@@ -162,7 +162,7 @@ class VenueSettingsAdminTest {
     @Test
     fun `manager accepts swiss francs at a rate`() {
         mockMvc.post("$page/currencies") {
-            with(member(Role.MANAGER))
+            with(member(StaffRole.MANAGER))
             with(csrf())
             param("currency", "CHF")
             param("rate", "1.05")
@@ -172,7 +172,7 @@ class VenueSettingsAdminTest {
         }
 
         assertEquals(ExchangeRate.of("1.05"), settings.get(venueId).accepted(CurrencyCode.of("CHF")).rate)
-        mockMvc.get(page) { with(member(Role.MANAGER)) }.andExpect {
+        mockMvc.get(page) { with(member(StaffRole.MANAGER)) }.andExpect {
             content { string(containsString("1 CHF =")) }
             content { string(containsString("value=\"1.05\"")) }
         }
@@ -183,7 +183,7 @@ class VenueSettingsAdminTest {
         acceptSwissFrancs()
 
         mockMvc.post("$page/currencies/CHF") {
-            with(member(Role.MANAGER))
+            with(member(StaffRole.MANAGER))
             with(csrf())
             param("rate", "1.07")
         }.andExpect {
@@ -199,7 +199,7 @@ class VenueSettingsAdminTest {
         acceptSwissFrancs()
 
         mockMvc.post("$page/currencies/CHF/delete") {
-            with(member(Role.MANAGER))
+            with(member(StaffRole.MANAGER))
             with(csrf())
         }.andExpect {
             redirectedUrl(page)
@@ -212,7 +212,7 @@ class VenueSettingsAdminTest {
     @Test
     fun `rate that is not a number is shown as an error`() {
         mockMvc.post("$page/currencies") {
-            with(member(Role.MANAGER))
+            with(member(StaffRole.MANAGER))
             with(csrf())
             param("currency", "CHF")
             param("rate", "one")
@@ -228,7 +228,7 @@ class VenueSettingsAdminTest {
     fun `main and accepted currencies are not offered again`() {
         acceptSwissFrancs()
 
-        val attributes = mockMvc.get(page) { with(member(Role.MANAGER)) }.andReturn().modelAndView!!.model
+        val attributes = mockMvc.get(page) { with(member(StaffRole.MANAGER)) }.andReturn().modelAndView!!.model
 
         @Suppress("UNCHECKED_CAST")
         val addable = (attributes["addableCurrencies"] as List<CodeOption>).map { it.code }
@@ -251,7 +251,7 @@ class VenueSettingsAdminTest {
     @Test
     fun `waiter cannot add a currency`() {
         mockMvc.post("$page/currencies") {
-            with(member(Role.WAITER))
+            with(member(StaffRole.WAITER))
             with(csrf())
             param("currency", "CHF")
             param("rate", "1.05")

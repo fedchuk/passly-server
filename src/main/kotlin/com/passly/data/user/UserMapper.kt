@@ -1,5 +1,6 @@
 package com.passly.data.user
 
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.user.Email
 import com.passly.domain.user.Membership
 import com.passly.domain.user.User
@@ -34,7 +35,7 @@ fun UserEntity.updateFrom(user: User) {
     if (memberships.map { it.toDomain() } != user.memberships) memberships = user.memberships.toEmbeddables()
 }
 
-private fun MembershipEmbeddable.toDomain() = Membership(TenantId(tenantId), venueId?.let(::VenueId), role)
+private fun MembershipEmbeddable.toDomain() = Membership(TenantId(tenantId), venueId?.let(::VenueId), roleId?.let(::VenueRoleId))
 
 private fun List<Membership>.toEmbeddables() =
-    map { MembershipEmbeddable(it.tenantId.value, it.venueId?.value, it.role) }.toMutableList()
+    map { MembershipEmbeddable(it.tenantId.value, it.venueId?.value, it.roleId?.value) }.toMutableList()

@@ -31,13 +31,12 @@
                 </td>
                 <td th:text="${member.email}">anna@bistro.es</td>
                 <td>
-                    <span th:if="${member.you}" th:text="${#strings.capitalize(#strings.toLowerCase(member.role.name()))}">Manager</span>
-                    <form th:unless="${member.you}" class="inline-role"
+                    <span th:unless="${member.changeable}" th:text="${member.roleName}">Manager</span>
+                    <form th:if="${member.changeable}" class="inline-role"
                           th:action="@{/admin/venues/{v}/staff/{u}/role(v=${venue.id}, u=${member.userId})}" method="post">
-                        <select name="role" aria-label="Role">
-                            <option th:each="role : ${roles}" th:value="${role}"
-                                    th:text="${#strings.capitalize(#strings.toLowerCase(role.name()))}"
-                                    th:selected="${role == member.role}">Waiter</option>
+                        <select name="roleId" aria-label="Role">
+                            <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}"
+                                    th:selected="${role.id == member.roleId}">Waiter</option>
                         </select>
                         <button type="submit" class="outline secondary">Change</button>
                     </form>

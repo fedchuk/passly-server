@@ -3,6 +3,7 @@ package com.passly.domain.user
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.Venue
 import com.passly.domain.venue.VenueId
@@ -31,27 +32,20 @@ class User private constructor(
 
     val isNew: Boolean get() = version == null
 
-    fun roleIn(venue: Venue): Role? {
-        if (!enabled) return null
-        if (memberships.any { it.isOwner && it.tenantId == venue.tenantId }) return Role.OWNER
-        return memberships.firstOrNull { it.venueId == venue.id }?.role
-    }
+    fun owns(tenantId: TenantId): Boolean = memberships.any { it.isOwner && it.tenantId == tenantId }
 
-    fun can(permission: Permission, venue: Venue): Boolean =
-        roleIn(venue)?.permissions?.contains(permission) == true
+    fun roleIdIn(venueId: VenueId): VenueRoleId? = memberships.firstOrNull { it.venueId == venueId }?.roleId
 
-    fun joinVenue(venue: Venue, role: Role) {
+    fun joinVenue(venue: Venue, roleId: VenueRoleId) {
         requireTenantUser()
-        if (role == Role.OWNER) throw ValidationException("Owner is granted for the whole business, not for one venue")
         if (memberships.any { it.venueId == venue.id }) throw ConflictException("$email already works at ${venue.name}")
         if (memberships.size >= MAX_MEMBERSHIPS) throw ValidationException("A user can have at most $MAX_MEMBERSHIPS memberships")
-        memberships = memberships + Membership(venue.tenantId, venue.id, role)
+        memberships = memberships + Membership(venue.tenantId, venue.id, roleId)
     }
 
-    fun changeRole(venue: Venue, role: Role) {
-        if (role == Role.OWNER) throw ValidationException("Owner is granted for the whole business, not for one venue")
+    fun changeRole(venue: Venue, roleId: VenueRoleId) {
         val current = membershipIn(venue.id)
-        memberships = memberships.map { if (it == current) it.copy(role = role) else it }
+        memberships = memberships.map { if (it == current) it.copy(roleId = roleId) else it }
     }
 
     fun leaveVenue(venueId: VenueId) {
@@ -62,7 +56,7 @@ class User private constructor(
     fun becomeOwnerOf(tenantId: TenantId) {
         requireTenantUser()
         if (memberships.any { it.isOwner && it.tenantId == tenantId }) throw ConflictException("$email already owns this business")
-        memberships = memberships + Membership(tenantId, null, Role.OWNER)
+        memberships = memberships + Membership(tenantId, null, null)
     }
 
     fun rename(newName: String) {

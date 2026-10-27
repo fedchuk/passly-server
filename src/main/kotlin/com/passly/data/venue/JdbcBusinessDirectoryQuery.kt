@@ -32,7 +32,7 @@ class JdbcBusinessDirectoryQuery(private val jdbc: JdbcClient) : BusinessDirecto
                 (select count(*) from venue v where v.tenant_id = t.id) as venues,
                 (select string_agg(u.email, ', ' order by u.email)
                    from membership m join app_user u on u.id = m.user_id
-                  where m.tenant_id = t.id and m.role = 'OWNER') as owners
+                  where m.tenant_id = t.id and m.venue_id is null) as owners
             from tenant t
             order by t.created_at desc, t.name
         """

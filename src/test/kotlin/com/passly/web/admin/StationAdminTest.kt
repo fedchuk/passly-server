@@ -5,8 +5,8 @@ import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.menu.CreateStationCommand
 import com.passly.application.menu.StationService
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -58,10 +58,10 @@ class StationAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        manager = member(Role.MANAGER)
+        manager = member(StaffRole.MANAGER)
     }
 
-    private fun member(role: Role): RequestPostProcessor =
+    private fun member(role: StaffRole): RequestPostProcessor =
         user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, role)}@test.passly"))
 
     private fun names() = stations.list(venueId).map { it.name }
@@ -132,6 +132,6 @@ class StationAdminTest {
 
     @Test
     fun `waiter cannot open the stations page`() {
-        mockMvc.get(base) { with(member(Role.WAITER)) }.andExpect { status { isForbidden() } }
+        mockMvc.get(base) { with(member(StaffRole.WAITER)) }.andExpect { status { isForbidden() } }
     }
 }

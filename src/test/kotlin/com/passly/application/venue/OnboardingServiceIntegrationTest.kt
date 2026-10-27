@@ -5,9 +5,9 @@ import com.passly.application.access.AccessService
 import com.passly.application.auth.AuthService
 import com.passly.application.auth.LoginCommand
 import com.passly.domain.common.ConflictException
+import com.passly.domain.role.VenueAccess
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
@@ -43,7 +43,7 @@ class OnboardingServiceIntegrationTest {
         val venues = access.venuesOf(business.ownerId)
 
         assertEquals(listOf("Bistro Centro"), venues.map { it.name })
-        assertEquals(Role.OWNER, venues.single().role)
+        assertEquals(VenueAccess.OWNER, venues.single().access)
     }
 
     @Test

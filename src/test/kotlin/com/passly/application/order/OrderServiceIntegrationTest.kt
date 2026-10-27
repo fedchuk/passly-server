@@ -13,9 +13,9 @@ import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.OrderStatus
 import com.passly.domain.order.PaymentMethod
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createStation
@@ -65,7 +65,7 @@ class OrderServiceIntegrationTest {
     @BeforeEach
     fun setUp() {
         venue = jdbc.createVenue()
-        waiterUuid = jdbc.createMember(venue, Role.WAITER)
+        waiterUuid = jdbc.createMember(venue, StaffRole.WAITER)
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))
         mainsUuid = categories.create(CreateCategoryCommand(venueId, "Mains", stationId = StationId(jdbc.createStation(venue)))).id.value

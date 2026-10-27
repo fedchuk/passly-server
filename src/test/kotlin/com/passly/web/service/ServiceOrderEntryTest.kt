@@ -13,7 +13,6 @@ import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
@@ -84,7 +83,7 @@ class ServiceOrderEntryTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        waiterId = jdbc.createMember(venue, Role.WAITER)
+        waiterId = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = user(userDetailsService.loadUserByUsername("$waiterId@test.passly"))
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))
@@ -233,7 +232,7 @@ class ServiceOrderEntryTest {
 
     @Test
     fun `kitchen cannot send rounds`() {
-        val cookId = jdbc.createMember(venue, Role.KITCHEN)
+        val cookId = jdbc.createMember(venue, StaffRole.KITCHEN)
 
         mockMvc.post(rounds) {
             with(user(userDetailsService.loadUserByUsername("$cookId@test.passly")))

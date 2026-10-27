@@ -5,7 +5,6 @@ import com.passly.application.tax.CreateTaxRateCommand
 import com.passly.application.tax.TaxRateService
 import com.passly.domain.common.TaxRate
 import com.passly.domain.tax.VenueTaxRate
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -55,7 +54,7 @@ class TaxRateAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, Role.MANAGER)}@test.passly"))
+        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, StaffRole.MANAGER)}@test.passly"))
     }
 
     private fun stored(): List<VenueTaxRate> = taxRates.list(venueId)
@@ -154,7 +153,7 @@ class TaxRateAdminTest {
 
     @Test
     fun `waiter cannot change tax rates but the app can read them`() {
-        val waiterId = jdbc.createMember(venue, Role.WAITER)
+        val waiterId = jdbc.createMember(venue, StaffRole.WAITER)
         taxRates.create(CreateTaxRateCommand(venueId, "Alcohol", TaxRate.of("20")))
 
         mockMvc.post(base) {

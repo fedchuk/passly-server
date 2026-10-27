@@ -39,10 +39,15 @@
 
         <label>
             Role
-            <select th:field="*{role}">
-                <option th:each="role : ${roles}" th:value="${role}"
-                        th:text="${#strings.capitalize(#strings.toLowerCase(role.name()))}">Waiter</option>
+            <select th:field="*{roleId}" required
+                    th:attr="aria-invalid=${#fields.hasErrors('roleId')} ? 'true' : null">
+                <option value="">Choose a role</option>
+                <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}">Waiter</option>
             </select>
+            <small class="muted" th:if="${venue.rolesManageable}">
+                What each role may do is set on the <a th:href="@{/admin/venues/{v}/roles(v=${venue.id})}">Roles</a> page.
+            </small>
+            <small class="error" th:if="${#fields.hasErrors('roleId')}" th:errors="*{roleId}">Choose a role</small>
         </label>
 
         <div class="buttons">

@@ -6,8 +6,8 @@ import com.passly.application.floor.CreateTableCommand
 import com.passly.application.floor.CreateTablesCommand
 import com.passly.application.floor.FloorPlanService
 import com.passly.domain.floor.DiningArea
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -58,10 +58,10 @@ class FloorAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        manager = member(Role.MANAGER)
+        manager = member(StaffRole.MANAGER)
     }
 
-    private fun member(role: Role): RequestPostProcessor =
+    private fun member(role: StaffRole): RequestPostProcessor =
         user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, role)}@test.passly"))
 
     private fun area(name: String): DiningArea = floors.createArea(CreateAreaCommand(venueId, name))
@@ -233,6 +233,6 @@ class FloorAdminTest {
 
     @Test
     fun `waiter cannot open the tables page`() {
-        mockMvc.get(base) { with(member(Role.WAITER)) }.andExpect { status { isForbidden() } }
+        mockMvc.get(base) { with(member(StaffRole.WAITER)) }.andExpect { status { isForbidden() } }
     }
 }

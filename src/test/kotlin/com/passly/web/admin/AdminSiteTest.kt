@@ -4,8 +4,7 @@
 import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.domain.menu.StationId
-import com.passly.domain.user.Role
-import com.passly.domain.venue.VenueId
+    import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.BeforeEach
@@ -74,7 +73,7 @@ import kotlin.test.Test
 
         @Test
         fun `login form without a csrf token is rejected`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.post("/login") {
                 param("username", emailOf(manager))
@@ -84,7 +83,7 @@ import kotlin.test.Test
 
         @Test
         fun `manager logs in and lands on the dashboard`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.perform(formLogin().user(emailOf(manager)).password("unused"))
                 .andExpect(redirectedUrl("/admin"))
@@ -93,7 +92,7 @@ import kotlin.test.Test
 
         @Test
         fun `wrong password returns to the login page with an error`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.perform(formLogin().user(emailOf(manager)).password("wrong"))
                 .andExpect(redirectedUrl("/login?error"))
@@ -102,7 +101,7 @@ import kotlin.test.Test
 
         @Test
         fun `dashboard lists the venues of the user`() {
-            val owner = jdbc.createMember(venue, Role.OWNER)
+            val owner = jdbc.createMember(venue, StaffRole.OWNER)
 
             mockMvc.get("/admin") { with(loggedIn(owner)) }.andExpect {
                 status { isOk() }
@@ -113,7 +112,7 @@ import kotlin.test.Test
 
         @Test
         fun `venue page shows the category tree`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
             val wine = categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Wine", stationId = StationId(jdbc.createStation(venue))))
             categories.create(CreateCategoryCommand(VenueId(venue.venueId), "Rioja", parentId = wine.id))
 
@@ -126,7 +125,7 @@ import kotlin.test.Test
 
         @Test
         fun `waiter cannot open the venue admin`() {
-            val waiter = jdbc.createMember(venue, Role.WAITER)
+            val waiter = jdbc.createMember(venue, StaffRole.WAITER)
 
             mockMvc.get("/admin/venues/${venue.venueId}") { with(loggedIn(waiter)) }.andExpect {
                 status { isForbidden() }
@@ -135,14 +134,14 @@ import kotlin.test.Test
 
         @Test
         fun `unknown pages stay closed after login`() {
-            val owner = jdbc.createMember(venue, Role.OWNER)
+            val owner = jdbc.createMember(venue, StaffRole.OWNER)
 
             mockMvc.get("/something-else") { with(loggedIn(owner)) }.andExpect { status { isForbidden() } }
         }
 
         @Test
         fun `remember me sets a long lived cookie`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.post("/login") {
                 with(csrf())
@@ -161,7 +160,7 @@ import kotlin.test.Test
 
         @Test
         fun `without remember me there is no cookie`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.post("/login") {
                 with(csrf())
@@ -175,7 +174,7 @@ import kotlin.test.Test
 
         @Test
         fun `venue pages show the venue menu in the sidebar`() {
-            val manager = jdbc.createMember(venue, Role.MANAGER)
+            val manager = jdbc.createMember(venue, StaffRole.MANAGER)
 
             mockMvc.get("/admin/venues/${venue.venueId}") { with(loggedIn(manager)) }.andExpect {
                 status { isOk() }

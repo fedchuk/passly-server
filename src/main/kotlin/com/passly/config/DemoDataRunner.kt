@@ -5,6 +5,7 @@ import com.passly.application.floor.CreateTablesCommand
 import com.passly.application.floor.FloorPlanService
 import com.passly.application.floor.UpdateTableCommand
 import com.passly.application.menu.*
+import com.passly.application.role.RoleService
 import com.passly.application.tax.TaxRateService
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
@@ -12,10 +13,11 @@ import com.passly.application.venue.OnboardingService
 import com.passly.application.venue.RegisterBusinessCommand
 import com.passly.domain.common.Money
 import com.passly.domain.menu.*
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.tax.VenueTaxRateId
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserRepository
 import com.passly.domain.venue.VenueId
 import org.slf4j.LoggerFactory
@@ -39,6 +41,7 @@ class DemoDataRunner(
     private val staff: StaffService,
     private val stations: StationService,
     private val taxRates: TaxRateService,
+    private val roles: RoleService,
     @Value("\${passly.demo.password:}") private val configuredPassword: String,
 ) : ApplicationRunner {
 
@@ -168,10 +171,12 @@ class DemoDataRunner(
     }
 
     private fun hireStaff(venueId: VenueId, password: String) {
-        hire(venueId, "lucia", "Lucía Martínez", Role.MANAGER, password)
-        hire(venueId, "pablo", "Pablo García", Role.WAITER, password)
-        hire(venueId, "marta", "Marta López", Role.WAITER, password)
-        hire(venueId, "diego", "Diego Sánchez", Role.KITCHEN, password)
+        val presets = roles.list(venueId).associate { it.role.name to it.role.id }
+        fun role(preset: RolePreset): VenueRoleId = presets.getValue(preset.roleName)
+        hire(venueId, "lucia", "Lucía Martínez", role(RolePreset.MANAGER), password)
+        hire(venueId, "pablo", "Pablo García", role(RolePreset.WAITER), password)
+        hire(venueId, "marta", "Marta López", role(RolePreset.WAITER), password)
+        hire(venueId, "diego", "Diego Sánchez", role(RolePreset.KITCHEN), password)
     }
 
     private fun group(
@@ -212,8 +217,8 @@ class DemoDataRunner(
         return created.id
     }
 
-    private fun hire(venueId: VenueId, login: String, name: String, role: Role, password: String) {
-        staff.hire(HireStaffCommand(venueId, Email.of("$login@$DOMAIN"), name, RawPassword.of(password), role))
+    private fun hire(venueId: VenueId, login: String, name: String, roleId: VenueRoleId, password: String) {
+        staff.hire(HireStaffCommand(venueId, Email.of("$login@$DOMAIN"), name, RawPassword.of(password), roleId))
     }
 
     private fun randomPassword(): String {

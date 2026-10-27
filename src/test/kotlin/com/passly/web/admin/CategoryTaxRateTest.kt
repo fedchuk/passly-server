@@ -6,7 +6,6 @@ import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.tax.TaxRateService
 import com.passly.domain.menu.StationId
 import com.passly.domain.tax.VenueTaxRate
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -62,7 +61,7 @@ class CategoryTaxRateTest {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
         kitchenUuid = jdbc.createStation(venue)
-        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, Role.MANAGER)}@test.passly"))
+        manager = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, StaffRole.MANAGER)}@test.passly"))
         taxRates.addPresets(venueId)
         food = taxRates.list(venueId).single { it.name == "Food and soft drinks" }
         alcohol = taxRates.list(venueId).single { it.name == "Alcohol" }
@@ -128,7 +127,7 @@ class CategoryTaxRateTest {
 
     @Test
     fun `api creates a category with a rate and reports the inherited one`() {
-        val ownerApi = context.mockMvcAs(jdbc.createMember(venue, Role.OWNER))
+        val ownerApi = context.mockMvcAs(jdbc.createMember(venue, StaffRole.OWNER))
         val wineId = ownerApi.post("/api/v1/venues/${venue.venueId}/categories") {
             contentType = MediaType.APPLICATION_JSON
             content = """{"name": "Wine", "stationId": "$kitchenUuid", "taxRateId": "${alcohol.id}"}"""

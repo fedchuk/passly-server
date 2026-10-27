@@ -9,7 +9,6 @@ import com.passly.domain.common.Money
 import com.passly.domain.menu.MenuItem
 import com.passly.domain.menu.MenuItemDetails
 import com.passly.domain.menu.StationId
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.hamcrest.CoreMatchers.containsString
@@ -79,13 +78,13 @@ class StopListTest {
         items.changeAvailability(venueId, sole.id, false)
     }
 
-    private fun member(role: Role) = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, role)}@test.passly"))
+    private fun member(role: StaffRole) = user(userDetailsService.loadUserByUsername("${jdbc.createMember(venue, role)}@test.passly"))
 
     private fun isAvailable(item: MenuItem) = items.listInCategory(venueId, item.categoryId!!).single { it.id == item.id }.available
 
     @Test
     fun `kitchen sees what is off the menu with its category`() {
-        mockMvc.get(page) { with(member(Role.KITCHEN)) }.andExpect {
+        mockMvc.get(page) { with(member(StaffRole.KITCHEN)) }.andExpect {
             status { isOk() }
             content { string(containsString("1 dish guests cannot order now")) }
             content { string(containsString("Sole meunière")) }
@@ -96,7 +95,7 @@ class StopListTest {
 
     @Test
     fun `kitchen puts a dish on the stop list and back`() {
-        val cook = member(Role.KITCHEN)
+        val cook = member(StaffRole.KITCHEN)
 
         mockMvc.post("$page/${steak.id.value}") {
             with(cook)
@@ -118,7 +117,7 @@ class StopListTest {
 
     @Test
     fun `waiter cannot change the stop list`() {
-        val waiter = member(Role.WAITER)
+        val waiter = member(StaffRole.WAITER)
 
         mockMvc.get(page) { with(waiter) }.andExpect { status { isForbidden() } }
         mockMvc.post("$page/${steak.id.value}") {
@@ -130,7 +129,7 @@ class StopListTest {
 
     @Test
     fun `manager reaches the stop list from the overview`() {
-        mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(member(Role.MANAGER)) }.andExpect {
+        mockMvc.get("/admin/venues/${venue.venueId}/overview") { with(member(StaffRole.MANAGER)) }.andExpect {
             content { string(containsString(page)) }
         }
     }

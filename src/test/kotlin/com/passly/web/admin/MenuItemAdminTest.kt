@@ -4,8 +4,8 @@ import com.passly.TestcontainersConfiguration
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
 import com.passly.domain.menu.*
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -67,7 +67,7 @@ class MenuItemAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        val managerId = jdbc.createMember(venue, Role.MANAGER)
+        val managerId = jdbc.createMember(venue, StaffRole.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
         wineId = categories.create(CreateCategoryCommand(venueId, "Wine", stationId = createStation("Kitchen"))).id.value
     }
@@ -308,7 +308,7 @@ class MenuItemAdminTest {
     fun `items of another business are out of reach`() {
         val rioja = createItem("Rioja")
         val other = jdbc.createVenue()
-        val stranger = jdbc.createMember(other, Role.OWNER)
+        val stranger = jdbc.createMember(other, StaffRole.OWNER)
 
         mockMvc.get("$base/items/${rioja.id}/edit") {
             with(user(userDetailsService.loadUserByUsername("$stranger@test.passly")))

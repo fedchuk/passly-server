@@ -19,7 +19,6 @@ import com.passly.domain.menu.StationId
 import com.passly.domain.order.Order
 import com.passly.domain.order.OrderLineRequest
 import com.passly.domain.order.OrderStatus
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
@@ -89,7 +88,7 @@ class ServicePaymentTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        waiterId = jdbc.createMember(venue, Role.WAITER)
+        waiterId = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = user(userDetailsService.loadUserByUsername("$waiterId@test.passly"))
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
         table = floors.createTable(CreateTableCommand(venueId, hall.id, "7", 4))
@@ -207,7 +206,7 @@ class ServicePaymentTest {
 
     @Test
     fun `kitchen cannot take payments`() {
-        val cookId = jdbc.createMember(venue, Role.KITCHEN)
+        val cookId = jdbc.createMember(venue, StaffRole.KITCHEN)
 
         mockMvc.post("$tablePage/payments") {
             with(user(userDetailsService.loadUserByUsername("$cookId@test.passly")))

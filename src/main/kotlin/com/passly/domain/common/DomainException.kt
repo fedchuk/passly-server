@@ -12,5 +12,7 @@ class ValidationException(message: String, val field: String? = null) : DomainEx
 
 class UnauthorizedException(message: String) : DomainException(message)
 
+class ForbiddenException(message: String) : DomainException(message)
+
 class UnavailableItemsException(val itemIds: List<UUID>, names: List<String>) :
     DomainException("Not available now: ${names.joinToString(", ")}. Reload the menu and try again.")

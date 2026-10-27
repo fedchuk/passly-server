@@ -2,9 +2,9 @@ package com.passly.web.account
 
 import com.passly.TestcontainersConfiguration
 import com.passly.domain.user.PasswordHasher
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.user.UserRepository
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
 import com.passly.web.api.securedMockMvc
@@ -52,7 +52,7 @@ class AccountPasswordTest {
     @BeforeEach
     fun setUp() {
         mockMvc = context.securedMockMvc()
-        managerId = jdbc.createMember(jdbc.createVenue(), Role.MANAGER)
+        managerId = jdbc.createMember(jdbc.createVenue(), StaffRole.MANAGER)
         manager = user(userDetailsService.loadUserByUsername("$managerId@test.passly"))
     }
 

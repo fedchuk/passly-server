@@ -4,14 +4,17 @@ import com.passly.web.api.doesNotContain
 import com.passly.TestcontainersConfiguration
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.StaffRole
 import com.passly.web.api.TestVenue
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
+import com.passly.web.api.roleId
 import com.passly.web.api.securedMockMvc
 import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.BeforeEach
@@ -61,7 +64,7 @@ class StaffAdminTest {
     fun setUp() {
         mockMvc = context.securedMockMvc()
         venue = jdbc.createVenue()
-        ownerId = jdbc.createMember(venue, Role.OWNER)
+        ownerId = jdbc.createMember(venue, StaffRole.OWNER)
         owner = loggedIn(ownerId)
     }
 
@@ -69,39 +72,59 @@ class StaffAdminTest {
 
     private fun email(name: String) = "$name-$unique@bistro.es"
 
-    private fun hireLucia(role: Role = Role.WAITER) = staff.hire(
-        HireStaffCommand(venueId, Email.of(email("lucia")), "Lucia", RawPassword.of("password-1"), role),
+    private fun role(preset: RolePreset) = jdbc.roleId(venue, preset)
+
+    private fun hireLucia(preset: RolePreset = RolePreset.WAITER) = staff.hire(
+        HireStaffCommand(venueId, Email.of(email("lucia")), "Lucia", RawPassword.of("password-1"),
+            VenueRoleId(role(preset))
+        ),
     )
 
-    private fun roleOf(userId: UUID) = staff.list(venueId).single { it.userId == UserId(userId) }.role
+    private fun roleOf(userId: UserId) = staff.list(venueId).single { it.userId == userId }.roleName
 
     @Test
-    fun `owner sees the staff`() {
+    fun `owner sees the staff with their roles`() {
         hireLucia()
 
         mockMvc.get(base) { with(owner) }.andExpect {
             status { isOk() }
             content { string(containsString("Lucia")) }
+            content { string(containsString("Waiter")) }
         }
     }
 
     @Test
-    fun `new waiter is hired and can log in`() {
+    fun `new cook is hired with a role of the venue and can log in`() {
         mockMvc.post(base) {
             with(owner)
             with(csrf())
             param("displayName", "Pablo")
             param("email", email("pablo"))
             param("password", "password-1")
-            param("role", "KITCHEN")
+            param("roleId", role(RolePreset.KITCHEN).toString())
         }.andExpect {
             redirectedUrl(base)
-            flash { attribute("message", "Pablo joined as kitchen") }
+            flash { attribute("message", "Pablo joined as Kitchen") }
         }
 
         val pablo = staff.list(venueId).single { it.displayName == "Pablo" }
-        assertEquals(Role.KITCHEN, pablo.role)
+        assertEquals("Kitchen", pablo.roleName)
         userDetailsService.loadUserByUsername(email("pablo"))
+    }
+
+    @Test
+    fun `role must be chosen`() {
+        mockMvc.post(base) {
+            with(owner)
+            with(csrf())
+            param("displayName", "Pablo")
+            param("email", email("pablo"))
+            param("password", "password-1")
+            param("roleId", "")
+        }.andExpect {
+            status { isOk() }
+            model { attributeHasFieldErrors("form", "roleId") }
+        }
     }
 
     @Test
@@ -112,7 +135,7 @@ class StaffAdminTest {
             param("displayName", "Pablo")
             param("email", "pablo")
             param("password", "short")
-            param("role", "WAITER")
+            param("roleId", role(RolePreset.WAITER).toString())
         }.andExpect {
             status { isOk() }
             view { name("admin/staff-form") }
@@ -131,7 +154,7 @@ class StaffAdminTest {
             param("displayName", "Lucia again")
             param("email", email("lucia"))
             param("password", "password-1")
-            param("role", "WAITER")
+            param("roleId", role(RolePreset.WAITER).toString())
         }.andExpect {
             status { isOk() }
             model { attributeHasFieldErrors("form", "email") }
@@ -142,28 +165,28 @@ class StaffAdminTest {
     fun `role is changed`() {
         val lucia = hireLucia()
 
-        mockMvc.post("$base/${lucia.id}/role") {
+        mockMvc.post("$base/${lucia.userId}/role") {
             with(owner)
             with(csrf())
-            param("role", "KITCHEN")
+            param("roleId", role(RolePreset.KITCHEN).toString())
         }.andExpect {
             redirectedUrl(base)
-            flash { attribute("message", "Lucia is now kitchen") }
+            flash { attribute("message", "Lucia is now Kitchen") }
         }
 
-        assertEquals(Role.KITCHEN, roleOf(lucia.id.value))
+        assertEquals("Kitchen", roleOf(lucia.userId))
     }
 
     @Test
     fun `dismissed member leaves the list`() {
         val lucia = hireLucia()
 
-        mockMvc.post("$base/${lucia.id}/dismiss") {
+        mockMvc.post("$base/${lucia.userId}/dismiss") {
             with(owner)
             with(csrf())
         }.andExpect { redirectedUrl(base) }
 
-        assertTrue(staff.list(venueId).none { it.userId == lucia.id })
+        assertTrue(staff.list(venueId).none { it.userId == lucia.userId })
     }
 
     @Test
@@ -176,31 +199,43 @@ class StaffAdminTest {
         mockMvc.post("$base/$ownerId/role") {
             with(owner)
             with(csrf())
-            param("role", "WAITER")
+            param("roleId", role(RolePreset.WAITER).toString())
         }.andExpect { flash { attribute("error", "You cannot change your own role") } }
     }
 
     @Test
     fun `manager and waiter cannot open the staff page`() {
-        val manager = jdbc.createMember(venue, Role.MANAGER)
-        val waiter = jdbc.createMember(venue, Role.WAITER)
+        val manager = jdbc.createMember(venue, StaffRole.MANAGER)
+        val waiter = jdbc.createMember(venue, StaffRole.WAITER)
 
         mockMvc.get(base) { with(loggedIn(manager)) }.andExpect { status { isForbidden() } }
         mockMvc.get(base) { with(loggedIn(waiter)) }.andExpect { status { isForbidden() } }
     }
 
     @Test
-    fun `manager cannot hire`() {
-        val manager = jdbc.createMember(venue, Role.MANAGER)
+    fun `staff manager hires only into roles they could do themselves`() {
+        jdbc.sql("insert into venue_role_permission (role_id, permission) values (?, 'MANAGE_STAFF')")
+            .params(role(RolePreset.WAITER))
+            .update()
+        val headWaiter = loggedIn(jdbc.createMember(venue, StaffRole.WAITER))
+
+        mockMvc.get("$base/new") { with(headWaiter) }.andExpect {
+            status { isOk() }
+            content { string(containsString(">Waiter<")) }
+            content { string(doesNotContain(">Manager<")) }
+        }
 
         mockMvc.post(base) {
-            with(loggedIn(manager))
+            with(headWaiter)
             with(csrf())
             param("displayName", "Pablo")
             param("email", email("pablo"))
             param("password", "password-1")
-            param("role", "WAITER")
-        }.andExpect { status { isForbidden() } }
+            param("roleId", role(RolePreset.MANAGER).toString())
+        }.andExpect {
+            status { isOk() }
+            model { attributeHasFieldErrors("form", "roleId") }
+        }
 
         assertTrue(staff.list(venueId).none { it.displayName == "Pablo" })
     }

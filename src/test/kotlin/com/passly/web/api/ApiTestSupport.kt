@@ -1,6 +1,7 @@
 package com.passly.web.api
 
-import com.passly.domain.user.Role
+import com.passly.domain.role.RolePreset
+import com.passly.domain.user.Permission
 import org.hamcrest.Matcher
 import org.hamcrest.CoreMatchers
 import org.springframework.jdbc.core.simple.JdbcClient
@@ -32,18 +33,35 @@ fun JdbcClient.createStation(venue: TestVenue, name: String = "Test kitchen"): U
     return id
 }
 
-fun JdbcClient.createMember(venue: TestVenue, role: Role): UUID {
+fun JdbcClient.roleId(venue: TestVenue, preset: RolePreset): UUID {
+    sql("insert into venue_role (id, tenant_id, venue_id, name, sort_order) values (?, ?, ?, ?, ?) on conflict do nothing")
+        .params(UUID.randomUUID(), venue.tenantId, venue.venueId, preset.roleName, preset.ordinal)
+        .update()
+    val roleId = sql("select id from venue_role where venue_id = ? and name = ?")
+        .params(venue.venueId, preset.roleName)
+        .query(UUID::class.java)
+        .single()
+    (preset.permissions + Permission.EVERY_ROLE).forEach { permission ->
+        sql("insert into venue_role_permission (role_id, permission) values (?, ?) on conflict do nothing")
+            .params(roleId, permission.name)
+            .update()
+    }
+    return roleId
+}
+
+fun JdbcClient.createMember(venue: TestVenue, role: StaffRole): UUID {
     val userId = UUID.randomUUID()
     sql("insert into app_user (id, email, display_name, password_hash) values (?, ?, ?, ?)")
         .params(userId, "$userId@test.passly", role.name, "{noop}unused")
         .update()
-    if (role == Role.OWNER) {
-        sql("insert into membership (user_id, position, tenant_id, role) values (?, 0, ?, ?)")
-            .params(userId, venue.tenantId, role.name)
+    val preset = role.preset
+    if (preset == null) {
+        sql("insert into membership (user_id, position, tenant_id) values (?, 0, ?)")
+            .params(userId, venue.tenantId)
             .update()
     } else {
-        sql("insert into membership (user_id, position, tenant_id, venue_id, role) values (?, 0, ?, ?, ?)")
-            .params(userId, venue.tenantId, venue.venueId, role.name)
+        sql("insert into membership (user_id, position, tenant_id, venue_id, role_id) values (?, 0, ?, ?, ?)")
+            .params(userId, venue.tenantId, venue.venueId, roleId(venue, preset))
             .update()
     }
     return userId

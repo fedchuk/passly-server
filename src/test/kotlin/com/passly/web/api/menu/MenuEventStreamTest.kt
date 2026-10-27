@@ -1,5 +1,6 @@
 package com.passly.web.api.menu
 
+import com.passly.web.api.StaffRole
 import com.passly.web.api.createStation
 import com.passly.domain.menu.StationId
 import com.passly.TestcontainersConfiguration
@@ -7,7 +8,6 @@ import com.passly.application.menu.CategoryService
 import com.passly.application.menu.CreateCategoryCommand
 import com.passly.application.menu.MenuChangeKind
 import com.passly.application.menu.MenuChangedEvent
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.createMember
 import com.passly.web.api.createVenue
@@ -52,7 +52,7 @@ class MenuEventStreamTest {
         val venue = jdbc.createVenue()
         venueUuid = venue.venueId
         stationUuid = jdbc.createStation(venue)
-        waiter = context.mockMvcAs(jdbc.createMember(venue, Role.WAITER))
+        waiter = context.mockMvcAs(jdbc.createMember(venue, StaffRole.WAITER))
     }
 
     private fun openStream(): MockHttpServletResponse =

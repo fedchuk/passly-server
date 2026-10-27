@@ -22,7 +22,7 @@ Passly is a multi-tenant SaaS backend for restaurants: a REST API for the waiter
 - **Menu with unlimited nesting.** Categories form a tree. Items have a price, VAT rate, kitchen or bar station (inherited from the category), a stop list and modifier groups such as doneness or size.
 - **Areas and tables.** Tables are grouped by area (main hall, terrace) with a label unique in the venue. A whole range such as 1–20 is added in one step.
 - **Live updates for the apps.** The menu and the floor are versioned. Clients use ETags to skip unchanged data and a server-sent events stream to learn about menu changes at once.
-- **Roles per venue.** Owner, manager, waiter and kitchen. A person can be a manager in one venue and a waiter in another.
+- **Roles per venue.** The owner of the business can do everything. Each venue has its own roles (Manager, Waiter and Kitchen to start with), and the owner sets what each of them may do in a table of checkboxes. A person can be a manager in one venue and a waiter in another, and nobody can give a role that allows more than their own.
 - **Two ways to sign in.**
   - Mobile apps get a short-lived JWT plus a rotating refresh token.
   - The web admin uses a server session with CSRF protection and remember-me.

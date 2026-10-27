@@ -4,10 +4,14 @@ import com.jayway.jsonpath.JsonPath
 import com.passly.TestcontainersConfiguration
 import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
+import com.passly.domain.role.RolePreset
+import com.passly.domain.role.VenueRoleId
 import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.TestVenue
+import com.passly.web.api.roleId
+import org.hamcrest.Matchers.hasItem
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -51,7 +55,7 @@ class AuthControllerTest {
                 Email.of(email),
                 "Anna",
                 RawPassword.of("password-1"),
-                Role.WAITER
+                VenueRoleId(jdbc.roleId(TestVenue(tenantId, venueId), RolePreset.WAITER)),
             )
         )
     }
@@ -84,7 +88,9 @@ class AuthControllerTest {
         }.andExpect {
             status { isOk() }
             jsonPath("$.email") { value(email) }
-            jsonPath("$.memberships[0].role") { value("WAITER") }
+            jsonPath("$.memberships[0].owner") { value(false) }
+            jsonPath("$.venues[0].role") { value("Waiter") }
+            jsonPath("$.venues[0].permissions") { value(hasItem("TAKE_ORDERS")) }
         }
     }
 

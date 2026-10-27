@@ -7,7 +7,6 @@ import com.passly.application.floor.FloorPlanService
 import com.passly.application.menu.*
 import com.passly.domain.common.Money
 import com.passly.domain.menu.*
-import com.passly.domain.user.Role
 import com.passly.domain.venue.VenueId
 import com.passly.web.api.*
 import org.junit.jupiter.api.BeforeEach
@@ -58,7 +57,7 @@ class OrderControllerTest {
     @BeforeEach
     fun setUp() {
         venue = jdbc.createVenue()
-        waiterUuid = jdbc.createMember(venue, Role.WAITER)
+        waiterUuid = jdbc.createMember(venue, StaffRole.WAITER)
         waiter = context.mockMvcAs(waiterUuid)
         stationUuid = jdbc.createStation(venue)
         val hall = floors.createArea(CreateAreaCommand(venueId, "Hall"))
@@ -194,7 +193,7 @@ class OrderControllerTest {
 
     @Test
     fun `kitchen cannot take orders`() {
-        val kitchen = context.mockMvcAs(jdbc.createMember(venue, Role.KITCHEN))
+        val kitchen = context.mockMvcAs(jdbc.createMember(venue, StaffRole.KITCHEN))
 
         kitchen.get(base).andExpect { status { isForbidden() } }
         kitchen.post(base) {
