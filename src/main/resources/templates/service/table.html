@@ -18,7 +18,7 @@
         </div>
         <div th:if="${table.order != null}" class="table-total">
             <small>Total</small>
-            <strong th:text="${table.order.total}">42.50</strong>
+            <strong th:text="${table.order.toPay}">42.50</strong>
         </div>
     </div>
 
@@ -88,6 +88,10 @@
                     <dl class="bill-lines">
                         <dt>Total</dt>
                         <dd th:text="${table.order.total}">42.50</dd>
+                        <th:block th:if="${table.order.discount != null}">
+                            <dt th:text="${table.order.discount}">Happy hour · 20%</dt>
+                            <dd th:text="|−${table.order.discountAmount}|">−8.50</dd>
+                        </th:block>
                         <th:block th:each="tax : ${table.order.taxes}">
                             <dt class="muted" th:text="|incl. VAT ${tax.rate}|">incl. VAT 10%</dt>
                             <dd class="muted" th:text="${tax.tax}">3.86</dd>
@@ -103,6 +107,24 @@
                         <dt class="bill-due">To pay</dt>
                         <dd class="bill-due" th:text="${table.order.due}">22.50</dd>
                     </dl>
+
+                    <div class="discount-forms" th:if="${venue.closesOrders and table.order.discountable and !discounts.isEmpty()}">
+                        <form class="discount-form" method="post" role="group"
+                              th:action="@{/service/venues/{v}/tables/{t}/discount(v=${venue.id}, t=${table.id})}">
+                            <input type="hidden" name="orderId" th:value="${table.order.id}">
+                            <select name="discountId" aria-label="Discount">
+                                <option th:each="discount : ${discounts}" th:value="${discount.id}" th:text="${discount.name}"
+                                        th:selected="${discount.id == table.order.discountId}">Happy hour · 20%</option>
+                            </select>
+                            <button type="submit" class="secondary outline"
+                                    th:text="${table.order.discount == null} ? 'Apply discount' : 'Change'">Apply discount</button>
+                        </form>
+                        <form th:if="${table.order.discount != null}" method="post"
+                              th:action="@{/service/venues/{v}/tables/{t}/discount/remove(v=${venue.id}, t=${table.id})}">
+                            <input type="hidden" name="orderId" th:value="${table.order.id}">
+                            <button type="submit" class="outline contrast">Remove discount</button>
+                        </form>
+                    </div>
 
                     <form th:if="${venue.closesOrders and !table.order.settled}" class="payment-form" method="post"
                           th:action="@{/service/venues/{v}/tables/{t}/payments(v=${venue.id}, t=${table.id})}"
@@ -446,4 +468,3 @@
     </script>
 </main>
 </body>
-</html>

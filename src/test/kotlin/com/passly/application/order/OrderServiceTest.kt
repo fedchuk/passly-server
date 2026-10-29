@@ -1,5 +1,6 @@
 package com.passly.application.order
 
+import com.passly.application.discount.FakeDiscountRepository
 import com.passly.application.floor.FakeFloorPlanRepository
 import com.passly.application.menu.FakeCategoryRepository
 import com.passly.application.menu.FakeMenuItemRepository
@@ -8,6 +9,8 @@ import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.venue.FakeVenueSettingsRepository
 import com.passly.domain.common.*
+import com.passly.domain.discount.DiscountPercent
+import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
@@ -47,8 +50,9 @@ class OrderServiceTest {
         .also { taxRates.saveAll(listOf(it)) }
     private val alcohol = taxRates.load(venue.id).add(venue.tenantId, "Alcohol", TaxRate.of("20"))
         .also { taxRates.saveAll(listOf(it)) }
+    private val discounts = FakeDiscountRepository()
     private val service = OrderService(
-        venues, floors, orders, items, groups, categories, settings, taxRates, Clock.fixed(now, ZoneOffset.UTC),
+        venues, floors, orders, items, groups, categories, settings, taxRates, discounts, Clock.fixed(now, ZoneOffset.UTC),
     )
 
     private val table: DiningTable = floors.load(venue.id).let { plan ->
@@ -220,5 +224,35 @@ class OrderServiceTest {
         val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, guests = 2, lines = listOf(line(burger), line(beer))))
 
         assertEquals(listOf(TaxRate.of("10"), TaxRate.of("20")), orders.stored.getValue(order.id).lines.map { it.taxRate })
+    }
+
+    @Test
+    fun `discount is applied from the venue list and kept on the order`() {
+        val regular = discounts.load(venue.id).add(venue.tenantId, "Regular guest", DiscountPercent.of("10"))
+            .also { discounts.saveAll(listOf(it)) }
+        val steak = item("Steak", "28.00")
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(steak))))
+
+        service.applyDiscount(ApplyDiscountCommand(venue.id, order.id, regular.id, waiter))
+
+        val stored = orders.stored.getValue(order.id)
+        assertEquals("Regular guest", stored.discount?.name)
+        assertEquals(waiter, stored.discount?.appliedBy)
+        assertEquals(now, stored.discount?.appliedAt)
+        assertEquals(Money.of("25.20"), stored.due)
+        assertEquals(1, orders.locks)
+
+        service.removeDiscount(RemoveDiscountCommand(venue.id, order.id))
+
+        assertEquals(Money.of("28.00"), orders.stored.getValue(order.id).due)
+    }
+
+    @Test
+    fun `unknown discount is not found`() {
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(item("Steak", "28.00")))))
+
+        assertFailsWith<NotFoundException> {
+            service.applyDiscount(ApplyDiscountCommand(venue.id, order.id, VenueDiscountId.new(), waiter))
+        }
     }
 }

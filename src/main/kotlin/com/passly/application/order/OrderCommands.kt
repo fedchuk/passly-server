@@ -1,6 +1,7 @@
 package com.passly.application.order
 
 import com.passly.domain.common.Money
+import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderLineRequest
@@ -37,4 +38,16 @@ data class CloseOrderCommand(
     val venueId: VenueId,
     val orderId: OrderId,
     val closedBy: UserId,
+)
+
+data class ApplyDiscountCommand(
+    val venueId: VenueId,
+    val orderId: OrderId,
+    val discountId: VenueDiscountId,
+    val appliedBy: UserId,
+)
+
+data class RemoveDiscountCommand(
+    val venueId: VenueId,
+    val orderId: OrderId,
 )

@@ -2,6 +2,7 @@ package com.passly.web.api.order
 
 import com.passly.application.order.*
 import com.passly.domain.common.Money
+import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
 import com.passly.domain.venue.CurrencyCode
@@ -111,6 +112,30 @@ class OrderController(
                 ),
             ).toResponse()
         }
+
+    @PutMapping("/{id}/discount")
+    @Operation(
+        summary = "Apply a discount to the whole bill",
+        description = "Replaces the discount the order had. Name and percent are copied into the order. " +
+                "Fails with 409 after the first payment and when the order is closed.",
+    )
+    fun applyDiscount(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: ApplyDiscountRequest,
+        @AuthenticationPrincipal jwt: Jwt,
+    ): OrderResponse =
+        orders.applyDiscount(
+            ApplyDiscountCommand(VenueId(venueId), OrderId(id), VenueDiscountId(request.discountId), jwt.userId()),
+        ).toResponse()
+
+    @DeleteMapping("/{id}/discount")
+    @Operation(
+        summary = "Remove the discount",
+        description = "Fails with 409 after the first payment and when the order is closed.",
+    )
+    fun removeDiscount(@PathVariable venueId: UUID, @PathVariable id: UUID): OrderResponse =
+        orders.removeDiscount(RemoveDiscountCommand(VenueId(venueId), OrderId(id))).toResponse()
 
     @PostMapping("/{id}/close")
     @Operation(

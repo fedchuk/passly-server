@@ -1,5 +1,6 @@
 package com.passly.web.admin
 
+import com.passly.application.discount.DiscountService
 import com.passly.application.tax.TaxRateService
 import com.passly.application.venue.AcceptCurrencyCommand
 import com.passly.application.venue.ChangeRateCommand
@@ -27,6 +28,7 @@ import java.util.*
 class VenueSettingsController(
     private val settings: VenueSettingsService,
     private val taxRates: TaxRateService,
+    private val discounts: DiscountService,
     private val venues: AdminVenues,
 ) {
 
@@ -121,6 +123,7 @@ class VenueSettingsController(
         model.addAttribute("addableCurrencies", current.addableCurrencyOptions())
         model.addAttribute("taxRates", taxRates.list(VenueId(venueId)).map { it.toRowView() })
         model.addAttribute("taxPresets", taxRates.presets(VenueId(venueId)).toPresetLabel())
+        model.addAttribute("discounts", discounts.list(VenueId(venueId)).map { it.toRowView() })
         model.addAttribute("countryName", Locale.of("", current.country.value).getDisplayCountry(Locale.ENGLISH))
         return "admin/settings"
     }

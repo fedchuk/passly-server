@@ -1,5 +1,7 @@
 package com.passly.config
 
+import com.passly.application.discount.CreateDiscountCommand
+import com.passly.application.discount.DiscountService
 import com.passly.application.floor.CreateAreaCommand
 import com.passly.application.floor.CreateTablesCommand
 import com.passly.application.floor.FloorPlanService
@@ -12,6 +14,7 @@ import com.passly.application.user.StaffService
 import com.passly.application.venue.OnboardingService
 import com.passly.application.venue.RegisterBusinessCommand
 import com.passly.domain.common.Money
+import com.passly.domain.discount.DiscountPercent
 import com.passly.domain.menu.*
 import com.passly.domain.role.RolePreset
 import com.passly.domain.role.VenueRoleId
@@ -42,6 +45,7 @@ class DemoDataRunner(
     private val stations: StationService,
     private val taxRates: TaxRateService,
     private val roles: RoleService,
+    private val discounts: DiscountService,
     @Value("\${passly.demo.password:}") private val configuredPassword: String,
 ) : ApplicationRunner {
 
@@ -70,9 +74,16 @@ class DemoDataRunner(
 
         createMenu(venueId, kitchen, bar, alcohol, createModifierGroups(venueId))
         createFloor(venueId)
+        createDiscounts(venueId)
         hireStaff(venueId, password)
 
         log.info("Demo venue 'Bistro Centro' is ready. Log in as {} with password {}", OWNER_EMAIL, password)
+    }
+
+    private fun createDiscounts(venueId: VenueId) {
+        discounts.create(CreateDiscountCommand(venueId, "Regular guest", DiscountPercent.of("10")))
+        discounts.create(CreateDiscountCommand(venueId, "Happy hour", DiscountPercent.of("20")))
+        discounts.create(CreateDiscountCommand(venueId, "Staff meal", DiscountPercent.of("50")))
     }
 
     private fun createModifierGroups(venueId: VenueId) = DemoModifierGroups(

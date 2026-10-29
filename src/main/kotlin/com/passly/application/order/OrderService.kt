@@ -1,6 +1,7 @@
 package com.passly.application.order
 
 import com.passly.domain.common.*
+import com.passly.domain.discount.DiscountRepository
 import com.passly.domain.floor.FloorPlanRepository
 import com.passly.domain.menu.*
 import com.passly.domain.order.*
@@ -21,6 +22,7 @@ class OrderService(
     private val categories: CategoryRepository,
     private val settings: VenueSettingsRepository,
     private val taxRates: TaxRateRepository,
+    private val discounts: DiscountRepository,
     private val clock: Clock,
 ) {
 
@@ -50,6 +52,21 @@ class OrderService(
     fun addRound(command: AddRoundCommand): Order {
         val order = lockOrder(command.venueId, command.orderId)
         order.addRound(price(command.venueId, command.lines), command.waiterId, clock.instant())
+        orders.save(order)
+        return order
+    }
+
+    fun applyDiscount(command: ApplyDiscountCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        val discount = discounts.load(command.venueId)[command.discountId]
+        order.applyDiscount(discount, command.appliedBy, clock.instant())
+        orders.save(order)
+        return order
+    }
+
+    fun removeDiscount(command: RemoveDiscountCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        order.removeDiscount()
         orders.save(order)
         return order
     }

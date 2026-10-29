@@ -1,5 +1,6 @@
 package com.passly.web.service
 
+import com.passly.application.discount.DiscountService
 import com.passly.application.menu.WaiterMenuService
 import com.passly.application.order.*
 import com.passly.application.venue.VenueSettingsService
@@ -7,6 +8,7 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.UnavailableItemsException
 import com.passly.domain.common.ValidationException
+import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderStatus
@@ -15,6 +17,7 @@ import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import com.passly.web.admin.AdminVenues
+import com.passly.web.admin.OptionView
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -33,6 +36,7 @@ class ServiceController(
     private val menus: WaiterMenuService,
     private val orders: OrderService,
     private val settings: VenueSettingsService,
+    private val discounts: DiscountService,
     private val clock: Clock,
 ) {
 
@@ -64,6 +68,7 @@ class ServiceController(
         model.addAttribute("sections", menu.toSectionViews())
         model.addAttribute("modifierGroups", menu.toModifierGroupViews())
         model.addAttribute("paymentCurrencies", settings.get(VenueId(venueId)).toPaymentCurrencies())
+        model.addAttribute("discounts", discounts.list(VenueId(venueId)).map { OptionView(it.id.value, it.label) })
         return "service/table"
     }
 
@@ -166,6 +171,43 @@ class ServiceController(
             flash.addFlashAttribute("error", e.message)
             tablePage
         }
+    }
+
+    @PostMapping("/tables/{tableId}/discount")
+    fun applyDiscount(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        @RequestParam discountId: UUID,
+        @AuthenticationPrincipal principal: PasslyUserPrincipal,
+        flash: RedirectAttributes,
+    ): String {
+        try {
+            val order = orders.applyDiscount(
+                ApplyDiscountCommand(VenueId(venueId), OrderId(orderId), VenueDiscountId(discountId), UserId(principal.userId)),
+            )
+            val discount = checkNotNull(order.discount)
+            flash.addFlashAttribute("message", "${discount.name} applied: −${order.discountAmount}, ${order.due} to pay")
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+        }
+        return "redirect:/service/venues/$venueId/tables/$tableId"
+    }
+
+    @PostMapping("/tables/{tableId}/discount/remove")
+    fun removeDiscount(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        flash: RedirectAttributes,
+    ): String {
+        try {
+            val order = orders.removeDiscount(RemoveDiscountCommand(VenueId(venueId), OrderId(orderId)))
+            flash.addFlashAttribute("message", "Discount removed, ${order.due} to pay")
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+        }
+        return "redirect:/service/venues/$venueId/tables/$tableId"
     }
 
     @PostMapping("/tables/{tableId}/close")

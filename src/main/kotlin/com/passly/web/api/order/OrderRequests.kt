@@ -47,3 +47,8 @@ data class PaymentRequest(
     )
     @Pattern(regexp = "^[A-Z]{3}$") val currency: String? = null,
 )
+
+data class ApplyDiscountRequest(
+    @Schema(description = "One of GET …/discounts")
+    val discountId: UUID,
+)

@@ -2,6 +2,8 @@ package com.passly.data.order
 
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
+import com.passly.domain.discount.DiscountPercent
+import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.menu.MenuItemId
 import com.passly.domain.menu.ModifierId
@@ -27,6 +29,15 @@ fun OrderEntity.toDomain() = Order.fromStorage(
     closedBy = closedBy?.let(::UserId),
     closedAt = closedAt,
     version = checkNotNull(version) { "Stored order $id has no version" },
+    discount = discountId?.let { discountId ->
+        OrderDiscount(
+            discountId = VenueDiscountId(discountId),
+            name = checkNotNull(discountName) { "Discount of order $id has no name" },
+            percent = DiscountPercent.of(checkNotNull(discountPercent) { "Discount of order $id has no percent" }),
+            appliedBy = UserId(checkNotNull(discountAppliedBy) { "Discount of order $id has no author" }),
+            appliedAt = checkNotNull(discountAppliedAt) { "Discount of order $id has no time" },
+        )
+    },
 )
 
 fun Order.toNewEntity() = OrderEntity(
@@ -41,6 +52,7 @@ fun Order.toNewEntity() = OrderEntity(
 ).also {
     it.closedBy = closedBy?.value
     it.closedAt = closedAt
+    it.copyDiscountFrom(this)
     it.appendNewLines(this)
     it.appendNewPayments(this)
 }
@@ -50,8 +62,18 @@ fun OrderEntity.updateFrom(order: Order) {
     guests = order.guests
     closedBy = order.closedBy?.value
     closedAt = order.closedAt
+    copyDiscountFrom(order)
     appendNewLines(order)
     appendNewPayments(order)
+}
+
+private fun OrderEntity.copyDiscountFrom(order: Order) {
+    val discount = order.discount
+    discountId = discount?.discountId?.value
+    discountName = discount?.name
+    discountPercent = discount?.percent?.value
+    discountAppliedBy = discount?.appliedBy?.value
+    discountAppliedAt = discount?.appliedAt
 }
 
 private fun OrderEntity.appendNewLines(order: Order) {

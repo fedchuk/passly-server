@@ -14,19 +14,36 @@ data class OrderResponse(
     val openedAt: Instant,
     @Schema(description = "Number of rounds sent so far")
     val rounds: Int,
-    @Schema(description = "Sum of all lines before discounts", example = "31.90")
+    @Schema(description = "Sum of all lines before the discount", example = "31.90")
     val total: String,
+    @Schema(description = "Discount on the whole bill, copied from the venue discount when applied")
+    val discount: OrderDiscountResponse?,
+    @Schema(description = "Total minus the discount", example = "28.71")
+    val toPay: String,
     @Schema(description = "Sum of all payments", example = "20.00")
     val paid: String,
-    @Schema(description = "What is still to pay", example = "11.90")
+    @Schema(description = "What is still to pay: toPay minus paid", example = "8.71")
     val due: String,
-    @Schema(description = "VAT included in the total, one entry per rate")
+    @Schema(description = "VAT included in toPay, one entry per rate. The discount lowers every rate in proportion.")
     val taxes: List<TaxShareResponse>,
     @Schema(description = "Lines in the order they were sent")
     val lines: List<OrderLineResponse>,
     val payments: List<PaymentResponse>,
     val closedBy: UUID?,
     val closedAt: Instant?,
+)
+
+data class OrderDiscountResponse(
+    @Schema(description = "The venue discount it was taken from. It may be changed or deleted since.")
+    val discountId: UUID,
+    @Schema(example = "Regular guest")
+    val name: String,
+    @Schema(example = "10.00")
+    val percent: String,
+    @Schema(description = "Taken off the total", example = "3.19")
+    val amount: String,
+    val appliedBy: UUID,
+    val appliedAt: Instant,
 )
 
 data class TaxShareResponse(
@@ -98,6 +115,10 @@ fun Order.toResponse() = OrderResponse(
     openedAt = openedAt,
     rounds = rounds,
     total = total.toString(),
+    discount = discount?.let {
+        OrderDiscountResponse(it.discountId.value, it.name, it.percent.value.toPlainString(), discountAmount.toString(), it.appliedBy.value, it.appliedAt)
+    },
+    toPay = toPay.toString(),
     paid = paid.toString(),
     due = due.toString(),
     taxes = taxShares.map { TaxShareResponse(it.rate.percent.toPlainString(), it.gross.toString(), it.tax.toString(), it.net.toString()) },

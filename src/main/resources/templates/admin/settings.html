@@ -134,6 +134,44 @@
             <small class="muted" th:text="${taxPresets}">Food and soft drinks 10%, Alcohol 20%</small>
         </form>
     </section>
+
+    <section class="card" id="discounts">
+        <h2>Discounts</h2>
+        <p class="muted">Ready discounts for the whole bill. Whoever takes payments picks one on the table screen before the first payment. VAT is counted on the bill after the discount.</p>
+
+        <p th:if="${discounts.isEmpty()}" class="empty">No discounts yet.</p>
+
+        <ul class="currency-list" th:unless="${discounts.isEmpty()}">
+            <li class="currency-row" th:each="discount : ${discounts}">
+                <form class="tax-rate-form" method="post" role="group"
+                      th:action="@{/admin/venues/{v}/settings/discounts/{d}(v=${venue.id}, d=${discount.id})}">
+                    <input type="hidden" name="version" th:value="${discount.version}">
+                    <input name="name" th:value="${discount.name}" required maxlength="80" aria-label="Name">
+                    <input name="percent" class="tax-rate-percent" th:value="${discount.percent}" inputmode="decimal" required
+                           th:aria-label="|Discount of ${discount.name} in percent|">
+                    <span class="rate-suffix">%</span>
+                    <button type="submit" class="secondary">Save</button>
+                </form>
+                <form method="post" th:action="@{/admin/venues/{v}/settings/discounts/{d}/delete(v=${venue.id}, d=${discount.id})}"
+                      onsubmit="return confirm('Delete this discount? Bills that already have it keep it.')">
+                    <button type="submit" class="outline contrast icon-button" th:title="|Delete ${discount.name}|"
+                            th:aria-label="|Delete ${discount.name}|">✕</button>
+                </form>
+            </li>
+        </ul>
+
+        <form class="currency-add" method="post" th:action="@{/admin/venues/{v}/settings/discounts(v=${venue.id})}">
+            <label>
+                Name
+                <input name="name" placeholder="Happy hour" required maxlength="80">
+            </label>
+            <label>
+                Discount, %
+                <input name="percent" inputmode="decimal" placeholder="20" required>
+            </label>
+            <button type="submit">Add discount</button>
+        </form>
+    </section>
 </main>
 </body>
 </html>

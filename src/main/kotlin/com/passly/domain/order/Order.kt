@@ -3,6 +3,7 @@ package com.passly.domain.order
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
 import com.passly.domain.common.ValidationException
+import com.passly.domain.discount.VenueDiscount
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.user.UserId
@@ -24,6 +25,7 @@ class Order private constructor(
     closedBy: UserId?,
     closedAt: Instant?,
     val version: Long?,
+    discount: OrderDiscount?,
 ) {
     var status: OrderStatus = status
         private set
@@ -40,6 +42,9 @@ class Order private constructor(
     var closedAt: Instant? = closedAt
         private set
 
+    var discount: OrderDiscount? = discount
+        private set
+
     val isNew: Boolean get() = version == null
 
     val rounds: Int get() = lines.maxOfOrNull { it.round } ?: 0
@@ -48,12 +53,23 @@ class Order private constructor(
 
     val paid: Money get() = payments.fold(Money.ZERO) { sum, payment -> sum + payment.amount }
 
-    val due: Money get() = total - paid
+    val discountAmount: Money get() = discount?.percent?.of(total) ?: Money.ZERO
+
+    val toPay: Money get() = total - discountAmount
+
+    val due: Money get() = toPay - paid
 
     val taxShares: List<TaxShare>
-        get() = lines.groupBy { it.taxRate.percent }
-            .toSortedMap()
-            .map { (_, rateLines) -> TaxShare.of(rateLines.first().taxRate, rateLines.fold(Money.ZERO) { sum, line -> sum + line.total }) }
+        get() {
+            val grossByRate = lines.groupBy { it.taxRate.percent }
+                .toSortedMap()
+                .map { (_, rateLines) -> rateLines.first().taxRate to rateLines.fold(Money.ZERO) { sum, line -> sum + line.total } }
+            val percent = discount?.percent ?: return grossByRate.map { (rate, gross) -> TaxShare.of(rate, gross) }
+            val discounted = grossByRate.map { (rate, gross) -> rate to gross - percent.of(gross) }
+            val drift = toPay - discounted.fold(Money.ZERO) { sum, (_, gross) -> sum + gross }
+            val largest = discounted.indices.maxByOrNull { discounted[it].second }
+            return discounted.mapIndexed { index, (rate, gross) -> TaxShare.of(rate, if (index == largest) gross + drift else gross) }
+        }
 
     fun addRound(priced: List<PricedLine>, addedBy: UserId, addedAt: Instant): Int {
         requireOpen()
@@ -84,9 +100,23 @@ class Order private constructor(
         return round
     }
 
+    fun applyDiscount(source: VenueDiscount, appliedBy: UserId, appliedAt: Instant) {
+        requireOpen()
+        requireNoPayments()
+        require(source.venueId == venueId) { "Discount ${source.id} belongs to another venue" }
+        discount = OrderDiscount(source.id, source.name, source.percent, appliedBy, appliedAt)
+    }
+
+    fun removeDiscount() {
+        requireOpen()
+        requireNoPayments()
+        discount = null
+    }
+
     fun pay(method: PaymentMethod, tender: Tender, takenBy: UserId, takenAt: Instant): Payment {
         requireOpen()
         if (lines.isEmpty()) throw ValidationException("There is nothing to pay yet", "amount")
+        if (due.isZero) throw ConflictException("Nothing is due. Close the table instead.")
         if (tender.amount.isNegative || tender.amount.isZero) throw ValidationException("Amount must be more than zero", "amount")
         if (payments.size >= MAX_PAYMENTS) {
             throw ValidationException("An order can have at most $MAX_PAYMENTS payments", "amount")
@@ -116,6 +146,10 @@ class Order private constructor(
         status = OrderStatus.CLOSED
         closedBy = by
         closedAt = at
+    }
+
+    private fun requireNoPayments() {
+        if (payments.isNotEmpty()) throw ConflictException("The discount cannot change after the first payment")
     }
 
     private fun requireOpen() {
@@ -153,6 +187,7 @@ class Order private constructor(
                 closedBy = null,
                 closedAt = null,
                 version = null,
+                discount = null,
             )
         }
 
@@ -170,6 +205,7 @@ class Order private constructor(
             closedBy: UserId?,
             closedAt: Instant?,
             version: Long,
-        ) = Order(id, tenantId, venueId, tableId, status, guests, openedBy, openedAt, lines, payments, closedBy, closedAt, version)
+            discount: OrderDiscount? = null,
+        ) = Order(id, tenantId, venueId, tableId, status, guests, openedBy, openedAt, lines, payments, closedBy, closedAt, version, discount)
     }
 }

@@ -4,6 +4,7 @@ import com.passly.data.common.BaseEntity
 import com.passly.domain.order.OrderStatus
 import jakarta.persistence.*
 import org.hibernate.annotations.BatchSize
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 
@@ -40,6 +41,21 @@ class OrderEntity(
 
     @Column(name = "closed_at")
     var closedAt: Instant? = null
+
+    @Column(name = "discount_id")
+    var discountId: UUID? = null
+
+    @Column(name = "discount_name", length = 80)
+    var discountName: String? = null
+
+    @Column(name = "discount_percent", precision = 5, scale = 2)
+    var discountPercent: BigDecimal? = null
+
+    @Column(name = "discount_applied_by")
+    var discountAppliedBy: UUID? = null
+
+    @Column(name = "discount_applied_at")
+    var discountAppliedAt: Instant? = null
 
     @OneToMany(mappedBy = "parentOrder", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("position")
