@@ -6,14 +6,25 @@
     <div class="page-header">
         <div>
             <h1>Settings</h1>
-            <p class="subtitle">Where the venue works and which currencies its guests pay in.</p>
+            <p class="subtitle">Where the venue works, what guests pay in, and the taxes and discounts on their bills.</p>
         </div>
     </div>
 
     <p th:if="${message}" class="notice" th:text="${message}">Settings saved</p>
     <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
 
-    <section class="card">
+    <nav class="settings-tabs" role="tablist" aria-label="Settings sections">
+        <a href="#general" role="tab" id="tab-general" aria-controls="settings-general">General</a>
+        <a href="#currencies" role="tab" id="tab-currencies" aria-controls="settings-currencies">
+            Currencies <span class="tab-count" th:unless="${accepted.isEmpty()}" th:text="${accepted.size()}">1</span></a>
+        <a href="#tax-rates" role="tab" id="tab-tax-rates" aria-controls="settings-tax-rates">
+            Tax rates <span class="tab-count" th:unless="${taxRates.isEmpty()}" th:text="${taxRates.size()}">3</span></a>
+        <a href="#discounts" role="tab" id="tab-discounts" aria-controls="settings-discounts">
+            Discounts <span class="tab-count" th:unless="${discounts.isEmpty()}" th:text="${discounts.size()}">2</span></a>
+    </nav>
+
+    <section class="card settings-panel" id="settings-general" role="tabpanel" aria-labelledby="tab-general">
+        <h2>General</h2>
         <form th:action="@{/admin/venues/{v}/settings(v=${venue.id})}" th:object="${form}" method="post">
             <p th:each="err : ${#fields.globalErrors()}" class="error" th:text="${err}">Changed by someone else</p>
 
@@ -56,7 +67,7 @@
         </form>
     </section>
 
-    <section class="card">
+    <section class="card settings-panel" id="settings-currencies" role="tabpanel" aria-labelledby="tab-currencies">
         <h2>Additional currencies</h2>
         <p class="muted">Guests can also pay in these currencies, in cash or by card. The amount is converted to
             <strong th:text="${mainCurrency}">EUR</strong> at the rate you set here.</p>
@@ -101,7 +112,7 @@
         </form>
     </section>
 
-    <section class="card" id="tax-rates">
+    <section class="card settings-panel" id="settings-tax-rates" role="tabpanel" aria-labelledby="tab-tax-rates">
         <h2>Tax rates</h2>
         <p class="muted">VAT included in menu prices. A new rate applies to new orders; orders already taken keep the rate they had.</p>
 
@@ -145,7 +156,7 @@
         </form>
     </section>
 
-    <section class="card" id="discounts">
+    <section class="card settings-panel" id="settings-discounts" role="tabpanel" aria-labelledby="tab-discounts">
         <h2>Discounts</h2>
         <p class="muted">Ready discounts for the whole bill. Whoever takes payments picks one on the table screen before the first payment. VAT is counted on the bill after the discount.</p>
 
@@ -182,6 +193,38 @@
             <button type="submit">Add discount</button>
         </form>
     </section>
+
+    <script>
+        (() => {
+            const tabs = [...document.querySelectorAll('.settings-tabs [role="tab"]')];
+            const names = tabs.map(tab => tab.hash.slice(1));
+            const show = name => {
+                const current = names.includes(name) ? name : names[0];
+                tabs.forEach(tab => {
+                    const selected = tab.hash.slice(1) === current;
+                    tab.setAttribute('aria-selected', selected);
+                    tab.tabIndex = selected ? 0 : -1;
+                    document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+                });
+            };
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', event => {
+                    event.preventDefault();
+                    history.replaceState(null, '', tab.hash);
+                    show(tab.hash.slice(1));
+                });
+                tab.addEventListener('keydown', event => {
+                    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+                    if (step === 0) return;
+                    const next = tabs[(index + step + tabs.length) % tabs.length];
+                    next.focus();
+                    next.click();
+                });
+            });
+            window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+            show(location.hash.slice(1));
+        })();
+    </script>
 </main>
 </body>
 </html>

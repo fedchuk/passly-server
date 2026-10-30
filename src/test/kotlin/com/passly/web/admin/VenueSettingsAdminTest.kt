@@ -167,7 +167,7 @@ class VenueSettingsAdminTest {
             param("currency", "CHF")
             param("rate", "1.05")
         }.andExpect {
-            redirectedUrl(page)
+            redirectedUrl("$page#currencies")
             flash { attribute("message", "CHF is accepted at 1.05") }
         }
 
@@ -187,7 +187,7 @@ class VenueSettingsAdminTest {
             with(csrf())
             param("rate", "1.07")
         }.andExpect {
-            redirectedUrl(page)
+            redirectedUrl("$page#currencies")
             flash { attribute("message", "Rate of CHF is now 1.07") }
         }
 
@@ -202,7 +202,7 @@ class VenueSettingsAdminTest {
             with(member(StaffRole.MANAGER))
             with(csrf())
         }.andExpect {
-            redirectedUrl(page)
+            redirectedUrl("$page#currencies")
             flash { attribute("message", "CHF is no longer accepted") }
         }
 
@@ -217,7 +217,7 @@ class VenueSettingsAdminTest {
             param("currency", "CHF")
             param("rate", "one")
         }.andExpect {
-            redirectedUrl(page)
+            redirectedUrl("$page#currencies")
             flash { attribute("error", "Exchange rate 'one' is not a number") }
         }
 
@@ -256,5 +256,20 @@ class VenueSettingsAdminTest {
             param("currency", "CHF")
             param("rate", "1.05")
         }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `settings are split into tabs`() {
+        acceptSwissFrancs()
+
+        mockMvc.get(page) { with(member(StaffRole.MANAGER)) }.andExpect {
+            content { string(containsString("role=\"tablist\"")) }
+            content { string(containsString("href=\"#general\"")) }
+            content { string(containsString("href=\"#currencies\"")) }
+            content { string(containsString("href=\"#tax-rates\"")) }
+            content { string(containsString("href=\"#discounts\"")) }
+            content { string(containsString("id=\"settings-currencies\" role=\"tabpanel\"")) }
+            content { string(containsString("<span class=\"tab-count\">1</span>")) }
+        }
     }
 }

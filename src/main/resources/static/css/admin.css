@@ -2635,3 +2635,50 @@ form.tax-rate-form button {
 .voucher-forms button {
     white-space: nowrap;
 }
+
+.settings-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0 0 1.25rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.settings-tabs a {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: -1px;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.settings-tabs a:hover {
+    color: var(--text);
+}
+
+.settings-tabs a[aria-selected="true"] {
+    border-bottom-color: var(--primary);
+    color: var(--primary);
+}
+
+.tab-count {
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+.settings-panel[hidden] {
+    display: none;
+}
+
+.settings-panel + .settings-panel:not([hidden]) {
+    margin-top: 0;
+}

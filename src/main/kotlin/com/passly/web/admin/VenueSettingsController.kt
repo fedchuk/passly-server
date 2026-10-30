@@ -135,7 +135,7 @@ class VenueSettingsController(
         } catch (e: ConflictException) {
             addFlashAttribute("error", e.message)
         }
-        return settingsPage(venueId)
+        return "redirect:/admin/venues/$venueId/settings#currencies"
     }
 
     private fun settingsPage(venueId: UUID) = "redirect:/admin/venues/$venueId/settings"
