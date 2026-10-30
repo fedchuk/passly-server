@@ -1,6 +1,7 @@
 package com.passly.data.order
 
 import com.passly.data.common.BaseEntity
+import com.passly.domain.order.PrepStatus
 import jakarta.persistence.*
 import org.hibernate.annotations.BatchSize
 import java.math.BigDecimal
@@ -49,6 +50,13 @@ class OrderLineEntity(
     @Column(name = "added_at", nullable = false, updatable = false)
     val addedAt: Instant,
 ) : BaseEntity(id) {
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prep_status", nullable = false, length = 12)
+    var prepStatus: PrepStatus = PrepStatus.NEW
+
+    @Column(name = "status_changed_at", nullable = false)
+    var statusChangedAt: Instant = addedAt
 
     @ElementCollection
     @CollectionTable(name = "order_line_modifier", joinColumns = [JoinColumn(name = "line_id")])

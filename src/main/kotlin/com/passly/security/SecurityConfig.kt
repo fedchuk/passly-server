@@ -36,6 +36,7 @@ class SecurityConfig {
                 authorize("/api/v1/venues/{venueId}/orders/{orderId}/discount", venues.requires(Permission.CLOSE_ORDERS))
                 authorize("/api/v1/venues/{venueId}/orders/{orderId}/voucher", venues.requires(Permission.CLOSE_ORDERS))
                 authorize("/api/v1/venues/{venueId}/orders/**", venues.requires(Permission.TAKE_ORDERS))
+                authorize("/api/v1/venues/{venueId}/kitchen/**", venues.requires(Permission.PREPARE_ORDERS))
                 authorize(HttpMethod.GET, "/api/v1/venues/{venueId}/**", venues.requires(Permission.VIEW_MENU))
                 authorize("/api/v1/venues/{venueId}/**", venues.requires(Permission.EDIT_MENU))
                 authorize(anyRequest, authenticated)

@@ -6,14 +6,24 @@
     <div class="page-header">
         <div>
             <h1>Kitchen display</h1>
-            <p class="subtitle">New rounds for your stations appear here as soon as waiters send them.</p>
+            <p class="subtitle">Choose the station this screen works for. Each station sees only its own dishes and drinks.</p>
         </div>
     </div>
 
-    <div class="placeholder">
+    <div th:if="${stations.isEmpty()}" class="placeholder">
         <svg th:replace="~{fragments/icons :: icon('station')}"></svg>
-        <p>The order board is coming in one of the next steps.</p>
+        <p>There are no stations yet. A manager adds them in the back office.</p>
     </div>
+
+    <ul class="station-picker" th:unless="${stations.isEmpty()}">
+        <li th:each="station : ${stations}">
+            <a class="station-choice" th:href="@{/kitchen/venues/{v}/stations/{s}(v=${venue.id}, s=${station.id})}"
+               th:attr="data-station-id=${station.id}">
+                <svg th:replace="~{fragments/icons :: icon('station')}"></svg>
+                <strong th:text="${station.name}">Kitchen</strong>
+            </a>
+        </li>
+    </ul>
 </main>
 </body>
 </html>

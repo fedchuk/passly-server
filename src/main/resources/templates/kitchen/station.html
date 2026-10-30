@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/workspace :: page(${station}, ${venue}, 'kitchen', ~{::main})}">
+<body>
+<main class="work-main kds" th:attr="data-refresh=${refreshSeconds}">
+    <div class="page-header">
+        <div>
+            <h1 th:text="${station}">Kitchen</h1>
+            <p class="subtitle" th:text="|${board.preparing.size()} to prepare · ${board.ready.size()} ready for pickup|">3 to prepare · 1 ready for pickup</p>
+        </div>
+        <nav class="kds-stations" th:if="${stations.size() > 1}" aria-label="Stations">
+            <a th:each="other : ${stations}" th:href="@{/kitchen/venues/{v}/stations/{s}(v=${venue.id}, s=${other.id})}"
+               th:text="${other.name}" th:attr="aria-current=${other.current} ? 'page' : null">Bar</a>
+        </nav>
+    </div>
+
+    <p th:if="${error}" class="error" th:text="${error}">Order line not found</p>
+
+    <div class="kds-columns">
+        <section class="kds-column" aria-labelledby="kds-preparing">
+            <h2 id="kds-preparing">To prepare <span class="tab-count" th:text="${board.preparing.size()}">3</span></h2>
+            <p class="empty" th:if="${board.preparing.isEmpty()}">Nothing to prepare.</p>
+            <article class="kds-ticket" th:each="ticket : ${board.preparing}" th:classappend="${ticket.late} ? 'late'">
+                <header>
+                    <strong th:text="${ticket.table}">Table 7</strong>
+                    <span th:text="|Round ${ticket.round}|">Round 2</span>
+                    <span class="kds-wait" th:text="${ticket.waitingFor}">12 min</span>
+                </header>
+                <ul>
+                    <li th:each="line : ${ticket.lines}" th:class="|kds-line ${line.statusKey}|">
+                        <span class="kds-quantity" th:text="|${line.quantity}×|">2×</span>
+                        <span class="kds-name">
+                            <strong th:text="${line.name}">Ribeye</strong>
+                            <small th:if="${line.modifiers != null}" th:text="${line.modifiers}">Medium rare</small>
+                            <small th:if="${line.comment != null}" class="line-comment" th:text="${line.comment}">No salt</small>
+                        </span>
+                        <form th:if="${line.action != null}" method="post"
+                              th:action="@{/kitchen/venues/{v}/stations/{s}/lines(v=${venue.id}, s=${stationId})}">
+                            <input type="hidden" name="orderId" th:value="${ticket.orderId}">
+                            <input type="hidden" name="lineId" th:value="${line.lineId}">
+                            <button type="submit" name="status" th:value="${line.action.status}" class="outline"
+                                    th:text="${line.action.label}" th:title="${line.status}">Start</button>
+                        </form>
+                    </li>
+                </ul>
+                <footer>
+                    <small th:text="|Sent by ${ticket.sentBy}|">Sent by Anna</small>
+                    <form th:if="${ticket.action != null}" method="post"
+                          th:action="@{/kitchen/venues/{v}/stations/{s}/lines(v=${venue.id}, s=${stationId})}">
+                        <input type="hidden" name="orderId" th:value="${ticket.orderId}">
+                        <input type="hidden" name="lineId" th:each="lineId : ${ticket.lineIds}" th:value="${lineId}">
+                        <button type="submit" name="status" th:value="${ticket.action.status}"
+                                th:text="${ticket.action.label}">Start all</button>
+                    </form>
+                </footer>
+            </article>
+        </section>
+
+        <section class="kds-column ready" aria-labelledby="kds-ready">
+            <h2 id="kds-ready">Ready for pickup <span class="tab-count" th:text="${board.ready.size()}">1</span></h2>
+            <p class="empty" th:if="${board.ready.isEmpty()}">Nothing waiting.</p>
+            <article class="kds-ticket" th:each="ticket : ${board.ready}">
+                <header>
+                    <strong th:text="${ticket.table}">Table 3</strong>
+                    <span th:text="|Round ${ticket.round}|">Round 1</span>
+                    <span class="kds-wait" th:text="${ticket.waitingFor}">20 min</span>
+                </header>
+                <ul>
+                    <li th:each="line : ${ticket.lines}" class="kds-line ready">
+                        <span class="kds-quantity" th:text="|${line.quantity}×|">1×</span>
+                        <span class="kds-name">
+                            <strong th:text="${line.name}">Mojito</strong>
+                            <small th:if="${line.modifiers != null}" th:text="${line.modifiers}">No ice</small>
+                        </span>
+                    </li>
+                </ul>
+                <footer>
+                    <small th:text="|Sent by ${ticket.sentBy}|">Sent by Anna</small>
+                    <form th:if="${ticket.action != null}" method="post"
+                          th:action="@{/kitchen/venues/{v}/stations/{s}/lines(v=${venue.id}, s=${stationId})}">
+                        <input type="hidden" name="orderId" th:value="${ticket.orderId}">
+                        <input type="hidden" name="lineId" th:each="lineId : ${ticket.lineIds}" th:value="${lineId}">
+                        <button type="submit" name="status" th:value="${ticket.action.status}" class="secondary"
+                                th:text="${ticket.action.label}">All picked up</button>
+                    </form>
+                </footer>
+            </article>
+        </section>
+    </div>
+
+    <script>
+        (() => {
+            const seconds = Number(document.querySelector('.kds').dataset.refresh);
+            let busy = false;
+            document.addEventListener('submit', () => busy = true);
+            setInterval(() => {
+                if (!busy && document.visibilityState === 'visible') location.reload();
+            }, seconds * 1000);
+        })();
+    </script>
+</main>
+</body>
+</html>

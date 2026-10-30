@@ -69,7 +69,7 @@ fun Order.toNewEntity() = OrderEntity(
     it.closedAt = closedAt
     it.copyDiscountFrom(this)
     it.copyVoucherFrom(this)
-    it.appendNewLines(this)
+    it.syncLines(this)
     it.appendNewPayments(this)
 }
 
@@ -80,7 +80,7 @@ fun OrderEntity.updateFrom(order: Order) {
     closedAt = order.closedAt
     copyDiscountFrom(order)
     copyVoucherFrom(order)
-    appendNewLines(order)
+    syncLines(order)
     appendNewPayments(order)
 }
 
@@ -105,10 +105,16 @@ private fun OrderEntity.copyVoucherFrom(order: Order) {
     voucherAppliedAt = voucher?.appliedAt
 }
 
-private fun OrderEntity.appendNewLines(order: Order) {
-    val stored = lines.map { it.id }.toSet()
+private fun OrderEntity.syncLines(order: Order) {
+    val stored = lines.associateBy { it.id }
     order.lines.forEachIndexed { position, line ->
-        if (line.id.value !in stored) lines += line.toEntity(this, position)
+        val entity = stored[line.id.value]
+        if (entity == null) {
+            lines += line.toEntity(this, position)
+        } else if (entity.prepStatus != line.status) {
+            entity.prepStatus = line.status
+            entity.statusChangedAt = line.statusChangedAt
+        }
     }
 }
 
@@ -132,6 +138,8 @@ private fun OrderLineEntity.toDomain() = OrderLine(
     },
     addedBy = UserId(addedBy),
     addedAt = addedAt,
+    status = prepStatus,
+    statusChangedAt = statusChangedAt,
 )
 
 private fun OrderLine.toEntity(order: OrderEntity, position: Int) = OrderLineEntity(
@@ -149,6 +157,8 @@ private fun OrderLine.toEntity(order: OrderEntity, position: Int) = OrderLineEnt
     addedBy = addedBy.value,
     addedAt = addedAt,
 ).also { entity ->
+    entity.prepStatus = status
+    entity.statusChangedAt = statusChangedAt
     entity.modifiers = modifiers.map {
         OrderLineModifierEmbeddable(it.modifierId.value, it.groupName, it.name, it.priceDelta.amount)
     }.toMutableList()

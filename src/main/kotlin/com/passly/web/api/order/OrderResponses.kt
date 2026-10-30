@@ -116,6 +116,9 @@ data class OrderLineResponse(
     val modifiers: List<OrderLineModifierResponse>,
     val addedBy: UUID,
     val addedAt: Instant,
+    @Schema(description = "Progress at its station: NEW, IN_PROGRESS, READY, SERVED")
+    val status: PrepStatus,
+    val statusChangedAt: Instant,
 )
 
 data class OrderLineModifierResponse(
@@ -177,6 +180,8 @@ private fun OrderLine.toResponse() = OrderLineResponse(
     modifiers = modifiers.map { OrderLineModifierResponse(it.modifierId.value, it.groupName, it.name, it.priceDelta.toString()) },
     addedBy = addedBy.value,
     addedAt = addedAt,
+    status = status,
+    statusChangedAt = statusChangedAt,
 )
 
 private fun Payment.toResponse() = PaymentResponse(

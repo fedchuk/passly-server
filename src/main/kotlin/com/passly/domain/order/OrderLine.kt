@@ -20,6 +20,8 @@ data class OrderLine(
     val modifiers: List<OrderLineModifier>,
     val addedBy: UserId,
     val addedAt: Instant,
+    val status: PrepStatus = PrepStatus.NEW,
+    val statusChangedAt: Instant = addedAt,
 ) {
     val total: Money get() = unitPrice * quantity
 }

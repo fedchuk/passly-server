@@ -2,6 +2,7 @@ package com.passly.domain.order
 
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.Money
+import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
 import com.passly.domain.discount.VenueDiscount
 import com.passly.domain.floor.DiningTable
@@ -112,6 +113,18 @@ class Order private constructor(
             )
         }
         return round
+    }
+
+    fun moveLines(lineIds: Collection<OrderLineId>, to: PrepStatus, at: Instant): List<OrderLine> {
+        if (to == PrepStatus.NEW) throw ValidationException("A line cannot go back to new", "status")
+        val wanted = lineIds.toSet()
+        if (wanted.isEmpty()) throw ValidationException("Choose at least one line", "lineIds")
+        wanted.firstOrNull { id -> lines.none { it.id == id } }?.let { throw NotFoundException("Order line", it) }
+        val moved = mutableListOf<OrderLine>()
+        lines = lines.map { line ->
+            if (line.id in wanted && line.status.isBefore(to)) line.copy(status = to, statusChangedAt = at).also(moved::add) else line
+        }
+        return moved
     }
 
     fun applyDiscount(source: VenueDiscount, appliedBy: UserId, appliedAt: Instant) {
