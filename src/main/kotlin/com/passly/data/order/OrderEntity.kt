@@ -2,6 +2,7 @@ package com.passly.data.order
 
 import com.passly.data.common.BaseEntity
 import com.passly.domain.order.OrderStatus
+import com.passly.domain.voucher.VoucherKind
 import jakarta.persistence.*
 import org.hibernate.annotations.BatchSize
 import java.math.BigDecimal
@@ -56,6 +57,31 @@ class OrderEntity(
 
     @Column(name = "discount_applied_at")
     var discountAppliedAt: Instant? = null
+
+    @Column(name = "voucher_id")
+    var voucherId: UUID? = null
+
+    @Column(name = "voucher_code", length = 8)
+    var voucherCode: String? = null
+
+    @Column(name = "voucher_name", length = 80)
+    var voucherName: String? = null
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "voucher_kind", length = 12)
+    var voucherKind: VoucherKind? = null
+
+    @Column(name = "voucher_percent", precision = 5, scale = 2)
+    var voucherPercent: BigDecimal? = null
+
+    @Column(name = "voucher_amount", precision = 10, scale = 2)
+    var voucherAmount: BigDecimal? = null
+
+    @Column(name = "voucher_applied_by")
+    var voucherAppliedBy: UUID? = null
+
+    @Column(name = "voucher_applied_at")
+    var voucherAppliedAt: Instant? = null
 
     @OneToMany(mappedBy = "parentOrder", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("position")

@@ -2534,3 +2534,104 @@ form.tax-rate-form button {
 .discount-forms button {
     white-space: nowrap;
 }
+
+.voucher-form {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.3fr) minmax(0, 0.8fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.voucher-form label {
+    margin: 0;
+}
+
+.voucher-form label[hidden] {
+    display: none;
+}
+
+.voucher-value {
+    display: flex;
+}
+
+.voucher-value input {
+    flex: 1;
+    min-width: 4rem;
+    margin: 0;
+    border-radius: var(--radius-small) 0 0 var(--radius-small);
+    text-align: right;
+}
+
+.voucher-value select {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
+}
+
+@media (max-width: 900px) {
+    .voucher-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .voucher-form .voucher-name,
+    .voucher-form button {
+        grid-column: 1 / -1;
+    }
+}
+
+.voucher-codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.voucher-codes code,
+.voucher-list-card code {
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.vouchers-page > .card + .card {
+    margin-top: 1.25rem;
+}
+
+.voucher-list-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.voucher-list-card > .empty,
+.voucher-list-card > small {
+    display: block;
+    padding: 1rem 1.25rem;
+}
+
+.voucher-forms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+}
+
+.voucher-forms form {
+    margin: 0;
+}
+
+.voucher-forms .voucher-apply {
+    flex: 1;
+    min-width: 14rem;
+}
+
+.voucher-forms input {
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.voucher-forms button {
+    white-space: nowrap;
+}

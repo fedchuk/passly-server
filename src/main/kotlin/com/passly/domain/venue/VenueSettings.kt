@@ -4,12 +4,15 @@ import com.passly.domain.common.ConflictException
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.ValidationException
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 class VenueSettings private constructor(
     val venueId: VenueId,
     country: CountryCode,
     currency: CurrencyCode,
     acceptedCurrencies: List<AcceptedCurrency>,
+    timeZone: ZoneId,
     val version: Long,
 ) {
     var country: CountryCode = country
@@ -20,6 +23,15 @@ class VenueSettings private constructor(
 
     var acceptedCurrencies: List<AcceptedCurrency> = acceptedCurrencies
         private set
+
+    var timeZone: ZoneId = timeZone
+        private set
+
+    fun today(at: Instant): LocalDate = at.atZone(timeZone).toLocalDate()
+
+    fun changeTimeZone(timeZone: ZoneId) {
+        this.timeZone = timeZone
+    }
 
     fun changeCountry(country: CountryCode) {
         this.country = country
@@ -64,7 +76,7 @@ class VenueSettings private constructor(
             currency
         )
 
-    override fun toString() = "VenueSettings($venueId, $country, $currency, accepts ${acceptedCurrencies.map { it.currency }})"
+    override fun toString() = "VenueSettings($venueId, $country, $currency, $timeZone, accepts ${acceptedCurrencies.map { it.currency }})"
 
     companion object {
         const val MAX_ACCEPTED = 5
@@ -75,6 +87,7 @@ class VenueSettings private constructor(
             currency: CurrencyCode,
             version: Long,
             acceptedCurrencies: List<AcceptedCurrency> = emptyList(),
-        ) = VenueSettings(venueId, country, currency, acceptedCurrencies, version)
+            timeZone: ZoneId = TimeZones.DEFAULT,
+        ) = VenueSettings(venueId, country, currency, acceptedCurrencies, timeZone, version)
     }
 }

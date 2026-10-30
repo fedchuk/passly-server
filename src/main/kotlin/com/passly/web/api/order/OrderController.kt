@@ -7,6 +7,7 @@ import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.VoucherCode
 import com.passly.web.api.IdempotentResponses
 import com.passly.web.api.auth.userId
 import io.swagger.v3.oas.annotations.Operation
@@ -136,6 +137,32 @@ class OrderController(
     )
     fun removeDiscount(@PathVariable venueId: UUID, @PathVariable id: UUID): OrderResponse =
         orders.removeDiscount(RemoveDiscountCommand(VenueId(venueId), OrderId(id))).toResponse()
+
+    @PutMapping("/{id}/voucher")
+    @Operation(
+        summary = "Apply a voucher by its code",
+        description = "Takes the voucher value off the bill after the discount and replaces the voucher the order had. " +
+                "A single-use voucher is held by this order until it is removed. Fails with 404 for an unknown code, " +
+                "with 400 for a malformed one and with 409 when the voucher has expired, was used on another bill, " +
+                "after the first payment or when the order is closed.",
+    )
+    fun applyVoucher(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: ApplyVoucherRequest,
+        @AuthenticationPrincipal jwt: Jwt,
+    ): OrderResponse =
+        orders.applyVoucher(
+            ApplyVoucherCommand(VenueId(venueId), OrderId(id), VoucherCode.parse(request.code), jwt.userId()),
+        ).toResponse()
+
+    @DeleteMapping("/{id}/voucher")
+    @Operation(
+        summary = "Remove the voucher",
+        description = "Frees a single-use voucher for another bill. Fails with 409 after the first payment and when the order is closed.",
+    )
+    fun removeVoucher(@PathVariable venueId: UUID, @PathVariable id: UUID): OrderResponse =
+        orders.removeVoucher(RemoveVoucherCommand(VenueId(venueId), OrderId(id))).toResponse()
 
     @PostMapping("/{id}/close")
     @Operation(

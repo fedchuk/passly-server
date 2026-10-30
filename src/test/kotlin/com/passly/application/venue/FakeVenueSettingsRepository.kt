@@ -14,5 +14,5 @@ class FakeVenueSettingsRepository(vararg settings: VenueSettings) : VenueSetting
     }
 
     private fun copyOf(s: VenueSettings, version: Long) =
-        VenueSettings.fromStorage(s.venueId, s.country, s.currency, version, s.acceptedCurrencies)
+        VenueSettings.fromStorage(s.venueId, s.country, s.currency, version, s.acceptedCurrencies, s.timeZone)
 }

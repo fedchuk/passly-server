@@ -1,9 +1,6 @@
 package com.passly.web.admin
 
-import com.passly.domain.venue.AcceptedCurrency
-import com.passly.domain.venue.CountryCode
-import com.passly.domain.venue.CurrencyCode
-import com.passly.domain.venue.VenueSettings
+import com.passly.domain.venue.*
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -26,6 +23,9 @@ fun countryOptions(): List<CodeOption> =
     CountryCode.supported()
         .map { CodeOption(it.value, Locale.of("", it.value).getDisplayCountry(Locale.ENGLISH)) }
         .sortedBy { it.label }
+
+fun timeZoneOptions(): List<CodeOption> =
+    TimeZones.supported().map { CodeOption(it.id, it.id.replace('_', ' ')) }
 
 fun currencyOptions(): List<CodeOption> =
     CurrencyCode.supported().map { CodeOption(it.value, currencyLabel(it)) }

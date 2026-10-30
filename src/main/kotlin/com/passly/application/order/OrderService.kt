@@ -7,6 +7,7 @@ import com.passly.domain.menu.*
 import com.passly.domain.order.*
 import com.passly.domain.tax.TaxRateRepository
 import com.passly.domain.venue.*
+import com.passly.domain.voucher.VoucherRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -23,6 +24,7 @@ class OrderService(
     private val settings: VenueSettingsRepository,
     private val taxRates: TaxRateRepository,
     private val discounts: DiscountRepository,
+    private val vouchers: VoucherRepository,
     private val clock: Clock,
 ) {
 
@@ -71,6 +73,29 @@ class OrderService(
         return order
     }
 
+    fun applyVoucher(command: ApplyVoucherCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        val voucher = vouchers.findByCodeForUpdate(command.venueId, command.code)
+            ?: throw NotFoundException("Voucher", command.code)
+        val now = clock.instant()
+        val previous = order.voucher
+        order.applyVoucher(voucher, command.appliedBy, now)
+        voucher.redeem(order.id, now, venueSettings(command.venueId).today(now))
+        if (previous != null && previous.voucherId != voucher.id) release(order, previous)
+        vouchers.save(voucher)
+        orders.save(order)
+        return order
+    }
+
+    fun removeVoucher(command: RemoveVoucherCommand): Order {
+        val order = lockOrder(command.venueId, command.orderId)
+        val applied = order.voucher ?: return order
+        order.removeVoucher()
+        release(order, applied)
+        orders.save(order)
+        return order
+    }
+
     fun pay(command: PayOrderCommand): Order {
         val order = lockOrder(command.venueId, command.orderId)
         order.pay(command.method, tender(command.venueId, command.amount, command.currency), command.takenBy, clock.instant())
@@ -85,8 +110,17 @@ class OrderService(
         return order
     }
 
+    private fun release(order: Order, applied: OrderVoucher) {
+        val voucher = vouchers.findForUpdate(order.venueId, applied.voucherId) ?: return
+        voucher.release(order.id)
+        vouchers.save(voucher)
+    }
+
+    private fun venueSettings(venueId: VenueId): VenueSettings =
+        settings.find(venueId) ?: throw NotFoundException("Venue", venueId)
+
     private fun tender(venueId: VenueId, amount: Money, currency: CurrencyCode?): Tender {
-        val venueSettings = settings.find(venueId) ?: throw NotFoundException("Venue", venueId)
+        val venueSettings = venueSettings(venueId)
         if (currency == null || currency == venueSettings.currency) return Tender.main(amount, venueSettings.currency)
         val accepted = venueSettings.acceptedCurrencies.firstOrNull { it.currency == currency }
             ?: throw ValidationException("$currency is not accepted here", "currency")

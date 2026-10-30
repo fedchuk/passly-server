@@ -5,13 +5,14 @@ import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
 import java.sql.Timestamp
+import java.time.ZoneId
 
 @Repository
 class JdbcVenueSettingsRepository(private val jdbc: JdbcClient) : VenueSettingsRepository {
 
     override fun find(venueId: VenueId): VenueSettings? {
         val accepted = acceptedCurrencies(venueId)
-        return jdbc.sql("select country, currency, version from venue where id = :id")
+        return jdbc.sql("select country, currency, time_zone, version from venue where id = :id")
             .param("id", venueId.value)
             .query { rs, _ ->
                 VenueSettings.fromStorage(
@@ -20,6 +21,7 @@ class JdbcVenueSettingsRepository(private val jdbc: JdbcClient) : VenueSettingsR
                     currency = CurrencyCode.of(rs.getString("currency")),
                     version = rs.getLong("version"),
                     acceptedCurrencies = accepted,
+                    timeZone = ZoneId.of(rs.getString("time_zone")),
                 )
             }
             .optional()
@@ -30,12 +32,13 @@ class JdbcVenueSettingsRepository(private val jdbc: JdbcClient) : VenueSettingsR
         val updated = jdbc.sql(
             """
             update venue
-            set country = :country, currency = :currency, version = version + 1, updated_at = now()
+            set country = :country, currency = :currency, time_zone = :timeZone, version = version + 1, updated_at = now()
             where id = :id and version = :version
             """,
         )
             .param("country", settings.country.value)
             .param("currency", settings.currency.value)
+            .param("timeZone", settings.timeZone.id)
             .param("id", settings.venueId.value)
             .param("version", settings.version)
             .update()

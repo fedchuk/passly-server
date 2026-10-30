@@ -40,6 +40,16 @@
                 <small class="muted" th:unless="${currencyLocked}">Menu prices and bills are in this currency. It can change only until the first order.</small>
             </label>
 
+            <label>
+                Time zone
+                <select th:field="*{timeZone}" required
+                        th:attr="aria-invalid=${#fields.hasErrors('timeZone')} ? 'true' : null">
+                    <option th:each="zone : ${timeZones}" th:value="${zone.code}" th:text="${zone.label}">Europe/Paris</option>
+                </select>
+                <small class="error" th:if="${#fields.hasErrors('timeZone')}" th:errors="*{timeZone}">Unknown time zone</small>
+                <small class="muted">The venue day ends at midnight here: vouchers stop working after their last day.</small>
+            </label>
+
             <div class="buttons">
                 <button type="submit">Save</button>
             </div>

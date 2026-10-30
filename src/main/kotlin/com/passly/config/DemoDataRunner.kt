@@ -13,6 +13,8 @@ import com.passly.application.user.HireStaffCommand
 import com.passly.application.user.StaffService
 import com.passly.application.venue.OnboardingService
 import com.passly.application.venue.RegisterBusinessCommand
+import com.passly.application.voucher.CreateVouchersCommand
+import com.passly.application.voucher.VoucherService
 import com.passly.domain.common.Money
 import com.passly.domain.discount.DiscountPercent
 import com.passly.domain.menu.*
@@ -23,6 +25,8 @@ import com.passly.domain.user.Email
 import com.passly.domain.user.RawPassword
 import com.passly.domain.user.UserRepository
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.VoucherKind
+import com.passly.domain.voucher.VoucherValue
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
@@ -46,6 +50,7 @@ class DemoDataRunner(
     private val taxRates: TaxRateService,
     private val roles: RoleService,
     private val discounts: DiscountService,
+    private val vouchers: VoucherService,
     @Value("\${passly.demo.password:}") private val configuredPassword: String,
 ) : ApplicationRunner {
 
@@ -75,6 +80,7 @@ class DemoDataRunner(
         createMenu(venueId, kitchen, bar, alcohol, createModifierGroups(venueId))
         createFloor(venueId)
         createDiscounts(venueId)
+        createVouchers(venueId)
         hireStaff(venueId, password)
 
         log.info("Demo venue 'Bistro Centro' is ready. Log in as {} with password {}", OWNER_EMAIL, password)
@@ -84,6 +90,22 @@ class DemoDataRunner(
         discounts.create(CreateDiscountCommand(venueId, "Regular guest", DiscountPercent.of("10")))
         discounts.create(CreateDiscountCommand(venueId, "Happy hour", DiscountPercent.of("20")))
         discounts.create(CreateDiscountCommand(venueId, "Staff meal", DiscountPercent.of("50")))
+    }
+
+    private fun createVouchers(venueId: VenueId) {
+        val validUntil = vouchers.today(venueId).plusMonths(6)
+        val codes = vouchers.create(
+            CreateVouchersCommand(
+                venueId,
+                "Newsletter",
+                VoucherKind.REUSABLE,
+                VoucherValue.Percent(DiscountPercent.of("15")),
+                validUntil
+            ),
+        ) + vouchers.create(
+            CreateVouchersCommand(venueId, "Gift card", VoucherKind.SINGLE_USE, VoucherValue.Amount(Money.of("25.00")), validUntil, quantity = 3),
+        )
+        log.info("Demo vouchers: {}", codes.joinToString { "${it.code.label} (${it.name})" })
     }
 
     private fun createModifierGroups(venueId: VenueId) = DemoModifierGroups(

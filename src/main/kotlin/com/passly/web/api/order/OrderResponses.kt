@@ -1,6 +1,8 @@
 package com.passly.web.api.order
 
 import com.passly.domain.order.*
+import com.passly.domain.voucher.VoucherKind
+import com.passly.domain.voucher.VoucherValue
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.Instant
 import java.util.*
@@ -18,7 +20,9 @@ data class OrderResponse(
     val total: String,
     @Schema(description = "Discount on the whole bill, copied from the venue discount when applied")
     val discount: OrderDiscountResponse?,
-    @Schema(description = "Total minus the discount", example = "28.71")
+    @Schema(description = "Voucher entered by its code. It is applied after the discount.")
+    val voucher: OrderVoucherResponse?,
+    @Schema(description = "Total minus the discount and the voucher", example = "28.71")
     val toPay: String,
     @Schema(description = "Sum of all payments", example = "20.00")
     val paid: String,
@@ -41,6 +45,24 @@ data class OrderDiscountResponse(
     @Schema(example = "10.00")
     val percent: String,
     @Schema(description = "Taken off the total", example = "3.19")
+    val amount: String,
+    val appliedBy: UUID,
+    val appliedAt: Instant,
+)
+
+data class OrderVoucherResponse(
+    @Schema(description = "The voucher it was taken from. It may be deleted since.")
+    val voucherId: UUID,
+    @Schema(example = "ABCD-2345")
+    val code: String,
+    @Schema(example = "Birthday gift")
+    val name: String,
+    val kind: VoucherKind,
+    @Schema(description = "Percent taken off the bill after the discount; empty for an amount voucher", example = "15.00")
+    val percent: String?,
+    @Schema(description = "Amount taken off the bill after the discount; empty for a percent voucher. Never more than the bill.", example = "20.00")
+    val value: String?,
+    @Schema(description = "Taken off this bill", example = "20.00")
     val amount: String,
     val appliedBy: UUID,
     val appliedAt: Instant,
@@ -117,6 +139,19 @@ fun Order.toResponse() = OrderResponse(
     total = total.toString(),
     discount = discount?.let {
         OrderDiscountResponse(it.discountId.value, it.name, it.percent.value.toPlainString(), discountAmount.toString(), it.appliedBy.value, it.appliedAt)
+    },
+    voucher = voucher?.let {
+        OrderVoucherResponse(
+            voucherId = it.voucherId.value,
+            code = it.code.label,
+            name = it.name,
+            kind = it.kind,
+            percent = (it.value as? VoucherValue.Percent)?.percent?.value?.toPlainString(),
+            value = (it.value as? VoucherValue.Amount)?.amount?.toString(),
+            amount = voucherAmount.toString(),
+            appliedBy = it.appliedBy.value,
+            appliedAt = it.appliedAt,
+        )
     },
     toPay = toPay.toString(),
     paid = paid.toString(),

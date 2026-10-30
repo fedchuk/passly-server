@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: page('Vouchers', ${venue}, 'vouchers', ~{::main})}">
+<body>
+<main class="vouchers-page">
+    <div class="page-header">
+        <div>
+            <h1>Vouchers</h1>
+            <p class="subtitle">Codes guests bring to get money off the bill. Whoever takes payments enters the code on the table screen.</p>
+        </div>
+    </div>
+
+    <p th:if="${message}" class="notice" th:text="${message}">Voucher ABCD-2345 created</p>
+    <p th:if="${error}" class="error" th:text="${error}">Something went wrong</p>
+
+    <section class="card created-codes" th:if="${createdCodes != null and !createdCodes.isEmpty()}" aria-label="New codes">
+        <h2>New codes</h2>
+        <p class="muted">Give these to your guests. They are also listed below.</p>
+        <ul class="voucher-codes">
+            <li th:each="code : ${createdCodes}"><code th:text="${code}">ABCD-2345</code></li>
+        </ul>
+    </section>
+
+    <section class="card">
+        <h2>New voucher</h2>
+        <form class="voucher-form" method="post" th:action="@{/admin/venues/{v}/vouchers(v=${venue.id})}">
+            <label class="voucher-name">
+                Name
+                <input name="name" placeholder="Birthday gift" required maxlength="80">
+            </label>
+            <label>
+                Works
+                <select name="kind" id="voucher-kind">
+                    <option value="SINGLE_USE">Once</option>
+                    <option value="REUSABLE">Every time</option>
+                </select>
+            </label>
+            <label>
+                Takes off
+                <span class="voucher-value" role="group">
+                    <input name="value" inputmode="decimal" placeholder="20" required aria-label="Value">
+                    <select name="valueType" aria-label="Percent or amount">
+                        <option value="PERCENT">%</option>
+                        <option value="AMOUNT" th:text="${currency}">EUR</option>
+                    </select>
+                </span>
+            </label>
+            <label>
+                Valid until
+                <input type="date" name="validUntil" required th:min="${today}" th:value="${suggestedValidUntil}">
+            </label>
+            <label id="voucher-quantity">
+                How many
+                <input type="number" name="quantity" min="1" th:max="${maxBatch}" value="1" inputmode="numeric">
+            </label>
+            <button type="submit">Create</button>
+        </form>
+        <small class="muted">A single-use voucher is used up when the bill it was entered on is paid; an amount larger than the bill is not carried over.
+            A voucher works until the end of its last day in the venue time zone.</small>
+    </section>
+
+    <section class="card voucher-list-card">
+        <p th:if="${vouchers.isEmpty()}" class="empty">No vouchers yet.</p>
+
+        <div class="overflow-auto" th:unless="${vouchers.isEmpty()}">
+            <table class="striped">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Takes off</th>
+                    <th>Works</th>
+                    <th>Valid until</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="voucher : ${vouchers}">
+                    <td><code th:text="${voucher.code}">ABCD-2345</code></td>
+                    <td th:text="${voucher.name}">Birthday gift</td>
+                    <td th:text="${voucher.value}">−20%</td>
+                    <td th:text="${voucher.kind}">Single use</td>
+                    <td th:text="${voucher.validUntil}">31 Dec 2026</td>
+                    <td><span th:class="${voucher.active} ? 'badge' : 'pill'" th:text="${voucher.status}">Active</span></td>
+                    <td>
+                        <span class="actions" th:if="${voucher.deletable}">
+                            <form th:action="@{/admin/venues/{v}/vouchers/{id}/delete(v=${venue.id}, id=${voucher.id})}" method="post"
+                                  onsubmit="return confirm('Delete this voucher? Its code stops working.')">
+                                <button type="submit" class="outline contrast" th:title="|Delete ${voucher.code}|"
+                                        th:aria-label="|Delete ${voucher.code}|">✕</button>
+                            </form>
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <small class="muted" th:if="${vouchers.size() == listLimit}" th:text="|The ${listLimit} newest vouchers are shown.|">The 200 newest vouchers are shown.</small>
+    </section>
+
+    <script>
+        (() => {
+            const kind = document.getElementById('voucher-kind');
+            const quantity = document.getElementById('voucher-quantity');
+            const sync = () => {
+                const single = kind.value === 'SINGLE_USE';
+                quantity.hidden = !single;
+                if (!single) quantity.querySelector('input').value = 1;
+            };
+            kind.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+</main>
+</body>
+</html>

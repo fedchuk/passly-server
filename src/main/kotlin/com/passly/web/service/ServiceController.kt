@@ -4,10 +4,7 @@ import com.passly.application.discount.DiscountService
 import com.passly.application.menu.WaiterMenuService
 import com.passly.application.order.*
 import com.passly.application.venue.VenueSettingsService
-import com.passly.domain.common.ConflictException
-import com.passly.domain.common.Money
-import com.passly.domain.common.UnavailableItemsException
-import com.passly.domain.common.ValidationException
+import com.passly.domain.common.*
 import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
@@ -15,6 +12,7 @@ import com.passly.domain.order.OrderStatus
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.VoucherCode
 import com.passly.security.PasslyUserPrincipal
 import com.passly.web.admin.AdminVenues
 import com.passly.web.admin.OptionView
@@ -204,6 +202,47 @@ class ServiceController(
         try {
             val order = orders.removeDiscount(RemoveDiscountCommand(VenueId(venueId), OrderId(orderId)))
             flash.addFlashAttribute("message", "Discount removed, ${order.due} to pay")
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+        }
+        return "redirect:/service/venues/$venueId/tables/$tableId"
+    }
+
+    @PostMapping("/tables/{tableId}/voucher")
+    fun applyVoucher(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        @RequestParam code: String,
+        @AuthenticationPrincipal principal: PasslyUserPrincipal,
+        flash: RedirectAttributes,
+    ): String {
+        try {
+            val order = orders.applyVoucher(
+                ApplyVoucherCommand(VenueId(venueId), OrderId(orderId), VoucherCode.parse(code), UserId(principal.userId)),
+            )
+            val voucher = checkNotNull(order.voucher)
+            flash.addFlashAttribute("message", "Voucher ${voucher.code.label} applied: −${order.voucherAmount}, ${order.due} to pay")
+        } catch (e: ValidationException) {
+            flash.addFlashAttribute("error", e.message)
+        } catch (e: NotFoundException) {
+            flash.addFlashAttribute("error", e.message)
+        } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+        }
+        return "redirect:/service/venues/$venueId/tables/$tableId"
+    }
+
+    @PostMapping("/tables/{tableId}/voucher/remove")
+    fun removeVoucher(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        flash: RedirectAttributes,
+    ): String {
+        try {
+            val order = orders.removeVoucher(RemoveVoucherCommand(VenueId(venueId), OrderId(orderId)))
+            flash.addFlashAttribute("message", "Voucher removed, ${order.due} to pay")
         } catch (e: ConflictException) {
             flash.addFlashAttribute("error", e.message)
         }

@@ -52,3 +52,8 @@ data class ApplyDiscountRequest(
     @Schema(description = "One of GET …/discounts")
     val discountId: UUID,
 )
+
+data class ApplyVoucherRequest(
+    @Schema(description = "Code the guest brings, with or without the dash", example = "ABCD-2345")
+    @Size(max = 20) val code: String,
+)

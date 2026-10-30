@@ -8,10 +8,7 @@ import com.passly.application.venue.UpdateVenueSettingsCommand
 import com.passly.application.venue.VenueSettingsService
 import com.passly.domain.common.ConflictException
 import com.passly.domain.common.ValidationException
-import com.passly.domain.venue.CountryCode
-import com.passly.domain.venue.CurrencyCode
-import com.passly.domain.venue.ExchangeRate
-import com.passly.domain.venue.VenueId
+import com.passly.domain.venue.*
 import com.passly.security.PasslyUserPrincipal
 import jakarta.validation.Valid
 import org.springframework.dao.OptimisticLockingFailureException
@@ -59,6 +56,7 @@ class VenueSettingsController(
                         country = CountryCode.of(form.country),
                         currency = CurrencyCode.of(form.currency),
                         expectedVersion = form.version,
+                        timeZone = form.timeZone.takeIf { it.isNotBlank() }?.let(TimeZones::of),
                     ),
                 )
                 flash.addFlashAttribute("message", "Settings saved")
@@ -117,6 +115,7 @@ class VenueSettingsController(
         model.addAttribute("venue", venues.find(principal, venueId))
         model.addAttribute("countries", countryOptions())
         model.addAttribute("currencies", currencyOptions())
+        model.addAttribute("timeZones", timeZoneOptions())
         model.addAttribute("currencyLocked", settings.currencyLocked(VenueId(venueId)))
         model.addAttribute("mainCurrency", current.currency.value)
         model.addAttribute("accepted", current.acceptedCurrencies.map { it.toView() })

@@ -1,5 +1,6 @@
 package com.passly.data.order
 
+import com.passly.data.voucher.voucherValueOf
 import com.passly.domain.common.Money
 import com.passly.domain.common.TaxRate
 import com.passly.domain.discount.DiscountPercent
@@ -14,6 +15,9 @@ import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.ExchangeRate
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.VoucherCode
+import com.passly.domain.voucher.VoucherId
+import com.passly.domain.voucher.VoucherValue
 
 fun OrderEntity.toDomain() = Order.fromStorage(
     id = OrderId(id),
@@ -38,6 +42,17 @@ fun OrderEntity.toDomain() = Order.fromStorage(
             appliedAt = checkNotNull(discountAppliedAt) { "Discount of order $id has no time" },
         )
     },
+    voucher = voucherId?.let { voucherId ->
+        OrderVoucher(
+            voucherId = VoucherId(voucherId),
+            code = VoucherCode.fromStorage(checkNotNull(voucherCode) { "Voucher of order $id has no code" }),
+            name = checkNotNull(voucherName) { "Voucher of order $id has no name" },
+            kind = checkNotNull(voucherKind) { "Voucher of order $id has no kind" },
+            value = voucherValueOf(voucherPercent, voucherAmount),
+            appliedBy = UserId(checkNotNull(voucherAppliedBy) { "Voucher of order $id has no author" }),
+            appliedAt = checkNotNull(voucherAppliedAt) { "Voucher of order $id has no time" },
+        )
+    },
 )
 
 fun Order.toNewEntity() = OrderEntity(
@@ -53,6 +68,7 @@ fun Order.toNewEntity() = OrderEntity(
     it.closedBy = closedBy?.value
     it.closedAt = closedAt
     it.copyDiscountFrom(this)
+    it.copyVoucherFrom(this)
     it.appendNewLines(this)
     it.appendNewPayments(this)
 }
@@ -63,6 +79,7 @@ fun OrderEntity.updateFrom(order: Order) {
     closedBy = order.closedBy?.value
     closedAt = order.closedAt
     copyDiscountFrom(order)
+    copyVoucherFrom(order)
     appendNewLines(order)
     appendNewPayments(order)
 }
@@ -74,6 +91,18 @@ private fun OrderEntity.copyDiscountFrom(order: Order) {
     discountPercent = discount?.percent?.value
     discountAppliedBy = discount?.appliedBy?.value
     discountAppliedAt = discount?.appliedAt
+}
+
+private fun OrderEntity.copyVoucherFrom(order: Order) {
+    val voucher = order.voucher
+    voucherId = voucher?.voucherId?.value
+    voucherCode = voucher?.code?.value
+    voucherName = voucher?.name
+    voucherKind = voucher?.kind
+    voucherPercent = (voucher?.value as? VoucherValue.Percent)?.percent?.value
+    voucherAmount = (voucher?.value as? VoucherValue.Amount)?.amount?.amount
+    voucherAppliedBy = voucher?.appliedBy?.value
+    voucherAppliedAt = voucher?.appliedAt
 }
 
 private fun OrderEntity.appendNewLines(order: Order) {

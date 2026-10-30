@@ -34,6 +34,7 @@ class VenueSettingsService(
         }
         val previousCurrency = current.currency
         current.changeCountry(command.country)
+        command.timeZone?.let(current::changeTimeZone)
         current.changeCurrency(command.currency, venueHasOrders = orders.existsInVenue(command.venueId))
         settings.save(current)
         if (current.currency != previousCurrency) menuChanges.recordChange(command.venueId, MenuChangeKind.CURRENCY)

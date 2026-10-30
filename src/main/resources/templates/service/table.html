@@ -92,6 +92,10 @@
                             <dt th:text="${table.order.discount}">Happy hour · 20%</dt>
                             <dd th:text="|−${table.order.discountAmount}|">−8.50</dd>
                         </th:block>
+                        <th:block th:if="${table.order.voucher != null}">
+                            <dt th:text="${table.order.voucher}">Voucher ABCD-2345 · Birthday gift</dt>
+                            <dd th:text="|−${table.order.voucherAmount}|">−20.00</dd>
+                        </th:block>
                         <th:block th:each="tax : ${table.order.taxes}">
                             <dt class="muted" th:text="|incl. VAT ${tax.rate}|">incl. VAT 10%</dt>
                             <dd class="muted" th:text="${tax.tax}">3.86</dd>
@@ -123,6 +127,22 @@
                               th:action="@{/service/venues/{v}/tables/{t}/discount/remove(v=${venue.id}, t=${table.id})}">
                             <input type="hidden" name="orderId" th:value="${table.order.id}">
                             <button type="submit" class="outline contrast">Remove discount</button>
+                        </form>
+                    </div>
+
+                    <div class="voucher-forms" th:if="${venue.closesOrders and table.order.discountable}">
+                        <form class="voucher-apply" method="post" role="group"
+                              th:action="@{/service/venues/{v}/tables/{t}/voucher(v=${venue.id}, t=${table.id})}">
+                            <input type="hidden" name="orderId" th:value="${table.order.id}">
+                            <input type="text" name="code" required maxlength="12" autocomplete="off" autocapitalize="characters"
+                                   placeholder="ABCD-2345" aria-label="Voucher code">
+                            <button type="submit" class="secondary outline"
+                                    th:text="${table.order.voucher == null} ? 'Apply voucher' : 'Replace'">Apply voucher</button>
+                        </form>
+                        <form th:if="${table.order.voucher != null}" method="post"
+                              th:action="@{/service/venues/{v}/tables/{t}/voucher/remove(v=${venue.id}, t=${table.id})}">
+                            <input type="hidden" name="orderId" th:value="${table.order.id}">
+                            <button type="submit" class="outline contrast">Remove voucher</button>
                         </form>
                     </div>
 

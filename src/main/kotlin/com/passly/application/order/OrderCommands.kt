@@ -9,6 +9,7 @@ import com.passly.domain.order.PaymentMethod
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.VoucherCode
 
 data class OpenOrderCommand(
     val venueId: VenueId,
@@ -48,6 +49,18 @@ data class ApplyDiscountCommand(
 )
 
 data class RemoveDiscountCommand(
+    val venueId: VenueId,
+    val orderId: OrderId,
+)
+
+data class ApplyVoucherCommand(
+    val venueId: VenueId,
+    val orderId: OrderId,
+    val code: VoucherCode,
+    val appliedBy: UserId,
+)
+
+data class RemoveVoucherCommand(
     val venueId: VenueId,
     val orderId: OrderId,
 )

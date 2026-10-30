@@ -9,6 +9,8 @@ import com.passly.domain.floor.DiningTableId
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.TenantId
 import com.passly.domain.venue.VenueId
+import com.passly.domain.voucher.Voucher
+import java.math.RoundingMode
 import java.time.Instant
 
 class Order private constructor(
@@ -26,6 +28,7 @@ class Order private constructor(
     closedAt: Instant?,
     val version: Long?,
     discount: OrderDiscount?,
+    voucher: OrderVoucher?,
 ) {
     var status: OrderStatus = status
         private set
@@ -45,6 +48,9 @@ class Order private constructor(
     var discount: OrderDiscount? = discount
         private set
 
+    var voucher: OrderVoucher? = voucher
+        private set
+
     val isNew: Boolean get() = version == null
 
     val rounds: Int get() = lines.maxOfOrNull { it.round } ?: 0
@@ -55,7 +61,11 @@ class Order private constructor(
 
     val discountAmount: Money get() = discount?.percent?.of(total) ?: Money.ZERO
 
-    val toPay: Money get() = total - discountAmount
+    val afterDiscount: Money get() = total - discountAmount
+
+    val voucherAmount: Money get() = voucher?.value?.of(afterDiscount) ?: Money.ZERO
+
+    val toPay: Money get() = afterDiscount - voucherAmount
 
     val due: Money get() = toPay - paid
 
@@ -64,11 +74,15 @@ class Order private constructor(
             val grossByRate = lines.groupBy { it.taxRate.percent }
                 .toSortedMap()
                 .map { (_, rateLines) -> rateLines.first().taxRate to rateLines.fold(Money.ZERO) { sum, line -> sum + line.total } }
-            val percent = discount?.percent ?: return grossByRate.map { (rate, gross) -> TaxShare.of(rate, gross) }
-            val discounted = grossByRate.map { (rate, gross) -> rate to gross - percent.of(gross) }
-            val drift = toPay - discounted.fold(Money.ZERO) { sum, (_, gross) -> sum + gross }
-            val largest = discounted.indices.maxByOrNull { discounted[it].second }
-            return discounted.mapIndexed { index, (rate, gross) -> TaxShare.of(rate, if (index == largest) gross + drift else gross) }
+            val full = total
+            val payable = toPay
+            if (payable == full || full.isZero) return grossByRate.map { (rate, gross) -> TaxShare.of(rate, gross) }
+            val reduced = grossByRate.map { (rate, gross) ->
+                rate to Money.of(gross.amount.multiply(payable.amount).divide(full.amount, 2, RoundingMode.HALF_UP))
+            }
+            val drift = payable - reduced.fold(Money.ZERO) { sum, (_, gross) -> sum + gross }
+            val largest = reduced.indices.maxByOrNull { reduced[it].second }
+            return reduced.mapIndexed { index, (rate, gross) -> TaxShare.of(rate, if (index == largest) gross + drift else gross) }
         }
 
     fun addRound(priced: List<PricedLine>, addedBy: UserId, addedAt: Instant): Int {
@@ -102,15 +116,28 @@ class Order private constructor(
 
     fun applyDiscount(source: VenueDiscount, appliedBy: UserId, appliedAt: Instant) {
         requireOpen()
-        requireNoPayments()
+        requireNoPayments("discount")
         require(source.venueId == venueId) { "Discount ${source.id} belongs to another venue" }
         discount = OrderDiscount(source.id, source.name, source.percent, appliedBy, appliedAt)
     }
 
     fun removeDiscount() {
         requireOpen()
-        requireNoPayments()
+        requireNoPayments("discount")
         discount = null
+    }
+
+    fun applyVoucher(source: Voucher, appliedBy: UserId, appliedAt: Instant) {
+        requireOpen()
+        requireNoPayments("voucher")
+        require(source.venueId == venueId) { "Voucher ${source.id} belongs to another venue" }
+        voucher = OrderVoucher(source.id, source.code, source.name, source.kind, source.value, appliedBy, appliedAt)
+    }
+
+    fun removeVoucher() {
+        requireOpen()
+        requireNoPayments("voucher")
+        voucher = null
     }
 
     fun pay(method: PaymentMethod, tender: Tender, takenBy: UserId, takenAt: Instant): Payment {
@@ -148,8 +175,8 @@ class Order private constructor(
         closedAt = at
     }
 
-    private fun requireNoPayments() {
-        if (payments.isNotEmpty()) throw ConflictException("The discount cannot change after the first payment")
+    private fun requireNoPayments(what: String) {
+        if (payments.isNotEmpty()) throw ConflictException("The $what cannot change after the first payment")
     }
 
     private fun requireOpen() {
@@ -188,6 +215,7 @@ class Order private constructor(
                 closedAt = null,
                 version = null,
                 discount = null,
+                voucher = null,
             )
         }
 
@@ -206,6 +234,10 @@ class Order private constructor(
             closedAt: Instant?,
             version: Long,
             discount: OrderDiscount? = null,
-        ) = Order(id, tenantId, venueId, tableId, status, guests, openedBy, openedAt, lines, payments, closedBy, closedAt, version, discount)
+            voucher: OrderVoucher? = null,
+        ) = Order(
+            id, tenantId, venueId, tableId, status, guests, openedBy, openedAt,
+            lines, payments, closedBy, closedAt, version, discount, voucher,
+        )
     }
 }

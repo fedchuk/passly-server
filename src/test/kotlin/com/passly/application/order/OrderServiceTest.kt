@@ -8,9 +8,15 @@ import com.passly.application.menu.FakeModifierGroupRepository
 import com.passly.application.menu.FakeVenueRepository
 import com.passly.application.tax.FakeTaxRateRepository
 import com.passly.application.venue.FakeVenueSettingsRepository
+import com.passly.application.voucher.FakeVoucherRepository
 import com.passly.domain.common.*
 import com.passly.domain.discount.DiscountPercent
 import com.passly.domain.discount.VenueDiscountId
+import com.passly.domain.voucher.Voucher
+import com.passly.domain.voucher.VoucherCode
+import com.passly.domain.voucher.VoucherKind
+import com.passly.domain.voucher.VoucherValue
+import java.time.LocalDate
 import com.passly.domain.floor.DiningTable
 import com.passly.domain.menu.*
 import com.passly.domain.order.OrderLineRequest
@@ -51,8 +57,9 @@ class OrderServiceTest {
     private val alcohol = taxRates.load(venue.id).add(venue.tenantId, "Alcohol", TaxRate.of("20"))
         .also { taxRates.saveAll(listOf(it)) }
     private val discounts = FakeDiscountRepository()
+    private val vouchers = FakeVoucherRepository()
     private val service = OrderService(
-        venues, floors, orders, items, groups, categories, settings, taxRates, discounts, Clock.fixed(now, ZoneOffset.UTC),
+        venues, floors, orders, items, groups, categories, settings, taxRates, discounts, vouchers, Clock.fixed(now, ZoneOffset.UTC),
     )
 
     private val table: DiningTable = floors.load(venue.id).let { plan ->
@@ -254,5 +261,64 @@ class OrderServiceTest {
         assertFailsWith<NotFoundException> {
             service.applyDiscount(ApplyDiscountCommand(venue.id, order.id, VenueDiscountId.new(), waiter))
         }
+    }
+
+    private fun voucher(code: String, kind: VoucherKind, validUntil: String = "2026-12-31"): Voucher =
+        Voucher.create(
+            venue.tenantId, venue.id, VoucherCode.parse(code), "Gift", kind, VoucherValue.Amount(Money.of("10.00")),
+            LocalDate.parse(validUntil), LocalDate.parse("2026-10-24"), now,
+        ).also(vouchers::save)
+
+    @Test
+    fun `single-use voucher is held by the bill and freed when removed`() {
+        val gift = voucher("ABCD-2345", VoucherKind.SINGLE_USE)
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(item("Steak", "28.00")))))
+
+        service.applyVoucher(ApplyVoucherCommand(venue.id, order.id, VoucherCode.parse("abcd2345"), waiter))
+
+        assertEquals(Money.of("18.00"), orders.stored.getValue(order.id).due)
+        assertEquals(order.id, vouchers.stored.getValue(gift.id).redeemedOrderId)
+
+        service.removeVoucher(RemoveVoucherCommand(venue.id, order.id))
+
+        assertEquals(null, vouchers.stored.getValue(gift.id).redeemedOrderId)
+        assertEquals(Money.of("28.00"), orders.stored.getValue(order.id).due)
+    }
+
+    @Test
+    fun `voucher of another bill is refused and the last day still counts`() {
+        voucher("ABCD-2345", VoucherKind.SINGLE_USE)
+        voucher("WXYZ-6789", VoucherKind.REUSABLE, validUntil = "2026-10-24")
+        val steak = item("Steak", "28.00")
+        val first = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(steak))))
+        service.applyVoucher(ApplyVoucherCommand(venue.id, first.id, VoucherCode.parse("ABCD-2345"), waiter))
+        val other = floors.load(venue.id).let { plan ->
+            plan.addTable(venue.tenantId, plan.areas.first().id, "8", 2).also { floors.saveTables(listOf(it)) }
+        }
+        val second = service.open(OpenOrderCommand(venue.id, other.id, waiter, lines = listOf(line(steak))))
+
+        val used = assertFailsWith<ConflictException> {
+            service.applyVoucher(ApplyVoucherCommand(venue.id, second.id, VoucherCode.parse("ABCD-2345"), waiter))
+        }
+        assertEquals("Voucher ABCD-2345 was already used", used.message)
+
+        service.applyVoucher(ApplyVoucherCommand(venue.id, second.id, VoucherCode.parse("WXYZ-6789"), waiter))
+        assertFailsWith<NotFoundException> {
+            service.applyVoucher(ApplyVoucherCommand(venue.id, second.id, VoucherCode.parse("QQQQ-2222"), waiter))
+        }
+    }
+
+    @Test
+    fun `replacing a single-use voucher frees the previous one`() {
+        val first = voucher("ABCD-2345", VoucherKind.SINGLE_USE)
+        val second = voucher("WXYZ-6789", VoucherKind.SINGLE_USE)
+        val order = service.open(OpenOrderCommand(venue.id, table.id, waiter, lines = listOf(line(item("Steak", "28.00")))))
+
+        service.applyVoucher(ApplyVoucherCommand(venue.id, order.id, first.code, waiter))
+        service.applyVoucher(ApplyVoucherCommand(venue.id, order.id, second.code, waiter))
+
+        assertEquals(null, vouchers.stored.getValue(first.id).redeemedOrderId)
+        assertEquals(order.id, vouchers.stored.getValue(second.id).redeemedOrderId)
+        assertEquals(second.id, orders.stored.getValue(order.id).voucher?.voucherId)
     }
 }
