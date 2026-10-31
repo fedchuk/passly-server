@@ -2,7 +2,9 @@ package com.passly.application.kitchen
 
 import com.passly.application.menu.FakeStationRepository
 import com.passly.application.menu.FakeVenueRepository
+import com.passly.application.order.FakeOrderChangeRecorder
 import com.passly.application.order.FakeOrderRepository
+import com.passly.application.order.OrderChangeKind
 import com.passly.domain.common.Money
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.common.TaxRate
@@ -29,7 +31,8 @@ class KitchenServiceTest {
     private val orders = FakeOrderRepository()
     private val stations = FakeStationRepository(mapOf(bar to venue.id))
     private val board = RecordingBoardQuery()
-    private val service = KitchenService(FakeVenueRepository(venue), stations, orders, board, Clock.fixed(now, ZoneOffset.UTC))
+    private val changes = FakeOrderChangeRecorder()
+    private val service = KitchenService(FakeVenueRepository(venue), stations, orders, board, changes, Clock.fixed(now, ZoneOffset.UTC))
     private val waiter = UserId.new()
 
     private fun order(): Order {
@@ -59,6 +62,10 @@ class KitchenServiceTest {
         assertEquals(PrepStatus.READY, orders.stored.getValue(order.id).lines.single().status)
         assertEquals(now, orders.stored.getValue(order.id).lines.single().statusChangedAt)
         assertEquals(1, orders.locks)
+        assertEquals(listOf(Triple(order.id, OrderChangeKind.LINES_MOVED, setOf(bar))), changes.recorded)
+
+        service.moveLines(MoveLinesCommand(venue.id, order.id, order.lines.map { it.id }, PrepStatus.READY))
+        assertEquals(1, changes.recorded.size)
         assertFailsWith<NotFoundException> {
             service.moveLines(MoveLinesCommand(venue.id, OrderId.new(), listOf(OrderLineId.new()), PrepStatus.READY))
         }

@@ -1,5 +1,7 @@
 package com.passly.application.kitchen
 
+import com.passly.application.order.OrderChangeKind
+import com.passly.application.order.OrderChangeRecorder
 import com.passly.domain.common.NotFoundException
 import com.passly.domain.menu.Station
 import com.passly.domain.menu.StationId
@@ -20,6 +22,7 @@ class KitchenService(
     private val stations: StationRepository,
     private val orders: OrderRepository,
     private val board: StationBoardQuery,
+    private val changes: OrderChangeRecorder,
     private val clock: Clock,
 ) {
 
@@ -44,7 +47,9 @@ class KitchenService(
     fun moveLines(command: MoveLinesCommand): List<OrderLine> {
         val order = orders.findForUpdate(command.venueId, command.orderId) ?: throw NotFoundException("Order", command.orderId)
         val moved = order.moveLines(command.lineIds, command.status, clock.instant())
+        if (moved.isEmpty()) return moved
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.LINES_MOVED, moved.mapNotNull { it.stationId }.toSet())
         return moved
     }
 

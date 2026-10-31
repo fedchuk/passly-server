@@ -2,10 +2,7 @@ package com.passly.web.service
 
 import com.passly.application.order.FloorStatus
 import com.passly.application.order.TableStatus
-import com.passly.domain.order.Order
-import com.passly.domain.order.OrderLine
-import com.passly.domain.order.Payment
-import com.passly.domain.order.PaymentMethod
+import com.passly.domain.order.*
 import com.passly.domain.venue.VenueSettings
 import java.time.Duration
 import java.time.Instant
@@ -25,6 +22,7 @@ data class ServiceTableView(
     val total: String?,
     val guests: Int?,
     val openFor: String?,
+    val ready: Int,
 )
 
 data class FloorSummaryView(
@@ -59,6 +57,7 @@ data class OrderPageView(
     val taxes: List<TaxLineView>,
     val payments: List<PaymentView>,
     val rounds: List<RoundView>,
+    val readyLineIds: List<UUID>,
 )
 
 data class TaxLineView(
@@ -84,11 +83,15 @@ data class RoundView(
 )
 
 data class LineView(
+    val lineId: UUID,
     val quantity: Int,
     val name: String,
     val modifiers: String?,
     val comment: String?,
     val total: String,
+    val status: String,
+    val statusKey: String,
+    val ready: Boolean,
 )
 
 fun FloorStatus.toAreaViews(now: Instant): List<ServiceAreaView> =
@@ -108,6 +111,7 @@ fun FloorStatus.toAreaViews(now: Instant): List<ServiceAreaView> =
                         total = order?.toPay?.toString(),
                         guests = order?.guests,
                         openFor = order?.let { Duration.between(it.openedAt, now).toElapsedLabel() },
+                        ready = order?.lines?.count { it.status == PrepStatus.READY } ?: 0,
                     )
                 },
         )
@@ -145,6 +149,7 @@ private fun Order.toPageView(now: Instant) = OrderPageView(
     taxes = taxShares.map { TaxLineView("${it.rate.percent.stripTrailingZeros().toPlainString()}%", it.tax.toString()) },
     payments = payments.map { it.toView() },
     rounds = lines.groupBy { it.round }.toSortedMap().map { (number, lines) -> RoundView(number, lines.map { it.toView() }) },
+    readyLineIds = lines.filter { it.status == PrepStatus.READY }.map { it.id.value },
 )
 
 private fun Payment.toView() = PaymentView(
@@ -163,12 +168,23 @@ fun VenueSettings.toPaymentCurrencies(): List<PaymentCurrencyView> =
             acceptedCurrencies.map { PaymentCurrencyView(it.currency.value, it.rate.toString()) }
 
 private fun OrderLine.toView() = LineView(
+    lineId = id.value,
     quantity = quantity,
     name = name,
     modifiers = modifiers.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name },
     comment = comment,
     total = total.toString(),
+    status = status.waiterLabel(),
+    statusKey = status.name.lowercase().replace('_', '-'),
+    ready = status == PrepStatus.READY,
 )
+
+fun PrepStatus.waiterLabel(): String = when (this) {
+    PrepStatus.NEW -> "Sent"
+    PrepStatus.IN_PROGRESS -> "Preparing"
+    PrepStatus.READY -> "Ready"
+    PrepStatus.SERVED -> "Served"
+}
 
 fun Duration.toElapsedLabel(): String {
     val minutes = toMinutes().coerceAtLeast(0)

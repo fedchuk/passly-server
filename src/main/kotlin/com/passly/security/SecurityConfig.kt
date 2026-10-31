@@ -58,6 +58,7 @@ class SecurityConfig {
     ): SecurityFilterChain {
         http {
             authorizeHttpRequests {
+                authorize(DispatcherTypeRequestMatcher(DispatcherType.ASYNC), permitAll)
                 authorize("/login", permitAll)
                 authorize("/css/**", permitAll)
                 authorize("/js/**", permitAll)

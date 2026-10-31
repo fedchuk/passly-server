@@ -88,6 +88,8 @@
         </section>
     </div>
 
+    <script th:src="@{/js/live-orders.js}"
+            th:attr="data-events=@{/kitchen/venues/{v}/events(v=${venue.id})}, data-station-id=${stationId}"></script>
     <script>
         (() => {
             const seconds = Number(document.querySelector('.kds').dataset.refresh);

@@ -25,6 +25,7 @@ class OrderService(
     private val taxRates: TaxRateRepository,
     private val discounts: DiscountRepository,
     private val vouchers: VoucherRepository,
+    private val changes: OrderChangeRecorder,
     private val clock: Clock,
 ) {
 
@@ -48,13 +49,16 @@ class OrderService(
         val order = Order.open(table, command.guests, command.waiterId, now)
         if (command.lines.isNotEmpty()) order.addRound(price(venue.id, command.lines), command.waiterId, now)
         orders.save(order)
+        if (order.lines.isEmpty()) changes.recordChange(order, OrderChangeKind.OPENED)
+        else changes.recordChange(order, OrderChangeKind.ROUND_SENT, order.stationsOfRound(order.rounds))
         return order
     }
 
     fun addRound(command: AddRoundCommand): Order {
         val order = lockOrder(command.venueId, command.orderId)
-        order.addRound(price(command.venueId, command.lines), command.waiterId, clock.instant())
+        val round = order.addRound(price(command.venueId, command.lines), command.waiterId, clock.instant())
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.ROUND_SENT, order.stationsOfRound(round))
         return order
     }
 
@@ -63,6 +67,7 @@ class OrderService(
         val discount = discounts.load(command.venueId)[command.discountId]
         order.applyDiscount(discount, command.appliedBy, clock.instant())
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.BILL_CHANGED)
         return order
     }
 
@@ -70,6 +75,7 @@ class OrderService(
         val order = lockOrder(command.venueId, command.orderId)
         order.removeDiscount()
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.BILL_CHANGED)
         return order
     }
 
@@ -84,6 +90,7 @@ class OrderService(
         if (previous != null && previous.voucherId != voucher.id) release(order, previous)
         vouchers.save(voucher)
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.BILL_CHANGED)
         return order
     }
 
@@ -93,6 +100,7 @@ class OrderService(
         order.removeVoucher()
         release(order, applied)
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.BILL_CHANGED)
         return order
     }
 
@@ -100,6 +108,7 @@ class OrderService(
         val order = lockOrder(command.venueId, command.orderId)
         order.pay(command.method, tender(command.venueId, command.amount, command.currency), command.takenBy, clock.instant())
         orders.save(order)
+        changes.recordChange(order, if (order.status == OrderStatus.CLOSED) OrderChangeKind.CLOSED else OrderChangeKind.PAID)
         return order
     }
 
@@ -107,8 +116,12 @@ class OrderService(
         val order = lockOrder(command.venueId, command.orderId)
         order.close(command.closedBy, clock.instant())
         orders.save(order)
+        changes.recordChange(order, OrderChangeKind.CLOSED)
         return order
     }
+
+    private fun Order.stationsOfRound(round: Int): Set<StationId> =
+        lines.filter { it.round == round }.mapNotNull { it.stationId }.toSet()
 
     private fun release(order: Order, applied: OrderVoucher) {
         val voucher = vouchers.findForUpdate(order.venueId, applied.voucherId) ?: return

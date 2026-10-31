@@ -58,8 +58,9 @@ class OrderServiceTest {
         .also { taxRates.saveAll(listOf(it)) }
     private val discounts = FakeDiscountRepository()
     private val vouchers = FakeVoucherRepository()
+    private val changes = FakeOrderChangeRecorder()
     private val service = OrderService(
-        venues, floors, orders, items, groups, categories, settings, taxRates, discounts, vouchers, Clock.fixed(now, ZoneOffset.UTC),
+        venues, floors, orders, items, groups, categories, settings, taxRates, discounts, vouchers, changes, Clock.fixed(now, ZoneOffset.UTC),
     )
 
     private val table: DiningTable = floors.load(venue.id).let { plan ->
@@ -320,5 +321,21 @@ class OrderServiceTest {
         assertEquals(null, vouchers.stored.getValue(first.id).redeemedOrderId)
         assertEquals(order.id, vouchers.stored.getValue(second.id).redeemedOrderId)
         assertEquals(second.id, orders.stored.getValue(order.id).voucher?.voucherId)
+    }
+
+    @Test
+    fun `every change of an order is recorded with the stations it concerns`() {
+        val steak = item("Steak", "28.00")
+        val empty = service.open(OpenOrderCommand(venue.id, table.id, waiter))
+
+        service.addRound(AddRoundCommand(venue.id, empty.id, waiter, listOf(line(steak))))
+        service.pay(PayOrderCommand(venue.id, empty.id, waiter, PaymentMethod.CARD, Money.of("10.00")))
+        service.pay(PayOrderCommand(venue.id, empty.id, waiter, PaymentMethod.CARD, Money.of("18.00")))
+
+        assertEquals(
+            listOf(OrderChangeKind.OPENED, OrderChangeKind.ROUND_SENT, OrderChangeKind.PAID, OrderChangeKind.CLOSED),
+            changes.kinds(),
+        )
+        assertEquals(setOf(kitchen), changes.recorded[1].third)
     }
 }

@@ -6,16 +6,30 @@ import com.passly.domain.menu.StationId
 import com.passly.domain.order.OrderId
 import com.passly.domain.order.OrderLineId
 import com.passly.domain.venue.VenueId
+import com.passly.web.api.order.OrderEventStreams
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/venues/{venueId}/kitchen")
 @Tag(name = "Kitchen display", description = "Tickets of one station and the progress of their lines")
-class KitchenApiController(private val kitchen: KitchenService) {
+class KitchenApiController(
+    private val kitchen: KitchenService,
+    private val streams: OrderEventStreams,
+) {
+
+    @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @Operation(
+        summary = "Changes of orders as they happen",
+        description = "The same 'order' events as GET …/orders/events. Reload the tickets of your station when its id is " +
+                "in stationIds.",
+    )
+    fun events(@PathVariable venueId: UUID): SseEmitter = streams.subscribe(VenueId(venueId))
 
     @GetMapping("/stations/{stationId}/tickets")
     @Operation(

@@ -2867,3 +2867,64 @@ form.tax-rate-form button {
 .kds-ticket footer small {
     color: var(--muted);
 }
+
+.ready-badge {
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: var(--success);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.serve-ready {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-color: var(--success);
+    background: var(--success-soft);
+}
+
+.serve-ready button {
+    margin: 0;
+}
+
+.prep-pill {
+    flex: none;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    background: var(--surface-muted);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.prep-pill.in-progress {
+    background: var(--warning-soft);
+    color: var(--warning);
+}
+
+.prep-pill.ready {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.serve-line {
+    margin: 0;
+}
+
+.serve-line button {
+    padding: 0.15rem 0.55rem;
+    font-size: 0.8rem;
+}
+
+.live-banner a {
+    font-weight: 600;
+}
+
+.live-banner[hidden] {
+    display: none;
+}

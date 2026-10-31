@@ -11,10 +11,13 @@ import com.passly.domain.order.PrepStatus
 import com.passly.domain.venue.VenueId
 import com.passly.security.PasslyUserPrincipal
 import com.passly.web.admin.AdminVenues
+import com.passly.web.api.order.OrderEventStreams
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
 import java.time.Clock
 import java.util.*
@@ -24,8 +27,13 @@ import java.util.*
 class KitchenController(
     private val venues: AdminVenues,
     private val kitchen: KitchenService,
+    private val streams: OrderEventStreams,
     private val clock: Clock,
 ) {
+
+    @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    fun events(@PathVariable venueId: UUID): SseEmitter = streams.subscribe(VenueId(venueId))
 
     @GetMapping
     fun board(
@@ -75,6 +83,6 @@ class KitchenController(
     }
 
     private companion object {
-        const val REFRESH_SECONDS = 15
+        const val REFRESH_SECONDS = 60
     }
 }

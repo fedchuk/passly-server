@@ -27,6 +27,7 @@
                     <span class="service-tile-label" th:text="${table.label}">7</span>
                     <th:block th:if="${table.busy}">
                         <strong class="service-tile-total" th:text="${table.total}">42.50</strong>
+                        <span class="ready-badge" th:if="${table.ready > 0}" th:text="|${table.ready} ready|">2 ready</span>
                         <small>
                             <span th:if="${table.guests != null}" th:text="|${table.guests} guests · |">2 guests · </span>
                             <span th:text="${table.openFor}">35 min</span>
@@ -38,10 +39,11 @@
         </ol>
     </section>
 
+    <script th:src="@{/js/live-orders.js}" th:attr="data-events=@{/service/venues/{v}/events(v=${venue.id})}"></script>
     <script>
         setInterval(() => {
             if (document.visibilityState === 'visible') location.reload();
-        }, 30000);
+        }, 60000);
     </script>
 </main>
 </body>

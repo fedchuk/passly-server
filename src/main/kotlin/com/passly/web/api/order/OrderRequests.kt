@@ -57,3 +57,8 @@ data class ApplyVoucherRequest(
     @Schema(description = "Code the guest brings, with or without the dash", example = "ABCD-2345")
     @Size(max = 20) val code: String,
 )
+
+data class ServeLinesRequest(
+    @Schema(description = "Lines handed to the guests, usually the ready ones")
+    @NotEmpty @Size(max = 100) val lineIds: List<UUID>,
+)

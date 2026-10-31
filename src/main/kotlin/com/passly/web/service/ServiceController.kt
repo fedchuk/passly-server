@@ -1,6 +1,8 @@
 package com.passly.web.service
 
 import com.passly.application.discount.DiscountService
+import com.passly.application.kitchen.KitchenService
+import com.passly.application.kitchen.MoveLinesCommand
 import com.passly.application.menu.WaiterMenuService
 import com.passly.application.order.*
 import com.passly.application.venue.VenueSettingsService
@@ -8,7 +10,9 @@ import com.passly.domain.common.*
 import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
+import com.passly.domain.order.OrderLineId
 import com.passly.domain.order.OrderStatus
+import com.passly.domain.order.PrepStatus
 import com.passly.domain.user.UserId
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
@@ -16,11 +20,14 @@ import com.passly.domain.voucher.VoucherCode
 import com.passly.security.PasslyUserPrincipal
 import com.passly.web.admin.AdminVenues
 import com.passly.web.admin.OptionView
+import com.passly.web.api.order.OrderEventStreams
+import org.springframework.http.MediaType
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
 import java.math.BigDecimal
 import java.time.Clock
@@ -35,8 +42,14 @@ class ServiceController(
     private val orders: OrderService,
     private val settings: VenueSettingsService,
     private val discounts: DiscountService,
+    private val kitchen: KitchenService,
+    private val streams: OrderEventStreams,
     private val clock: Clock,
 ) {
+
+    @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @ResponseBody
+    fun events(@PathVariable venueId: UUID): SseEmitter = streams.subscribe(VenueId(venueId))
 
     @GetMapping
     fun floor(
@@ -244,6 +257,25 @@ class ServiceController(
             val order = orders.removeVoucher(RemoveVoucherCommand(VenueId(venueId), OrderId(orderId)))
             flash.addFlashAttribute("message", "Voucher removed, ${order.due} to pay")
         } catch (e: ConflictException) {
+            flash.addFlashAttribute("error", e.message)
+        }
+        return "redirect:/service/venues/$venueId/tables/$tableId"
+    }
+
+    @PostMapping("/tables/{tableId}/served")
+    fun serve(
+        @PathVariable venueId: UUID,
+        @PathVariable tableId: UUID,
+        @RequestParam orderId: UUID,
+        @RequestParam("lineId") lineIds: List<UUID>,
+        flash: RedirectAttributes,
+    ): String {
+        try {
+            val served = kitchen.moveLines(
+                MoveLinesCommand(VenueId(venueId), OrderId(orderId), lineIds.map(::OrderLineId), PrepStatus.SERVED),
+            )
+            flash.addFlashAttribute("message", if (served.size == 1) "${served.single().name} served" else "${served.size} lines served")
+        } catch (e: NotFoundException) {
             flash.addFlashAttribute("error", e.message)
         }
         return "redirect:/service/venues/$venueId/tables/$tableId"

@@ -22,6 +22,9 @@
         </div>
     </div>
 
+    <p id="live-banner" class="notice live-banner" hidden>
+        This table changed on another screen. <a href="" onclick="location.reload(); return false;">Refresh</a>
+    </p>
     <p th:if="${message}" class="notice" th:text="${message}">Round 2 sent</p>
     <p th:if="${error}" class="error" th:text="${error}">Not available now: Ribeye</p>
 
@@ -172,6 +175,14 @@
                     </form>
                 </section>
 
+                <form th:unless="${table.order.readyLineIds.isEmpty()}" class="card serve-ready" method="post"
+                      th:action="@{/service/venues/{v}/tables/{t}/served(v=${venue.id}, t=${table.id})}">
+                    <input type="hidden" name="orderId" th:value="${table.order.id}">
+                    <input type="hidden" name="lineId" th:each="lineId : ${table.order.readyLineIds}" th:value="${lineId}">
+                    <span th:text="|${table.order.readyLineIds.size()} ready to take to the table|">2 ready to take to the table</span>
+                    <button type="submit">Serve all ready</button>
+                </form>
+
                 <section class="card round" th:each="round : ${table.order.rounds}">
                     <h2 th:text="|Round ${round.number}|">Round 1</h2>
                     <ul class="round-lines">
@@ -182,6 +193,13 @@
                                 <small th:if="${line.modifiers != null}" class="muted" th:text="${line.modifiers}">Medium rare</small>
                                 <small th:if="${line.comment != null}" class="line-comment" th:text="${line.comment}">No salt</small>
                             </span>
+                            <span th:class="|prep-pill ${line.statusKey}|" th:text="${line.status}">Preparing</span>
+                            <form th:if="${line.ready}" class="serve-line" method="post"
+                                  th:action="@{/service/venues/{v}/tables/{t}/served(v=${venue.id}, t=${table.id})}">
+                                <input type="hidden" name="orderId" th:value="${table.order.id}">
+                                <input type="hidden" name="lineId" th:value="${line.lineId}">
+                                <button type="submit" class="outline" th:title="|Mark ${line.name} as served|">Served</button>
+                            </form>
                             <span class="line-total" th:text="${line.total}">52.00</span>
                         </li>
                     </ul>
@@ -228,6 +246,8 @@
         </form>
     </dialog>
 
+    <script th:src="@{/js/live-orders.js}"
+            th:attr="data-events=@{/service/venues/{v}/events(v=${venue.id})}, data-table-id=${table.id}"></script>
     <script>
         (() => {
             const root = document.getElementById('order-entry');

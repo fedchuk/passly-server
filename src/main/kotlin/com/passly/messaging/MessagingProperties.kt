@@ -6,5 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class MessagingProperties(
     val kafkaEnabled: Boolean = false,
     val menuTopic: String = "passly.menu-events",
+    val orderTopic: String = "passly.order-events",
     val relayIntervalMs: Long = 1000,
 )

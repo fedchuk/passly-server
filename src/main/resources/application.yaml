@@ -37,6 +37,7 @@ passly:
   messaging:
     kafka-enabled: ${KAFKA_ENABLED:false}
     menu-topic: passly.menu-events
+    order-topic: passly.order-events
     relay-interval-ms: 1000
   demo:
     password: ${DEMO_PASSWORD:}

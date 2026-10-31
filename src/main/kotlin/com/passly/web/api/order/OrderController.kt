@@ -1,10 +1,14 @@
 package com.passly.web.api.order
 
+import com.passly.application.kitchen.KitchenService
+import com.passly.application.kitchen.MoveLinesCommand
 import com.passly.application.order.*
 import com.passly.domain.common.Money
 import com.passly.domain.discount.VenueDiscountId
 import com.passly.domain.floor.DiningTableId
 import com.passly.domain.order.OrderId
+import com.passly.domain.order.OrderLineId
+import com.passly.domain.order.PrepStatus
 import com.passly.domain.venue.CurrencyCode
 import com.passly.domain.venue.VenueId
 import com.passly.domain.voucher.VoucherCode
@@ -15,10 +19,12 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.net.URI
 import java.util.*
 
@@ -27,8 +33,19 @@ import java.util.*
 @Tag(name = "Orders", description = "Orders at tables. One open order per table for the whole visit, sent in rounds.")
 class OrderController(
     private val orders: OrderService,
+    private val kitchen: KitchenService,
+    private val streams: OrderEventStreams,
     private val idempotent: IdempotentResponses,
 ) {
+
+    @GetMapping("/events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @Operation(
+        summary = "Changes of orders as they happen",
+        description = "Server-sent events named 'order' with OrderChangeNotice data: a table opened, a round sent, lines " +
+                "moved by the kitchen, the bill changed, paid or closed. Fetch the order to see the details. A comment is " +
+                "sent every 25 seconds to keep the connection open; reconnect when it closes.",
+    )
+    fun events(@PathVariable venueId: UUID): SseEmitter = streams.subscribe(VenueId(venueId))
 
     @GetMapping
     @Operation(
@@ -163,6 +180,28 @@ class OrderController(
     )
     fun removeVoucher(@PathVariable venueId: UUID, @PathVariable id: UUID): OrderResponse =
         orders.removeVoucher(RemoveVoucherCommand(VenueId(venueId), OrderId(id))).toResponse()
+
+    @PostMapping("/{id}/served")
+    @Operation(
+        summary = "Mark lines as served",
+        description = "The waiter took these lines to the table. Lines already served are left as they are, so repeating " +
+                "the request is safe. Works on closed orders too.",
+    )
+    fun serve(
+        @PathVariable venueId: UUID,
+        @PathVariable id: UUID,
+        @Valid @RequestBody request: ServeLinesRequest,
+    ): OrderResponse {
+        kitchen.moveLines(
+            MoveLinesCommand(
+                VenueId(venueId),
+                OrderId(id),
+                request.lineIds.map(::OrderLineId),
+                PrepStatus.SERVED
+            )
+        )
+        return orders.get(VenueId(venueId), OrderId(id)).toResponse()
+    }
 
     @PostMapping("/{id}/close")
     @Operation(
